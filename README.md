@@ -110,3 +110,9 @@ This runs the smoke test that installs the kit in a temp repo and validates:
 - `CONTRIBUTING.md`
 - `CODE_OF_CONDUCT.md`
 - `SECURITY.md`
+
+## Documentation
+
+- `docs/README.md` - doc index and reading order
+- `docs/how-it-works.md` - architecture and flow overview
+- `docs/adoption-guide.md` - rollout guidance for teams
