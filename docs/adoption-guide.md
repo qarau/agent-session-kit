@@ -44,6 +44,14 @@ Optional repo-level lock:
 - Use `setRepoWorkContextLock.mjs` to bind a repo/worktree to one branch policy in git config.
 - Use `clearRepoWorkContextLock.mjs` to remove the lock during intentional branch transitions.
 
+Migration quick commands:
+
+```bash
+node scripts/session/clearRepoWorkContextLock.mjs
+node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <worktree-path-suffix> --enforce-path-suffix true
+node scripts/session/verifyWorkContext.mjs --mode preflight
+```
+
 ## Suggested Branch Protection
 
 - Require pull request before merging.

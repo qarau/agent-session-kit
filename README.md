@@ -114,6 +114,23 @@ node scripts/session/clearRepoWorkContextLock.mjs
 
 `verifyWorkContext` automatically prefers repo lock values when lock is enabled.
 
+### Migration Quick Commands
+
+```bash
+# 1) clear any previous lock (safe to run repeatedly)
+node scripts/session/clearRepoWorkContextLock.mjs
+
+# 2) set lock for your current worktree branch
+node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <worktree-path-suffix> --enforce-path-suffix true
+
+# 3) verify lock is active
+node scripts/session/verifyWorkContext.mjs --mode preflight
+
+# 4) when intentionally changing branch/worktree policy
+node scripts/session/clearRepoWorkContextLock.mjs
+node scripts/session/setRepoWorkContextLock.mjs --branch <new-branch> --repo-suffix <new-worktree-path-suffix> --enforce-path-suffix true
+```
+
 ## Enforcement behavior
 
 - `pre-commit`: blocks if active branch/worktree context fails or meaningful staged changes do not include required session docs.
