@@ -71,6 +71,8 @@ test('agent-session-kit installs and enforces context/freshness in a temp repo',
   assert.match(installResult.stdout, /Agent Session Kit install complete\./);
 
   const configPath = path.join(repoDir, 'docs', 'session', 'active-work-context.json');
+  const tasksPath = path.join(repoDir, 'docs', 'session', 'tasks.md');
+  assert.equal(fs.existsSync(tasksPath), true, 'tasks.md should be installed');
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   assert.equal(config.expectedBranch, 'session-kit-smoke');
   assert.equal(config.enforceRepoPathSuffix, true);

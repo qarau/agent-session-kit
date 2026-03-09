@@ -50,7 +50,10 @@ If other files changed, it requires updates to:
 - `docs/session/current-status.md`
 - `docs/session/change-log.md`
 
-`docs/session/open-loops.md` is warning-level by default.
+Warning-level docs by default:
+
+- `docs/session/tasks.md`
+- `docs/session/open-loops.md`
 
 ## Bypass Behavior
 

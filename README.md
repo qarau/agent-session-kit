@@ -78,6 +78,7 @@ Optional flags:
 - `docs/session/guardrails.md`
 - `docs/session/active-work-context.json`
 - `docs/session/current-status.md`
+- `docs/session/tasks.md`
 - `docs/session/open-loops.md`
 - `docs/session/change-log.md`
 
@@ -105,7 +106,10 @@ Required session docs for meaningful changes:
 - `docs/session/current-status.md`
 - `docs/session/change-log.md`
 
-`open-loops.md` is warning-level by default, because not every change requires decision updates.
+Warning-level session docs for meaningful changes:
+
+- `docs/session/tasks.md` (recommended to reflect Now/Next/Done)
+- `docs/session/open-loops.md` (recommended when decisions/risks change)
 
 ## Emergency Bypass
 

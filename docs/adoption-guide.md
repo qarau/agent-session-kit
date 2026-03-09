@@ -29,6 +29,7 @@ Agent Session Kit follows this model.
 
 - Update `docs/session/current-status.md` every meaningful cycle.
 - Update `docs/session/change-log.md` with exact verification commands run.
+- Keep `docs/session/tasks.md` current so `Now`, `Next`, and `Done` are visible at a glance.
 - Update `docs/session/open-loops.md` when decisions or risk status changes.
 - Keep bypass usage explicit and rare.
 

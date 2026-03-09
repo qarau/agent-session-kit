@@ -2,7 +2,16 @@ import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 
 const REQUIRED_DOCS = ['docs/session/current-status.md', 'docs/session/change-log.md'];
-const OPTIONAL_DOC = 'docs/session/open-loops.md';
+const OPTIONAL_DOCS = [
+  {
+    path: 'docs/session/tasks.md',
+    reason: 'keep the active Now/Next/Done board current',
+  },
+  {
+    path: 'docs/session/open-loops.md',
+    reason: 'capture unresolved decision/risk context changes',
+  },
+];
 
 function normalize(pathValue) {
   return pathValue.replaceAll('\\', '/').trim();
@@ -81,20 +90,20 @@ function evaluateFreshness(files) {
   if (meaningfulChanges.length === 0) {
     return {
       ok: true,
-      warning: null,
+      warnings: [],
       missing: [],
       meaningfulChanges,
     };
   }
 
   const missingRequired = REQUIRED_DOCS.filter(required => !files.includes(required));
-  const missingOptional = !files.includes(OPTIONAL_DOC);
+  const missingOptional = OPTIONAL_DOCS.filter(item => !files.includes(item.path)).map(
+    item => `Optional check: update ${item.path} to ${item.reason}.`
+  );
 
   return {
     ok: missingRequired.length === 0,
-    warning: missingOptional
-      ? `Optional check: update ${OPTIONAL_DOC} if decision/risk context changed.`
-      : null,
+    warnings: missingOptional,
     missing: missingRequired,
     meaningfulChanges,
   };
@@ -126,8 +135,8 @@ function main() {
   }
 
   console.log(`[session-freshness:${mode}] OK`);
-  if (result.warning) {
-    console.warn(result.warning);
+  for (const warning of result.warnings) {
+    console.warn(warning);
   }
 }
 

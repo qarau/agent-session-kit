@@ -21,7 +21,8 @@ For every meaningful cycle, update:
 
 1. `docs/session/current-status.md`
 2. `docs/session/change-log.md`
-3. `docs/session/open-loops.md` when decisions/risks/scope changed
+3. `docs/session/tasks.md` to keep Now/Next/Done accurate
+4. `docs/session/open-loops.md` when decisions/risks/scope changed
 
 ## Meaningful Cycle Definition
 

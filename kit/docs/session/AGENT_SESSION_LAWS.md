@@ -13,6 +13,7 @@ Every meaningful work cycle must update:
 - `docs/session/current-status.md`
 - `docs/session/change-log.md`
 
+Also keep `docs/session/tasks.md` current for task-level visibility.
 Update `docs/session/open-loops.md` when decisions/risks/scope change.
 
 ## Law 3: Evidence Before Claims
@@ -45,3 +46,11 @@ A meaningful cycle is complete only when:
 2. Verification passes.
 3. Session docs are fresh.
 4. Commit is created.
+
+## Law 8: Task Board Continuity
+
+`docs/session/tasks.md` should always answer:
+
+1. What is in progress now.
+2. What is next.
+3. What was completed.

@@ -21,6 +21,8 @@ One sentence on current mission.
 2. `<next>`
 3. `<next>`
 
+Task board source of truth: `docs/session/tasks.md`.
+
 ## Blockers / Risks
 
 - `<risk or blocker>`

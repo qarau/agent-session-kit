@@ -22,6 +22,7 @@ Applies to all contributors working in this repository, especially when AI agent
 
 - `docs/session/current-status.md`
 - `docs/session/change-log.md`
+- `docs/session/tasks.md` (Now/Next/Done board)
 - `docs/session/open-loops.md` (required when decisions/risks/scope change)
 
 ## Meaningful Work Cycle Definition
@@ -42,7 +43,8 @@ For each meaningful cycle:
    - files changed
    - behavior change summary
    - exact verification commands and outcomes
-3. Update `open-loops.md` if unresolved decisions/risks changed.
+3. Update `tasks.md` so `Now`, `Next`, and `Done` match current execution state.
+4. Update `open-loops.md` if unresolved decisions/risks changed.
 
 ## Verification Standard
 
