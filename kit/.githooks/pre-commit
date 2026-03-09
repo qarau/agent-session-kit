@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+set -eu
+
+node scripts/session/verifyWorkContext.mjs --mode=pre-commit
+node scripts/session/verifySessionDocsFreshness.mjs --mode=pre-commit

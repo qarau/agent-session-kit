@@ -1,0 +1,6 @@
+{
+  "expectedBranch": "main",
+  "expectedRepoPathSuffix": "",
+  "enforceRepoPathSuffix": false,
+  "bypassEnvVar": "SESSION_CONTEXT_BYPASS"
+}
