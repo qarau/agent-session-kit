@@ -72,8 +72,12 @@ test('agent-session-kit installs and enforces context/freshness in a temp repo',
   assert.match(installResult.stdout, /Agent Session Kit install complete\./);
 
   const configPath = path.join(repoDir, 'docs', 'session', 'active-work-context.json');
+  const setRepoLockScriptPath = path.join(repoDir, 'scripts', 'session', 'setRepoWorkContextLock.mjs');
+  const clearRepoLockScriptPath = path.join(repoDir, 'scripts', 'session', 'clearRepoWorkContextLock.mjs');
   const tasksPath = path.join(repoDir, 'docs', 'session', 'tasks.md');
   assert.equal(fs.existsSync(tasksPath), true, 'tasks.md should be installed');
+  assert.equal(fs.existsSync(setRepoLockScriptPath), true, 'setRepoWorkContextLock.mjs should be installed');
+  assert.equal(fs.existsSync(clearRepoLockScriptPath), true, 'clearRepoWorkContextLock.mjs should be installed');
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   assert.equal(config.expectedBranch, 'session-kit-smoke');
   assert.equal(config.enforceRepoPathSuffix, true);
@@ -88,6 +92,55 @@ test('agent-session-kit installs and enforces context/freshness in a temp repo',
   assert.equal(contextPass.status, 0, contextPass.stdout + contextPass.stderr);
   assert.match(contextPass.stdout, /\[work-context:pre-commit\] OK/);
   assert.match(contextPass.stdout, /active-work-context\.alt\.json/);
+
+  runOrThrow(
+    process.execPath,
+    [
+      'scripts/session/setRepoWorkContextLock.mjs',
+      '--branch',
+      'wrong-locked-branch',
+      '--repo-suffix',
+      path.basename(repoDir),
+      '--enforce-path-suffix',
+      'true',
+    ],
+    { cwd: repoDir }
+  );
+  const repoLockedFail = run(
+    process.execPath,
+    ['scripts/session/verifyWorkContext.mjs', '--mode', 'pre-commit', '--config', 'docs/session/active-work-context.alt.json'],
+    { cwd: repoDir }
+  );
+  assert.equal(repoLockedFail.status, 1);
+  assert.match(repoLockedFail.stderr, /wrong-locked-branch/);
+
+  runOrThrow(
+    process.execPath,
+    [
+      'scripts/session/setRepoWorkContextLock.mjs',
+      '--branch',
+      'session-kit-smoke',
+      '--repo-suffix',
+      path.basename(repoDir),
+      '--enforce-path-suffix',
+      'true',
+    ],
+    { cwd: repoDir }
+  );
+  const repoLockedPass = run(
+    process.execPath,
+    ['scripts/session/verifyWorkContext.mjs', '--mode', 'pre-commit', '--config', 'docs/session/active-work-context.alt.json'],
+    { cwd: repoDir }
+  );
+  assert.equal(repoLockedPass.status, 0, repoLockedPass.stdout + repoLockedPass.stderr);
+
+  runOrThrow(process.execPath, ['scripts/session/clearRepoWorkContextLock.mjs'], { cwd: repoDir });
+  const clearedRepoLockPass = run(
+    process.execPath,
+    ['scripts/session/verifyWorkContext.mjs', '--mode', 'pre-commit', '--config', 'docs/session/active-work-context.alt.json'],
+    { cwd: repoDir }
+  );
+  assert.equal(clearedRepoLockPass.status, 0, clearedRepoLockPass.stdout + clearedRepoLockPass.stderr);
 
   writeJson(configPath, {
     ...config,

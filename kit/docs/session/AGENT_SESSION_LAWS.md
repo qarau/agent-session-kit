@@ -23,6 +23,7 @@ No completion claims without fresh verification output recorded in `change-log.m
 ## Law 4: Context Lock
 
 Active branch/worktree must match `docs/session/active-work-context.json`.
+If repo lock is enabled (`session.workContextLock.*`), repo lock values are the enforced source of truth.
 
 ## Law 5: Hook Enforcement
 

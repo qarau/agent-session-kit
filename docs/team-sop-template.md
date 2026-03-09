@@ -95,6 +95,15 @@ in `docs/session/change-log.md`.
 
 Update this file only when intentionally changing active branch/worktree policy.
 
+Optional repo-level lock (recommended for worktree-heavy repos):
+
+- Set lock:
+  - `node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <path-suffix> --enforce-path-suffix true`
+- Clear lock:
+  - `node scripts/session/clearRepoWorkContextLock.mjs`
+
+When enabled, repo lock values (`session.workContextLock.*`) take precedence over file context.
+
 ## Ownership
 
 - Process owner: `<team/role>`

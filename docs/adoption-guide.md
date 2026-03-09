@@ -21,9 +21,11 @@ Agent Session Kit follows this model.
    - `node scripts/session/installHooks.mjs`
    - `node scripts/session/verifyWorkContext.mjs --mode preflight`
    - `node scripts/session/verifySessionDocsFreshness.mjs --mode preflight`
-3. Commit the installed files.
-4. Enable branch protection on `main`.
-5. Require CI status checks before merge.
+3. Optional (recommended for worktrees): set repo-level lock:
+   - `node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <path-suffix> --enforce-path-suffix true`
+4. Commit the installed files.
+5. Enable branch protection on `main`.
+6. Require CI status checks before merge.
 
 ## Team Conventions
 
@@ -36,6 +38,11 @@ Agent Session Kit follows this model.
 Optional strict mode:
 
 - Set `strictTasksDoc: true` in `docs/session/active-work-context.json` to require `docs/session/tasks.md` on meaningful changes.
+
+Optional repo-level lock:
+
+- Use `setRepoWorkContextLock.mjs` to bind a repo/worktree to one branch policy in git config.
+- Use `clearRepoWorkContextLock.mjs` to remove the lock during intentional branch transitions.
 
 ## Suggested Branch Protection
 

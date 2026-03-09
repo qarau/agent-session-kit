@@ -9,6 +9,7 @@ The kit enforces three things:
 1. You are working in the intended branch/worktree.
 2. Session docs are updated when meaningful code changes happen.
 3. These checks run automatically before commit and push.
+4. Optional repo-level lock can override file context to prevent branch drift.
 
 ## Flow Overview
 
@@ -33,9 +34,28 @@ flowchart TD
 - Installer: `install-session-kit.mjs`
 - Hook setup helper: `kit/scripts/session/installHooks.mjs`
 - Work context validator: `kit/scripts/session/verifyWorkContext.mjs`
+- Repo lock helpers:
+  - `kit/scripts/session/setRepoWorkContextLock.mjs`
+  - `kit/scripts/session/clearRepoWorkContextLock.mjs`
 - Session freshness validator: `kit/scripts/session/verifySessionDocsFreshness.mjs`
 - Hook templates: `kit/.githooks/pre-commit`, `kit/.githooks/pre-push`
 - Session templates: `kit/docs/session/*`
+
+## Optional Repo-Level Lock
+
+Set lock:
+
+```bash
+node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <path-suffix> --enforce-path-suffix true
+```
+
+Clear lock:
+
+```bash
+node scripts/session/clearRepoWorkContextLock.mjs
+```
+
+When enabled, `verifyWorkContext` uses `git config` lock values (`session.workContextLock.*`) instead of `active-work-context.json`.
 
 ## What "Meaningful Change" Means
 

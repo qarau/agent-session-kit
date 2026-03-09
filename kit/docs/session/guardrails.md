@@ -15,6 +15,13 @@ See `docs/session/AGENT_SESSION_LAWS.md`.
   - `node scripts/session/installHooks.mjs`
   - verify: `git config --get core.hooksPath` (must be `.githooks`)
 
+Optional repo-level lock:
+
+- `node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <path-suffix> --enforce-path-suffix true`
+- `node scripts/session/clearRepoWorkContextLock.mjs`
+
+When enabled, `verifyWorkContext` uses `session.workContextLock.*` values from git config before reading file expectations.
+
 ## Session Docs Freshness (Always-On)
 
 For every meaningful cycle, update:

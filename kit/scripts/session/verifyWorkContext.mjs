@@ -38,6 +38,95 @@ function getGitValue(args) {
   return execFileSync('git', args, { encoding: 'utf8' }).trim();
 }
 
+function getGitValueOptional(args) {
+  try {
+    return getGitValue(args);
+  } catch {
+    return '';
+  }
+}
+
+function parseBoolean(value, fallback) {
+  if (typeof value !== 'string' || value.length === 0) {
+    return fallback;
+  }
+
+  const normalized = value.toLowerCase();
+  if (normalized === '1' || normalized === 'true' || normalized === 'yes') {
+    return true;
+  }
+  if (normalized === '0' || normalized === 'false' || normalized === 'no') {
+    return false;
+  }
+  return fallback;
+}
+
+function readRepoWorkContextLock() {
+  const enabledRaw = getGitValueOptional(['config', '--get', 'session.workContextLock.enabled']);
+  const expectedBranch = getGitValueOptional([
+    'config',
+    '--get',
+    'session.workContextLock.expectedBranch',
+  ]);
+  const expectedRepoPathSuffix = getGitValueOptional([
+    'config',
+    '--get',
+    'session.workContextLock.expectedRepoPathSuffix',
+  ]);
+  const enforceRepoPathSuffixRaw = getGitValueOptional([
+    'config',
+    '--get',
+    'session.workContextLock.enforceRepoPathSuffix',
+  ]);
+
+  const hasAnyLockValue =
+    enabledRaw.length > 0 ||
+    expectedBranch.length > 0 ||
+    expectedRepoPathSuffix.length > 0 ||
+    enforceRepoPathSuffixRaw.length > 0;
+  const enabled = parseBoolean(enabledRaw, false) || (enabledRaw.length === 0 && hasAnyLockValue);
+  if (!enabled) {
+    return {
+      enabled: false,
+    };
+  }
+
+  return {
+    enabled: true,
+    expectedBranch,
+    expectedRepoPathSuffix,
+    enforceRepoPathSuffix: parseBoolean(enforceRepoPathSuffixRaw, false),
+  };
+}
+
+function resolveEffectiveConfig(config) {
+  const repoLock = readRepoWorkContextLock();
+  if (!repoLock.enabled) {
+    return {
+      source: 'active-work-context',
+      config,
+      repoLock,
+    };
+  }
+
+  if (!repoLock.expectedBranch) {
+    throw new Error(
+      'Invalid repo work-context lock: expectedBranch is required when session.workContextLock.enabled=true.'
+    );
+  }
+
+  return {
+    source: 'repo-lock',
+    config: {
+      ...config,
+      expectedBranch: repoLock.expectedBranch,
+      expectedRepoPathSuffix: repoLock.expectedRepoPathSuffix,
+      enforceRepoPathSuffix: repoLock.enforceRepoPathSuffix,
+    },
+    repoLock,
+  };
+}
+
 function evaluate(config, runtime) {
   const violations = [];
   const expectedBranch = config.expectedBranch;
@@ -78,7 +167,9 @@ function main() {
   const argv = process.argv.slice(2);
   const mode = getMode(argv);
   const configPath = resolveConfigPath(argv);
-  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const fileConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const effectiveContext = resolveEffectiveConfig(fileConfig);
+  const config = effectiveContext.config;
   const bypassEnvVar =
     typeof config.bypassEnvVar === 'string' && config.bypassEnvVar.length > 0
       ? config.bypassEnvVar
@@ -98,6 +189,11 @@ function main() {
   if (!result.ok) {
     console.error(`[work-context:${mode}] guard failed`);
     console.error(`Config: ${configPath}`);
+    if (effectiveContext.source === 'repo-lock') {
+      console.error(
+        '- Repo work-context lock is active via git config (session.workContextLock.*).'
+      );
+    }
     for (const violation of result.violations) {
       console.error(`- ${violation}`);
     }
@@ -105,7 +201,12 @@ function main() {
     process.exit(1);
   }
 
-  console.log(`[work-context:${mode}] OK (${configPath})`);
+  if (effectiveContext.source === 'repo-lock') {
+    console.log(`[work-context:${mode}] OK (${configPath}, source=repo-lock)`);
+    return;
+  }
+
+  console.log(`[work-context:${mode}] OK (${configPath}, source=active-work-context)`);
 }
 
 const isDirectExecution =

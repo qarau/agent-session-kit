@@ -74,6 +74,8 @@ Optional flags:
 - `scripts/session/verifyWorkContext.mjs`
 - `scripts/session/verifySessionDocsFreshness.mjs`
 - `scripts/session/installHooks.mjs`
+- `scripts/session/setRepoWorkContextLock.mjs`
+- `scripts/session/clearRepoWorkContextLock.mjs`
 - `docs/session/AGENT_SESSION_LAWS.md`
 - `docs/session/guardrails.md`
 - `docs/session/active-work-context.json`
@@ -95,6 +97,22 @@ node scripts/session/installHooks.mjs
 node scripts/session/verifyWorkContext.mjs --mode preflight
 node scripts/session/verifySessionDocsFreshness.mjs --mode preflight
 ```
+
+## Optional Repo-Level Context Lock
+
+Use this when working with multiple branches/worktrees to prevent commits on the wrong branch after context drift.
+
+```bash
+node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <path-suffix> --enforce-path-suffix true
+```
+
+Clear lock:
+
+```bash
+node scripts/session/clearRepoWorkContextLock.mjs
+```
+
+`verifyWorkContext` automatically prefers repo lock values when lock is enabled.
 
 ## Enforcement behavior
 
@@ -136,6 +154,7 @@ npm run test
 This runs the smoke test that installs the kit in a temp repo and validates:
 
 - work-context guard pass/fail behavior
+- repo-level work-context lock pass/fail behavior
 - session freshness guard pass/fail behavior
 - installer wiring and hook setup path
 
