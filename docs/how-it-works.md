@@ -55,6 +55,13 @@ Warning-level docs by default:
 - `docs/session/tasks.md`
 - `docs/session/open-loops.md`
 
+Optional strict mode:
+
+- `strictTasksDoc: true` in `docs/session/active-work-context.json`, or
+- `SESSION_TASKS_STRICT=1`
+
+With strict mode, `docs/session/tasks.md` is required (not warning-level).
+
 ## Bypass Behavior
 
 Emergency bypass exists for controlled recovery:

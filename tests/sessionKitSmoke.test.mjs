@@ -15,6 +15,7 @@ function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: options.cwd,
     encoding: 'utf8',
+    env: options.env ? { ...process.env, ...options.env } : process.env,
   });
 
   return {
@@ -129,4 +130,27 @@ test('agent-session-kit installs and enforces context/freshness in a temp repo',
   );
   assert.equal(freshnessPass.status, 0, freshnessPass.stdout + freshnessPass.stderr);
   assert.match(freshnessPass.stdout, /\[session-freshness:pre-commit\] OK/);
+
+  const strictTasksFail = run(
+    process.execPath,
+    ['scripts/session/verifySessionDocsFreshness.mjs', '--mode', 'pre-commit'],
+    {
+      cwd: repoDir,
+      env: { SESSION_TASKS_STRICT: '1' },
+    }
+  );
+  assert.equal(strictTasksFail.status, 1);
+  assert.match(strictTasksFail.stderr, /docs\/session\/tasks\.md/);
+
+  fs.appendFileSync(tasksPath, '\n- [x] smoke strict task update\n');
+  runOrThrow('git', ['add', 'docs/session/tasks.md'], { cwd: repoDir });
+  const strictTasksPass = run(
+    process.execPath,
+    ['scripts/session/verifySessionDocsFreshness.mjs', '--mode', 'pre-commit'],
+    {
+      cwd: repoDir,
+      env: { SESSION_TASKS_STRICT: '1' },
+    }
+  );
+  assert.equal(strictTasksPass.status, 0, strictTasksPass.stdout + strictTasksPass.stderr);
 });

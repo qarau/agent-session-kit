@@ -111,6 +111,13 @@ Warning-level session docs for meaningful changes:
 - `docs/session/tasks.md` (recommended to reflect Now/Next/Done)
 - `docs/session/open-loops.md` (recommended when decisions/risks change)
 
+Optional strict mode for tasks:
+
+- Set `strictTasksDoc: true` in `docs/session/active-work-context.json`, or
+- Set `SESSION_TASKS_STRICT=1` for command/session-level strict enforcement.
+
+When strict mode is enabled, `docs/session/tasks.md` becomes required for meaningful changes.
+
 ## Emergency Bypass
 
 - `SESSION_CONTEXT_BYPASS=1`

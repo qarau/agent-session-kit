@@ -76,6 +76,11 @@ Bypass is allowed only for controlled recovery:
 - `SESSION_CONTEXT_BYPASS=1`
 - `SESSION_DOCS_BYPASS=1`
 
+Optional strict tasks mode:
+
+- `SESSION_TASKS_STRICT=1` (temporary/session)
+- or `strictTasksDoc: true` in `docs/session/active-work-context.json` (repo policy)
+
 If bypass is used, you must log:
 
 - reason

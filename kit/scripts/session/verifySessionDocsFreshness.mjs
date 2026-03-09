@@ -1,12 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 
 const REQUIRED_DOCS = ['docs/session/current-status.md', 'docs/session/change-log.md'];
+const TASKS_DOC = 'docs/session/tasks.md';
 const OPTIONAL_DOCS = [
-  {
-    path: 'docs/session/tasks.md',
-    reason: 'keep the active Now/Next/Done board current',
-  },
   {
     path: 'docs/session/open-loops.md',
     reason: 'capture unresolved decision/risk context changes',
@@ -32,6 +31,24 @@ function getArgValue(argv, name, fallback) {
     }
   }
   return fallback;
+}
+
+function resolveConfigPath(argv) {
+  return path.resolve(process.cwd(), getArgValue(argv, '--config', 'docs/session/active-work-context.json'));
+}
+
+function loadConfig(configPath) {
+  if (!fs.existsSync(configPath)) {
+    return {};
+  }
+  return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+}
+
+function isTasksStrict(config) {
+  if (process.env.SESSION_TASKS_STRICT === '1') {
+    return true;
+  }
+  return config.strictTasksDoc === true;
 }
 
 function runGit(args, allowFailure = false) {
@@ -85,7 +102,8 @@ function isEnforcementIgnored(filePath) {
   );
 }
 
-function evaluateFreshness(files) {
+function evaluateFreshness(files, options = {}) {
+  const strictTasksDoc = options.strictTasksDoc === true;
   const meaningfulChanges = files.filter(file => !isEnforcementIgnored(file));
   if (meaningfulChanges.length === 0) {
     return {
@@ -96,8 +114,18 @@ function evaluateFreshness(files) {
     };
   }
 
-  const missingRequired = REQUIRED_DOCS.filter(required => !files.includes(required));
-  const missingOptional = OPTIONAL_DOCS.filter(item => !files.includes(item.path)).map(
+  const requiredDocs = strictTasksDoc ? [...REQUIRED_DOCS, TASKS_DOC] : [...REQUIRED_DOCS];
+  const missingRequired = requiredDocs.filter(required => !files.includes(required));
+  const optionalDocs = strictTasksDoc
+    ? OPTIONAL_DOCS
+    : [
+        {
+          path: TASKS_DOC,
+          reason: 'keep the active Now/Next/Done board current',
+        },
+        ...OPTIONAL_DOCS,
+      ];
+  const missingOptional = optionalDocs.filter(item => !files.includes(item.path)).map(
     item => `Optional check: update ${item.path} to ${item.reason}.`
   );
 
@@ -117,12 +145,18 @@ function main() {
 
   const argv = process.argv.slice(2);
   const mode = getArgValue(argv, '--mode', 'preflight');
+  const configPath = resolveConfigPath(argv);
+  const config = loadConfig(configPath);
+  const strictTasksDoc = isTasksStrict(config);
   const files = getFileListForMode(mode);
-  const result = evaluateFreshness(files);
+  const result = evaluateFreshness(files, { strictTasksDoc });
 
   if (!result.ok) {
     console.error(`[session-freshness:${mode}] guard failed`);
     console.error('Meaningful changes detected without required session doc updates.');
+    if (strictTasksDoc) {
+      console.error('Strict tasks mode is enabled: docs/session/tasks.md is required.');
+    }
     console.error('Missing required docs:');
     for (const item of result.missing) {
       console.error(`- ${item}`);

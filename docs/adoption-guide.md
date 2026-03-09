@@ -33,6 +33,10 @@ Agent Session Kit follows this model.
 - Update `docs/session/open-loops.md` when decisions or risk status changes.
 - Keep bypass usage explicit and rare.
 
+Optional strict mode:
+
+- Set `strictTasksDoc: true` in `docs/session/active-work-context.json` to require `docs/session/tasks.md` on meaningful changes.
+
 ## Suggested Branch Protection
 
 - Require pull request before merging.

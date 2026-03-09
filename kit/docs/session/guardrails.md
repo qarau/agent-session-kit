@@ -24,6 +24,10 @@ For every meaningful cycle, update:
 3. `docs/session/tasks.md` to keep Now/Next/Done accurate
 4. `docs/session/open-loops.md` when decisions/risks/scope changed
 
+Strict option:
+
+- Set `strictTasksDoc: true` in `docs/session/active-work-context.json` (or `SESSION_TASKS_STRICT=1`) to make `docs/session/tasks.md` required rather than warning-level.
+
 ## Meaningful Cycle Definition
 
 A cycle is meaningful when it includes any of:
