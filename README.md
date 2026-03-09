@@ -140,3 +140,4 @@ This runs the smoke test that installs the kit in a temp repo and validates:
 - `docs/README.md` - doc index and reading order
 - `docs/how-it-works.md` - architecture and flow overview
 - `docs/adoption-guide.md` - rollout guidance for teams
+- `docs/team-sop-template.md` - copy-paste SOP template for target repositories
