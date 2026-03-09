@@ -9,8 +9,20 @@ function normalize(pathValue) {
 }
 
 function getArgValue(argv, name, fallback) {
-  const entry = argv.find(arg => arg.startsWith(`${name}=`));
-  return entry ? entry.slice(name.length + 1) : fallback;
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === name) {
+      const next = argv[index + 1];
+      if (!next || next.startsWith('--')) {
+        return fallback;
+      }
+      return next;
+    }
+    if (arg.startsWith(`${name}=`)) {
+      return arg.slice(name.length + 1);
+    }
+  }
+  return fallback;
 }
 
 function runGit(args, allowFailure = false) {

@@ -19,12 +19,21 @@ This keeps AI-agent work deterministic across long sessions and compaction:
 - change history includes verification evidence
 - hooks block commits/pushes when context is wrong or session docs are stale
 
+## Prerequisites
+
+- Node.js 20+
+- Git
+
 ## Install
 
 From this folder:
 
 ```powershell
 node install-session-kit.mjs --target "C:\path\to\your-repo" --branch main
+```
+
+```bash
+node install-session-kit.mjs --target /path/to/your-repo --branch main
 ```
 
 Optional flags:
@@ -56,6 +65,12 @@ node scripts/session/verifyWorkContext.mjs --mode=preflight
 node scripts/session/verifySessionDocsFreshness.mjs --mode=preflight
 ```
 
+```bash
+node scripts/session/installHooks.mjs
+node scripts/session/verifyWorkContext.mjs --mode preflight
+node scripts/session/verifySessionDocsFreshness.mjs --mode preflight
+```
+
 ## Enforcement behavior
 
 - `pre-commit`: blocks if active branch/worktree context fails or meaningful staged changes do not include required session docs.
@@ -67,3 +82,31 @@ Required session docs for meaningful changes:
 - `docs/session/change-log.md`
 
 `open-loops.md` is warning-level by default, because not every change requires decision updates.
+
+## Emergency Bypass
+
+- `SESSION_CONTEXT_BYPASS=1`
+- `SESSION_DOCS_BYPASS=1`
+
+Use only for controlled recovery flows; bypass is intended to be explicit and auditable.
+
+## Local Development
+
+From `agent-session-kit/`:
+
+```bash
+npm run test
+```
+
+This runs the smoke test that installs the kit in a temp repo and validates:
+
+- work-context guard pass/fail behavior
+- session freshness guard pass/fail behavior
+- installer wiring and hook setup path
+
+## Open Source Files
+
+- `LICENSE` (MIT)
+- `CONTRIBUTING.md`
+- `CODE_OF_CONDUCT.md`
+- `SECURITY.md`

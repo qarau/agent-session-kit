@@ -8,17 +8,30 @@ function normalize(value) {
   return value.replaceAll('\\', '/');
 }
 
+function getOptionValue(argv, name, fallback) {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === name) {
+      const next = argv[index + 1];
+      if (!next || next.startsWith('--')) {
+        return fallback;
+      }
+      return next;
+    }
+    if (arg.startsWith(`${name}=`)) {
+      return arg.slice(name.length + 1);
+    }
+  }
+  return fallback;
+}
+
 function getMode(argv) {
-  const modeArg = argv.find(arg => arg.startsWith('--mode='));
-  return modeArg ? modeArg.slice('--mode='.length) : 'preflight';
+  return getOptionValue(argv, '--mode', 'preflight');
 }
 
 function resolveConfigPath(argv) {
-  const configArg = argv.find(arg => arg.startsWith('--config='));
-  if (!configArg) {
-    return path.resolve(process.cwd(), 'docs/session/active-work-context.json');
-  }
-  return path.resolve(process.cwd(), configArg.slice('--config='.length));
+  const configValue = getOptionValue(argv, '--config', 'docs/session/active-work-context.json');
+  return path.resolve(process.cwd(), configValue);
 }
 
 function getGitValue(args) {

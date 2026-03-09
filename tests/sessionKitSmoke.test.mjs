@@ -74,13 +74,17 @@ test('agent-session-kit installs and enforces context/freshness in a temp repo',
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   assert.equal(config.expectedBranch, 'session-kit-smoke');
   assert.equal(config.enforceRepoPathSuffix, true);
+  const altConfigPath = path.join(repoDir, 'docs', 'session', 'active-work-context.alt.json');
+  writeJson(altConfigPath, config);
 
   const contextPass = run(
     process.execPath,
-    ['scripts/session/verifyWorkContext.mjs', '--mode', 'preflight', '--config', 'docs/session/active-work-context.json'],
+    ['scripts/session/verifyWorkContext.mjs', '--mode', 'pre-commit', '--config', 'docs/session/active-work-context.alt.json'],
     { cwd: repoDir }
   );
   assert.equal(contextPass.status, 0, contextPass.stdout + contextPass.stderr);
+  assert.match(contextPass.stdout, /\[work-context:pre-commit\] OK/);
+  assert.match(contextPass.stdout, /active-work-context\.alt\.json/);
 
   writeJson(configPath, {
     ...config,
@@ -107,6 +111,7 @@ test('agent-session-kit installs and enforces context/freshness in a temp repo',
     { cwd: repoDir }
   );
   assert.equal(freshnessFail.status, 1);
+  assert.match(freshnessFail.stderr, /\[session-freshness:pre-commit\] guard failed/);
   assert.match(freshnessFail.stderr, /Missing required docs/);
 
   fs.appendFileSync(path.join(repoDir, 'docs', 'session', 'current-status.md'), '\nsmoke update\n');
@@ -121,4 +126,5 @@ test('agent-session-kit installs and enforces context/freshness in a temp repo',
     { cwd: repoDir }
   );
   assert.equal(freshnessPass.status, 0, freshnessPass.stdout + freshnessPass.stderr);
+  assert.match(freshnessPass.stdout, /\[session-freshness:pre-commit\] OK/);
 });

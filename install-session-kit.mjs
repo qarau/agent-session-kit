@@ -133,6 +133,28 @@ function configureHooks(targetPath, dryRun) {
   });
 }
 
+function ensureHookExecutables(targetPath, dryRun) {
+  if (process.platform === 'win32') {
+    return;
+  }
+
+  const hooks = ['pre-commit', 'pre-push'];
+  for (const hook of hooks) {
+    const hookPath = path.join(targetPath, '.githooks', hook);
+    if (!fs.existsSync(hookPath)) {
+      continue;
+    }
+
+    if (dryRun) {
+      console.log(`[chmod] ${hookPath} -> 755`);
+      continue;
+    }
+
+    fs.chmodSync(hookPath, 0o755);
+    console.log(`[chmod] ${hookPath} -> 755`);
+  }
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const targetPath = path.resolve(args.target || process.cwd());
@@ -150,6 +172,7 @@ function main() {
   ensureGitRepo(targetPath);
   copyDirectory(kitPath, targetPath, args.force, args.dryRun);
   updateActiveWorkContext(targetPath, args);
+  ensureHookExecutables(targetPath, args.dryRun);
   configureHooks(targetPath, args.dryRun);
 
   console.log('\nAgent Session Kit install complete.');
