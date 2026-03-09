@@ -48,6 +48,11 @@ This keeps AI-agent work deterministic across long sessions and compaction:
 - Node.js 20+
 - Git
 
+## Compatibility
+
+- Developed and tested in Codex 5.3.
+- Works well with [Superpowers](https://github.com/obra/superpowers) for skill-driven agent workflows.
+
 ## Install
 
 From this folder:
