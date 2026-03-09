@@ -1,5 +1,29 @@
 # Agent Session Kit
 
+## Why Agent Session Kit Exists
+
+AI-assisted development has dramatically accelerated how quickly code can be written, explored, and refactored.
+
+As iteration speed increases, workflow discipline often lags behind.
+
+During internal development sessions, we repeatedly encountered problems such as:
+
+- commits landing in the wrong branch
+- session context documentation drifting out of date
+- interrupted sessions resuming with stale assumptions
+- inconsistent environments between machines
+- skipped validation checks before pushing changes
+
+These issues are not new, but AI-assisted development increases their frequency because sessions become longer, faster, and more exploratory.
+
+Agent Session Kit (ASK) was created to address this gap.
+
+ASK adds lightweight guardrails around standard Git workflows so workflow integrity keeps pace with coding speed.
+
+Instead of relying on developer memory or discipline, ASK ensures key checks and validation steps happen automatically as part of the development process.
+
+The result is a workflow that remains predictable, reproducible, and easier to collaborate on, even when AI agents are heavily involved in coding sessions.
+
 Portable session-control package for any git repo.
 
 It provides:
