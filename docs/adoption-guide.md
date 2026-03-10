@@ -44,12 +44,20 @@ Optional repo-level lock:
 - Use `setRepoWorkContextLock.mjs` to bind a repo/worktree to one branch policy in git config.
 - Use `clearRepoWorkContextLock.mjs` to remove the lock during intentional branch transitions.
 
+Session log compaction:
+
+- Use `archiveSessionLog.mjs` to keep active `change-log.md` readable and move older entries into monthly archives.
+- Suggested trigger:
+  - after major milestones, or
+  - when active `change-log.md` exceeds ~300 lines.
+
 Migration quick commands:
 
 ```bash
 node scripts/session/clearRepoWorkContextLock.mjs
 node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <worktree-path-suffix> --enforce-path-suffix true
 node scripts/session/verifyWorkContext.mjs --mode preflight
+node scripts/session/archiveSessionLog.mjs --keep-sections 14
 ```
 
 ## Suggested Branch Protection

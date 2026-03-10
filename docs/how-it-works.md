@@ -33,6 +33,8 @@ flowchart TD
 
 - Installer: `install-session-kit.mjs`
 - Hook setup helper: `kit/scripts/session/installHooks.mjs`
+- Resume helper: `kit/scripts/session/resumeSession.mjs`
+- Change-log archiver: `kit/scripts/session/archiveSessionLog.mjs`
 - Work context validator: `kit/scripts/session/verifyWorkContext.mjs`
 - Repo lock helpers:
   - `kit/scripts/session/setRepoWorkContextLock.mjs`
@@ -56,6 +58,16 @@ node scripts/session/clearRepoWorkContextLock.mjs
 ```
 
 When enabled, `verifyWorkContext` uses `git config` lock values (`session.workContextLock.*`) instead of `active-work-context.json`.
+
+## Resume Snapshot
+
+Use this to quickly rehydrate session context after interruptions:
+
+```bash
+node scripts/session/resumeSession.mjs
+```
+
+The output includes current branch, HEAD, active objective, next unchecked task, and latest verification command.
 
 ## What "Meaningful Change" Means
 

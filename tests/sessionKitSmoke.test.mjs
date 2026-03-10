@@ -74,10 +74,47 @@ test('agent-session-kit installs and enforces context/freshness in a temp repo',
   const configPath = path.join(repoDir, 'docs', 'session', 'active-work-context.json');
   const setRepoLockScriptPath = path.join(repoDir, 'scripts', 'session', 'setRepoWorkContextLock.mjs');
   const clearRepoLockScriptPath = path.join(repoDir, 'scripts', 'session', 'clearRepoWorkContextLock.mjs');
+  const resumeSessionScriptPath = path.join(repoDir, 'scripts', 'session', 'resumeSession.mjs');
+  const archiveSessionLogScriptPath = path.join(repoDir, 'scripts', 'session', 'archiveSessionLog.mjs');
   const tasksPath = path.join(repoDir, 'docs', 'session', 'tasks.md');
+  const sessionChangeLogPath = path.join(repoDir, 'docs', 'session', 'change-log.md');
   assert.equal(fs.existsSync(tasksPath), true, 'tasks.md should be installed');
   assert.equal(fs.existsSync(setRepoLockScriptPath), true, 'setRepoWorkContextLock.mjs should be installed');
   assert.equal(fs.existsSync(clearRepoLockScriptPath), true, 'clearRepoWorkContextLock.mjs should be installed');
+  assert.equal(fs.existsSync(resumeSessionScriptPath), true, 'resumeSession.mjs should be installed');
+  assert.equal(fs.existsSync(archiveSessionLogScriptPath), true, 'archiveSessionLog.mjs should be installed');
+  const resumeResult = run(process.execPath, ['scripts/session/resumeSession.mjs'], { cwd: repoDir });
+  assert.equal(resumeResult.status, 0, resumeResult.stdout + resumeResult.stderr);
+  assert.match(resumeResult.stdout, /Current branch:/);
+
+  fs.writeFileSync(
+    sessionChangeLogPath,
+    `# Session Change Log
+
+## 2026-03-10
+
+- latest
+
+## 2026-03-09
+
+- older
+`
+  );
+  const archiveResult = run(
+    process.execPath,
+    ['scripts/session/archiveSessionLog.mjs', '--keep-sections', '1'],
+    { cwd: repoDir }
+  );
+  assert.equal(archiveResult.status, 0, archiveResult.stdout + archiveResult.stderr);
+
+  const archivedChangeLog = fs.readFileSync(sessionChangeLogPath, 'utf8');
+  assert.match(archivedChangeLog, /## 2026-03-10/);
+  assert.doesNotMatch(archivedChangeLog, /## 2026-03-09/);
+  const monthlyArchivePath = path.join(repoDir, 'docs', 'session', 'archive', 'change-log-2026-03.md');
+  assert.equal(fs.existsSync(monthlyArchivePath), true, 'monthly archive should be created');
+  const monthlyArchive = fs.readFileSync(monthlyArchivePath, 'utf8');
+  assert.match(monthlyArchive, /## 2026-03-09/);
+
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   assert.equal(config.expectedBranch, 'session-kit-smoke');
   assert.equal(config.enforceRepoPathSuffix, true);

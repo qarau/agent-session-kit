@@ -56,6 +56,19 @@ Before claiming completion:
 
 No completion claims without fresh verification evidence.
 
+## Fast-Check First
+
+Use a fast-check lane before full CI:
+
+- Fast-check command:
+  - `npm run fast-check`
+- Route examples:
+  - UI changes -> `npm run test -- src/test/ui`
+  - domain changes -> `npm run test -- src/test/domain`
+  - runtime/infrastructure changes -> `npm run test -- src/test/runtime`
+- Pre-merge full gate:
+  - `npm run test:ci` (or your repo equivalent)
+
 ## Hook Enforcement
 
 The repo enforces:
@@ -78,6 +91,7 @@ Bypass is allowed only for controlled recovery:
 
 Optional strict tasks mode:
 
+- Default policy is soft mode (`strictTasksDoc: false`) unless your team explicitly elevates to strict.
 - `SESSION_TASKS_STRICT=1` (temporary/session)
 - or `strictTasksDoc: true` in `docs/session/active-work-context.json` (repo policy)
 

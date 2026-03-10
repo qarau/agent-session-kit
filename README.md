@@ -81,6 +81,8 @@ Optional flags:
 - `scripts/session/installHooks.mjs`
 - `scripts/session/setRepoWorkContextLock.mjs`
 - `scripts/session/clearRepoWorkContextLock.mjs`
+- `scripts/session/resumeSession.mjs`
+- `scripts/session/archiveSessionLog.mjs`
 - `docs/session/AGENT_SESSION_LAWS.md`
 - `docs/session/guardrails.md`
 - `docs/session/active-work-context.json`
@@ -95,13 +97,28 @@ Optional flags:
 node scripts/session/installHooks.mjs
 node scripts/session/verifyWorkContext.mjs --mode=preflight
 node scripts/session/verifySessionDocsFreshness.mjs --mode=preflight
+node scripts/session/resumeSession.mjs
 ```
 
 ```bash
 node scripts/session/installHooks.mjs
 node scripts/session/verifyWorkContext.mjs --mode preflight
 node scripts/session/verifySessionDocsFreshness.mjs --mode preflight
+node scripts/session/resumeSession.mjs
+node scripts/session/archiveSessionLog.mjs --keep-sections 14
 ```
+
+## Session Log Archiving
+
+Use this to keep active `docs/session/change-log.md` compact while preserving history:
+
+```bash
+node scripts/session/archiveSessionLog.mjs --keep-sections 14
+```
+
+This keeps the most recent sections in `change-log.md` and moves older dated sections to:
+
+- `docs/session/archive/change-log-YYYY-MM.md`
 
 ## Optional Repo-Level Context Lock
 
@@ -153,6 +170,7 @@ Warning-level session docs for meaningful changes:
 
 Optional strict mode for tasks:
 
+- Default policy: `strictTasksDoc` stays `false` (soft enforcement).
 - Set `strictTasksDoc: true` in `docs/session/active-work-context.json`, or
 - Set `SESSION_TASKS_STRICT=1` for command/session-level strict enforcement.
 
