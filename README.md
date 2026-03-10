@@ -50,8 +50,9 @@ This keeps AI-agent work deterministic across long sessions and compaction:
 
 ## Compatibility
 
-- Developed and tested in Codex 5.3.
+- Developed and tested in Codex 5.3 CLI.
 - Works well with [Superpowers](https://github.com/obra/superpowers) for skill-driven agent workflows.
+- ASK is workflow-level and agent-agnostic; it can improve GUI-agent workflows (for example Codex and Claude) when those workflows use the same git/hooks/session-doc guardrails.
 
 ## Install
 
