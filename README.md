@@ -20,6 +20,7 @@ Agent Session Kit (ASK) was created to address this gap.
 
 ASK adds lightweight guardrails around standard Git workflows so workflow integrity keeps pace with coding speed.
 The next runtime direction is a standalone `ask-core/` package that hosts shared policy/CLI logic, while this repository keeps the migration adapters and governance docs.
+`ask-core` now carries lifecycle-depth session commands (`session pause`, `session resume`, `session block`, `session close`) and transactional session history persistence.
 
 Instead of relying on developer memory or discipline, ASK ensures key checks and validation steps happen automatically as part of the development process.
 

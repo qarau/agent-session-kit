@@ -53,5 +53,7 @@ test('bootstrap creates ask-core and ask init scaffolds .ask control plane', () 
   });
 
   const workContextPath = path.join(tempRoot, '.ask', 'state', 'work-context.json');
+  const historyPath = path.join(tempRoot, '.ask', 'sessions', 'history.ndjson');
   assert.equal(fs.existsSync(workContextPath), true, '.ask state should be scaffolded by ask init');
+  assert.equal(fs.existsSync(historyPath), true, '.ask session history should be scaffolded by ask init');
 });

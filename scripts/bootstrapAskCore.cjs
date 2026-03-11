@@ -73,7 +73,7 @@ function printHelp() {
 
 Usage:
   ask init
-  ask session start|resume|status|close
+  ask session start|pause|resume|block|status|close
   ask context verify|status
   ask preflight
   ask can-commit
@@ -82,7 +82,7 @@ Usage:
 }
 
 export async function runCli(args) {
-  const [command, subcommand] = args;
+  const [command, subcommand, ...rest] = args;
   if (!command) {
     printHelp();
     return;
@@ -94,7 +94,7 @@ export async function runCli(args) {
   }
 
   if (command === 'session') {
-    await runSession(subcommand);
+    await runSession(subcommand, rest);
     return;
   }
 
@@ -131,14 +131,74 @@ export async function runInit() {
 `,
   'ask-core/src/cli/commands/session.js': `import { SessionRuntime } from '../../core/SessionRuntime.js';
 
-export async function runSession(subcommand) {
+function getArgValue(args, name) {
+  for (let index = 0; index < args.length; index += 1) {
+    const value = args[index];
+    if (value === name) {
+      return args[index + 1] ?? '';
+    }
+    if (value.startsWith(\`\${name}=\`)) {
+      return value.slice(name.length + 1);
+    }
+  }
+  return '';
+}
+
+function failMissingReason(command) {
+  const payload = {
+    ok: false,
+    code: 'missing-reason',
+    command,
+    message: \`--reason is required for session \${command}\`,
+  };
+  console.log(JSON.stringify(payload, null, 2));
+  process.exitCode = 1;
+}
+
+function printTransitionResult(result) {
+  if (!result.ok) {
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = 1;
+    return;
+  }
+  console.log(JSON.stringify(result.session, null, 2));
+}
+
+export async function runSession(subcommand, args = []) {
   const runtime = new SessionRuntime(process.cwd());
   if (subcommand === 'start') {
-    await runtime.start();
+    const result = await runtime.start();
+    printTransitionResult(result);
+    return;
+  }
+  if (subcommand === 'pause') {
+    const reason = getArgValue(args, '--reason');
+    if (!reason) {
+      failMissingReason('pause');
+      return;
+    }
+    const result = await runtime.pause(reason, 'session pause');
+    printTransitionResult(result);
     return;
   }
   if (subcommand === 'resume') {
-    await runtime.resume();
+    const reason = getArgValue(args, '--reason');
+    if (!reason) {
+      failMissingReason('resume');
+      return;
+    }
+    const result = await runtime.resume(reason, 'session resume');
+    printTransitionResult(result);
+    return;
+  }
+  if (subcommand === 'block') {
+    const reason = getArgValue(args, '--reason');
+    if (!reason) {
+      failMissingReason('block');
+      return;
+    }
+    const result = await runtime.block(reason, 'session block');
+    printTransitionResult(result);
     return;
   }
   if (subcommand === 'status') {
@@ -146,10 +206,16 @@ export async function runSession(subcommand) {
     return;
   }
   if (subcommand === 'close') {
-    await runtime.close();
+    const reason = getArgValue(args, '--reason');
+    if (!reason) {
+      failMissingReason('close');
+      return;
+    }
+    const result = await runtime.close(reason, 'session close');
+    printTransitionResult(result);
     return;
   }
-  console.log('Usage: ask session start|resume|status|close');
+  console.log('Usage: ask session start|pause|resume|block|status|close');
 }
 `,
   'ask-core/src/cli/commands/context.js': `import { WorkContextEngine } from '../../core/WorkContextEngine.js';
@@ -238,22 +304,42 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
+const VALID_TRANSITIONS = {
+  created: ['active'],
+  active: ['paused', 'blocked', 'closed'],
+  paused: ['resumed', 'closed'],
+  resumed: ['paused', 'blocked', 'closed'],
+  blocked: ['resumed', 'closed'],
+  closed: [],
+};
 
 function nowIso() {
   return new Date().toISOString();
 }
 
+function transitionMatches(left, right) {
+  return (
+    left?.sessionId === right?.sessionId &&
+    left?.from === right?.from &&
+    left?.to === right?.to &&
+    left?.at === right?.at &&
+    left?.sourceCommand === right?.sourceCommand
+  );
+}
+
 function createSession(overrides = {}) {
   return {
     sessionId: \`sess_\${Date.now().toString(36)}\`,
-    status: 'idle',
+    status: 'created',
     branch: '',
     worktree: '',
+    repoRoot: '',
     taskId: '',
     actorType: 'human',
     actorId: 'local',
     startedAt: '',
     lastActiveAt: '',
+    closedAt: '',
     ...overrides,
   };
 }
@@ -278,25 +364,22 @@ export class SessionRuntime {
   }
 
   async start() {
-    const branch = await getGitValue(this.cwd, ['branch', '--show-current'], true);
-    const worktree = await getGitValue(this.cwd, ['rev-parse', '--show-toplevel'], true);
-    const session = createSession({
-      status: 'active',
-      branch,
-      worktree,
-      startedAt: nowIso(),
-      lastActiveAt: nowIso(),
+    return this.transition('active', {
+      reason: 'session started',
+      sourceCommand: 'session start',
     });
-    await this.store.writeJson(this.paths.activeSession(), session);
-    console.log(JSON.stringify(session, null, 2));
   }
 
-  async resume() {
-    const session = await this.getActiveSession();
-    session.status = 'active';
-    session.lastActiveAt = nowIso();
-    await this.store.writeJson(this.paths.activeSession(), session);
-    console.log(JSON.stringify(session, null, 2));
+  async pause(reason, sourceCommand = 'session pause') {
+    return this.transition('paused', { reason, sourceCommand });
+  }
+
+  async resume(reason, sourceCommand = 'session resume') {
+    return this.transition('resumed', { reason, sourceCommand });
+  }
+
+  async block(reason, sourceCommand = 'session block') {
+    return this.transition('blocked', { reason, sourceCommand });
   }
 
   async status() {
@@ -304,16 +387,162 @@ export class SessionRuntime {
     console.log(JSON.stringify(session, null, 2));
   }
 
-  async close() {
-    const session = await this.getActiveSession();
-    session.status = 'closed';
-    session.lastActiveAt = nowIso();
-    await this.store.writeJson(this.paths.activeSession(), session);
-    console.log(JSON.stringify(session, null, 2));
+  async close(reason, sourceCommand = 'session close') {
+    return this.transition('closed', { reason, sourceCommand });
   }
 
   async getActiveSession() {
-    return this.store.readJson(this.paths.activeSession(), createSession());
+    await this.recoverIfPending();
+    return this.store.readJson(this.paths.activeSession(), createSession({ sessionId: '' }));
+  }
+
+  resolveState(session) {
+    const status = session.status ?? '';
+    if (!session.sessionId || status === '' || status === 'idle') {
+      return 'created';
+    }
+    if (VALID_TRANSITIONS[status]) {
+      return status;
+    }
+    return 'created';
+  }
+
+  async getGitContext() {
+    const branch = await getGitValue(this.cwd, ['branch', '--show-current'], true);
+    const repoRoot = await getGitValue(this.cwd, ['rev-parse', '--show-toplevel'], true);
+    return {
+      branch,
+      repoRoot,
+      worktree: repoRoot || this.cwd,
+    };
+  }
+
+  async recoverIfPending() {
+    const pending = await this.store.readJson(this.paths.pendingTransition(), null);
+    if (!pending || !pending.sessionId) {
+      return;
+    }
+
+    const history = await this.store.readNdjson(this.paths.historyLog(), []);
+    const existsInHistory = history.some(event => transitionMatches(event, pending));
+    if (!existsInHistory) {
+      return;
+    }
+
+    const session = await this.store.readJson(this.paths.activeSession(), createSession({ sessionId: pending.sessionId }));
+    const recovered = this.projectSession(session, pending);
+    await this.store.writeJson(this.paths.activeSession(), recovered);
+    await this.store.deleteFile(this.paths.pendingTransition());
+  }
+
+  async bootstrapLegacyHistory(session) {
+    const history = await this.store.readNdjson(this.paths.historyLog(), []);
+    if (history.length > 0 || !session.sessionId) {
+      return;
+    }
+
+    const state = this.resolveState(session);
+    if (state === 'created') {
+      return;
+    }
+
+    const context = await this.getGitContext();
+    const startEvent = {
+      sessionId: session.sessionId,
+      from: 'created',
+      to: 'active',
+      at: session.startedAt || session.lastActiveAt || nowIso(),
+      reason: 'legacy snapshot bootstrap',
+      actor: session.actorId || 'local',
+      branch: session.branch || context.branch,
+      worktree: session.worktree || context.worktree,
+      repoRoot: session.repoRoot || context.repoRoot,
+      sourceCommand: 'session migrate',
+    };
+    await this.store.appendNdjson(this.paths.historyLog(), startEvent);
+
+    if (state !== 'active') {
+      const alignEvent = {
+        ...startEvent,
+        from: 'active',
+        to: state,
+        at: session.lastActiveAt || nowIso(),
+        reason: 'legacy snapshot alignment',
+      };
+      await this.store.appendNdjson(this.paths.historyLog(), alignEvent);
+    }
+  }
+
+  projectSession(session, transition) {
+    const status = transition.to === 'resumed' ? 'active' : transition.to;
+    const next = {
+      ...createSession({ sessionId: transition.sessionId }),
+      ...session,
+      sessionId: transition.sessionId,
+      status,
+      branch: transition.branch || session.branch,
+      worktree: transition.worktree || session.worktree,
+      repoRoot: transition.repoRoot || session.repoRoot,
+      lastActiveAt: transition.at,
+    };
+
+    if (!next.startedAt) {
+      next.startedAt = transition.at;
+    }
+    if (status === 'closed') {
+      next.closedAt = transition.at;
+    } else {
+      next.closedAt = '';
+    }
+
+    return next;
+  }
+
+  async transition(to, options = {}) {
+    const reason = options.reason ?? '';
+    const sourceCommand = options.sourceCommand ?? \`session \${to}\`;
+    const session = await this.getActiveSession();
+    await this.bootstrapLegacyHistory(session);
+    const from = this.resolveState(session);
+    const allowed = VALID_TRANSITIONS[from] ?? [];
+
+    if (!allowed.includes(to)) {
+      return {
+        ok: false,
+        code: 'invalid-transition',
+        from,
+        to,
+        allowed,
+        message: \`cannot transition from \${from} to \${to}\`,
+      };
+    }
+
+    const gitContext = await this.getGitContext();
+    const sessionId = session.sessionId || createSession().sessionId;
+    const transition = {
+      sessionId,
+      from,
+      to,
+      at: nowIso(),
+      reason,
+      actor: session.actorId || 'local',
+      branch: gitContext.branch,
+      worktree: gitContext.worktree,
+      repoRoot: gitContext.repoRoot,
+      sourceCommand,
+    };
+
+    await this.store.writeJson(this.paths.pendingTransition(), transition);
+    await this.store.appendNdjson(this.paths.historyLog(), transition);
+    const nextSession = this.projectSession(session, transition);
+    await this.store.writeJson(this.paths.activeSession(), nextSession);
+    await this.store.deleteFile(this.paths.pendingTransition());
+
+    return {
+      ok: true,
+      session: nextSession,
+      event: transition,
+    };
   }
 }
 `,
@@ -515,6 +744,14 @@ export class AskPaths {
     return path.join(this.sessionsDir(), 'active-session.json');
   }
 
+  historyLog() {
+    return path.join(this.sessionsDir(), 'history.ndjson');
+  }
+
+  pendingTransition() {
+    return path.join(this.sessionsDir(), 'pending-transition.json');
+  }
+
   currentStatus() {
     return path.join(this.continuityDir(), 'current-status.md');
   }
@@ -575,11 +812,36 @@ export class FileStore {
     }
   }
 
+  async appendNdjson(filePath, record) {
+    await this.ensureDir(path.dirname(filePath));
+    await fs.appendFile(filePath, \`\${JSON.stringify(record)}\\n\`, 'utf8');
+  }
+
+  async readNdjson(filePath, fallback = []) {
+    const raw = await this.readText(filePath, '');
+    if (!raw.trim()) {
+      return fallback;
+    }
+    return raw
+      .split(/\\r?\\n/u)
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map(line => JSON.parse(line));
+  }
+
   async ensureText(filePath, content) {
     try {
       await fs.access(filePath);
     } catch {
       await this.writeText(filePath, content);
+    }
+  }
+
+  async deleteFile(filePath) {
+    try {
+      await fs.unlink(filePath);
+    } catch {
+      // Ignore when file is absent.
     }
   }
 }
@@ -603,6 +865,7 @@ export class Scaffolder {
     await this.store.ensureDir(this.paths.stateDir());
 
     await this.store.ensureText(this.paths.runtimePolicy(), defaultPolicyYaml);
+    await this.store.ensureText(this.paths.historyLog(), '');
     await this.store.writeJson(this.paths.activeSession(), {
       sessionId: '',
       status: 'idle',

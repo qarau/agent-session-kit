@@ -18,6 +18,7 @@ This mode is for teams maintaining ASK itself.
 
 - `pre-commit` and `pre-push` hooks should route through the ask-core adapter wrappers (`scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`).
 - Adapter behavior must stay policy-equivalent with existing ASK script expectations until full runtime cutover.
+- Session lifecycle recovery relies on `.ask/sessions/pending-transition.json`; maintainers should treat stale pending markers as recovery signals, not noise.
 
 ## Required Maintainer Signals
 

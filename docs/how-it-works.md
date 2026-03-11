@@ -13,6 +13,7 @@ The kit enforces three things:
 5. Optional repo-boundary tests can enforce architecture boundaries in CI.
 
 The runtime is being extracted into `ask-core/` so policy contracts and session runtime behavior can be tested independently from hook wrapper scripts.
+Session lifecycle depth is persisted with snapshot + journal files under `.ask/sessions/active-session.json`, `.ask/sessions/history.ndjson`, and `.ask/sessions/pending-transition.json`.
 
 ## Flow Overview
 
