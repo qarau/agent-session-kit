@@ -125,6 +125,22 @@ Optional repo-level lock (recommended for worktree-heavy repos):
 
 When enabled, repo lock values (`session.workContextLock.*`) take precedence over file context.
 
+## Optional Repo Boundary Guard Policy
+
+Use this when the repository has architecture boundaries that must not regress.
+
+Examples:
+
+- extracted toolkit must remain external
+- forbidden embedded directories must not be reintroduced
+- generated output must not be committed
+
+Policy:
+
+1. Define boundary assertions as deterministic tests.
+2. Keep boundary tests in standard CI lanes (`test:runtime` or `test:architecture`).
+3. Record boundary decisions and exceptions in `docs/session/open-loops.md`.
+
 ## Ownership
 
 - Process owner: `<team/role>`

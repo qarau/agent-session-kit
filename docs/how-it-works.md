@@ -10,6 +10,7 @@ The kit enforces three things:
 2. Session docs are updated when meaningful code changes happen.
 3. These checks run automatically before commit and push.
 4. Optional repo-level lock can override file context to prevent branch drift.
+5. Optional repo-boundary tests can enforce architecture boundaries in CI.
 
 ## Flow Overview
 
@@ -62,6 +63,18 @@ node scripts/session/clearRepoWorkContextLock.mjs
 ```
 
 When enabled, `verifyWorkContext` uses `git config` lock values (`session.workContextLock.*`) instead of `active-work-context.json`.
+
+## Optional Repo Boundary Guards
+
+Use this for architecture rules that are outside hook scope.
+
+Pattern:
+
+1. Define forbidden paths (or other boundary invariants).
+2. Add deterministic tests that fail when violated.
+3. Keep those tests in regular CI (`test:runtime` or `test:architecture`).
+
+See `repo-boundary-guards.md` for reusable templates.
 
 ## Resume Snapshot
 

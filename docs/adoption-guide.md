@@ -27,6 +27,7 @@ Agent Session Kit follows this model.
 4. Commit the installed files.
 5. Enable branch protection on `main`.
 6. Require CI status checks before merge.
+7. Optional (recommended for split-repo migrations): add repo-boundary tests to prevent forbidden path regressions.
 
 ## Team Conventions
 
@@ -44,6 +45,12 @@ Optional repo-level lock:
 
 - Use `setRepoWorkContextLock.mjs` to bind a repo/worktree to one branch policy in git config.
 - Use `clearRepoWorkContextLock.mjs` to remove the lock during intentional branch transitions.
+
+Optional repo-boundary guards:
+
+- Add tests for forbidden embedded paths and other architecture boundaries.
+- Keep them in your normal CI path so regressions fail fast.
+- Use `docs/repo-boundary-guards.md` templates to standardize this across repos.
 
 Session log compaction:
 

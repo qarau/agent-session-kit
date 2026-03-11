@@ -156,6 +156,34 @@ node scripts/session/clearRepoWorkContextLock.mjs
 
 `verifyWorkContext` automatically prefers repo lock values when lock is enabled.
 
+## Optional Repo Boundary Guards
+
+Use this when your architecture depends on specific repo boundaries (for example, split repos or extracted toolkits) and you want CI to detect boundary regressions early.
+
+Add a runtime/architecture test in your target repo that fails when forbidden paths appear.
+
+Example (Vitest):
+
+```ts
+import fs from 'node:fs';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+describe('repo boundaries', () => {
+  it('fails if forbidden embedded path exists', () => {
+    const appRoot = process.cwd();
+    const forbiddenPath = path.resolve(appRoot, 'agent-session-kit');
+    expect(fs.existsSync(forbiddenPath)).toBe(false);
+  });
+});
+```
+
+Recommended policy:
+
+- Keep this test in your standard CI lane (for example `test:runtime` or `test:architecture`).
+- Use it for high-risk boundaries (embedded repos, generated directories, or forbidden coupling points).
+- Record boundary policy decisions in `docs/session/open-loops.md`.
+
 ### Migration Quick Commands
 
 ```bash
@@ -232,6 +260,7 @@ This runs the smoke test that installs the kit in a temp repo and validates:
 - `docs/README.md` - doc index and reading order
 - `docs/how-it-works.md` - architecture and flow overview
 - `docs/adoption-guide.md` - rollout guidance for teams
+- `docs/repo-boundary-guards.md` - reusable repo-boundary guard patterns
 - `docs/team-sop-template.md` - copy-paste SOP template for target repositories
 - `docs/releases/README.md` - release ledger and version mapping
 - `docs/releases/release-checklist.md` - release publishing checklist
