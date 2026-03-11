@@ -234,6 +234,10 @@ export async function runHandoff(subcommand) {
 `,
   'ask-core/src/core/SessionRuntime.js': `import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 function nowIso() {
   return new Date().toISOString();
@@ -254,15 +258,32 @@ function createSession(overrides = {}) {
   };
 }
 
+async function getGitValue(cwd, args, allowFailure = false) {
+  try {
+    const { stdout } = await execFileAsync('git', args, { cwd });
+    return stdout.trim();
+  } catch (error) {
+    if (allowFailure) {
+      return '';
+    }
+    throw error;
+  }
+}
+
 export class SessionRuntime {
   constructor(cwd) {
+    this.cwd = cwd;
     this.paths = new AskPaths(cwd);
     this.store = new FileStore();
   }
 
   async start() {
+    const branch = await getGitValue(this.cwd, ['branch', '--show-current'], true);
+    const worktree = await getGitValue(this.cwd, ['rev-parse', '--show-toplevel'], true);
     const session = createSession({
       status: 'active',
+      branch,
+      worktree,
       startedAt: nowIso(),
       lastActiveAt: nowIso(),
     });
