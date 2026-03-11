@@ -4,47 +4,47 @@ Last updated: 2026-03-11
 
 ## Branch and Head
 
-- Active branch: `feature/ask-maintainer-full-works`
-- Current HEAD: `7626ab1 docs: add maintainer mode governance and branch policy guidance`
+- Active branch: `ask-runtime`
+- Current HEAD: `182c158 docs: wire ask-core runtime references and scripts`
 
 ## Active Objective
 
-Ship branch-aware maintainer governance for ASK with dogfooded hooks, release/session checks, and verification evidence.
+Complete phase-1 standalone `ask-core/` runtime bootstrap and prove adapter migration of current ASK pre-commit/pre-push governance flow.
 
 ## Completed In This Stream
 
-- `b2075e4` add branch enforcement mode resolver + tests.
-- `62a1139` add branch-aware session freshness enforcement and runtime noise guard.
-- `2830274` add protected-branch release docs enforcement + branch-aware verifier.
-- `29da182` dogfood `.githooks` and `docs/session` in maintainer repo.
-- `7626ab1` add maintainer-mode docs and branch policy guidance.
+- `1143b39` bootstrap standalone `ask-core/` runtime package.
+- `10413c5` add session/context runtime contract tests.
+- `11069df` add `preflight`/`can-commit` runtime contract tests.
+- `dbf186b` migrate pre-commit/pre-push checks through ask-core adapters.
+- `182c158` wire ask-core scripts and maintainer/runtime docs references.
 
 ## Next Tasks
 
-1. Finalize verification evidence commit (`package.json` + session docs).
-2. Request implementation review and decide merge path.
-3. Run `finishing-a-development-branch` workflow after review.
+1. Request implementation review for ask-core phase-1 migration branch.
+2. Decide merge/cutover path for `main` release and adapter hardening.
+3. Begin next feature phase in `ask-runtime` worktree.
 
 Task board source of truth: `docs/session/tasks.md`.
 
 ## Blockers / Risks
 
-- `docs/session/active-work-context.json` remains pinned to `main`; feature-branch preflight requires temporary repo lock or branch switch.
+- Adapter flow currently executes both legacy ASK checks and ask-core policy contracts; full runtime cutover remains a deliberate follow-up.
+- `.ask/*` runtime state is intentionally local and ignored; accidental staging must remain blocked by policy.
 
 ## Verification Baseline (latest run)
 
-- `npm run test`
-- `node scripts/verifyReleaseDocsConsistency.mjs --root .`
-- `node kit/scripts/session/verifySessionDocsFreshness.mjs --mode preflight --config docs/session/active-work-context.json`
-- `node kit/scripts/session/verifyWorkContext.mjs --mode preflight --config docs/session/active-work-context.json` (pass via temporary repo lock)
-- `node kit/scripts/session/verifySessionDocsFreshness.mjs --mode pre-commit --config docs/session/active-work-context.json` after staging `docs/ASK_Runtime/policy-test.txt` (expected fail)
+- `cmd /c npm run test` (pass)
+- `cmd /c node --test ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/preflightCanCommit.contract.test.mjs` (pass)
+- `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` (pass)
+- `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` (pass)
 
 Latest status: `pass (2026-03-11)`.
 
 ## Resume Commands
 
 ```powershell
-git checkout feature/ask-maintainer-full-works
+git checkout ask-runtime
 git log -5 --oneline
 cmd /c npm run test
 ```

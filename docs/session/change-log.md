@@ -2,6 +2,24 @@
 
 ## 2026-03-11
 
+- Ask-core phase-1 runtime and adapter migration:
+  - Commits:
+    - `1143b39` bootstrap standalone runtime package.
+    - `10413c5` add session/context runtime contracts.
+    - `11069df` add `preflight`/`can-commit` policy contracts.
+    - `dbf186b` migrate pre-commit/pre-push through ask-core adapters.
+    - `182c158` wire docs and package scripts for ask-core workflow.
+  - Runtime proof:
+    - Hook entrypoints now route through:
+      - `scripts/session/runAskCorePreCommitAdapter.mjs`
+      - `scripts/session/runAskCorePrePushAdapter.mjs`
+    - Adapter layer preserves current ASK checks while invoking ask-core contracts.
+  - Verification:
+    - `cmd /c npm run test` passed.
+    - `cmd /c node --test ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/preflightCanCommit.contract.test.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` passed.
+
 - Maintainer governance rollout:
   - Files:
     - `kit/scripts/session/resolveBranchEnforcementMode.mjs`

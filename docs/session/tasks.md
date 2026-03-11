@@ -4,21 +4,21 @@ Last updated: 2026-03-11
 
 ## Now
 
-- [ ] Finalize verification evidence commit for maintainer-mode rollout.
+- [ ] Request code review for ask-core phase-1 migration and adapter proof.
 
 ## Next
 
-- [ ] Request code review for branch-aware maintainer governance changes.
-- [ ] Decide integration path with `finishing-a-development-branch` workflow.
-- [ ] Plan phase-2 extraction of reusable maintainer mode after 1-2 release cycles.
+- [ ] Decide integration path to `main` release for ask-core phase-1.
+- [ ] Define adapter-to-core full cutover criteria and timeline.
+- [ ] Start the next ask-core feature phase in `ask-runtime`.
 
 ## Done
 
-- [x] 2026-03-11 - add branch enforcement resolver (`b2075e4`)
-- [x] 2026-03-11 - add branch-aware session freshness + runtime path guard (`62a1139`)
-- [x] 2026-03-11 - add protected-branch release docs enforcement (`2830274`)
-- [x] 2026-03-11 - dogfood root hooks and session docs in maintainer repo (`29da182`)
-- [x] 2026-03-11 - publish maintainer-mode policy docs (`7626ab1`)
+- [x] 2026-03-11 - bootstrap standalone ask-core runtime package (`1143b39`)
+- [x] 2026-03-11 - add session/context runtime contract coverage (`10413c5`)
+- [x] 2026-03-11 - add preflight/can-commit runtime contracts (`11069df`)
+- [x] 2026-03-11 - migrate pre-commit and pre-push through ask-core adapters (`dbf186b`)
+- [x] 2026-03-11 - wire ask-core scripts and runtime migration docs (`182c158`)
 
 ## Usage Rules
 
