@@ -21,6 +21,7 @@ Agent Session Kit follows this model.
    - `node scripts/session/installHooks.mjs`
    - `node scripts/session/verifyWorkContext.mjs --mode preflight`
    - `node scripts/session/verifySessionDocsFreshness.mjs --mode preflight`
+   - `node scripts/session/nextTask.mjs`
 3. Optional (recommended for worktrees): set repo-level lock:
    - `node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <path-suffix> --enforce-path-suffix true`
 4. Commit the installed files.
@@ -59,6 +60,14 @@ node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-su
 node scripts/session/verifyWorkContext.mjs --mode preflight
 node scripts/session/archiveSessionLog.mjs --keep-sections 14
 ```
+
+Soft next-task reminder flow:
+
+```bash
+node scripts/session/completeTask.mjs
+```
+
+This updates `tasks.md` and prints the next recommendation. A non-blocking `post-commit` hook also prints `nextTask` automatically.
 
 ## Suggested Branch Protection
 

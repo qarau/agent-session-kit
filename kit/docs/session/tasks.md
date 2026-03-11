@@ -22,3 +22,6 @@ Last updated: YYYY-MM-DD
 - Update before first code edit.
 - Move items to Done immediately after meaningful completion.
 - Keep exactly one item in `Now`.
+- Optional helpers:
+  - `node scripts/session/nextTask.mjs`
+  - `node scripts/session/completeTask.mjs`

@@ -76,6 +76,8 @@ test('agent-session-kit installs and enforces context/freshness in a temp repo',
   const clearRepoLockScriptPath = path.join(repoDir, 'scripts', 'session', 'clearRepoWorkContextLock.mjs');
   const resumeSessionScriptPath = path.join(repoDir, 'scripts', 'session', 'resumeSession.mjs');
   const archiveSessionLogScriptPath = path.join(repoDir, 'scripts', 'session', 'archiveSessionLog.mjs');
+  const nextTaskScriptPath = path.join(repoDir, 'scripts', 'session', 'nextTask.mjs');
+  const completeTaskScriptPath = path.join(repoDir, 'scripts', 'session', 'completeTask.mjs');
   const tasksPath = path.join(repoDir, 'docs', 'session', 'tasks.md');
   const sessionChangeLogPath = path.join(repoDir, 'docs', 'session', 'change-log.md');
   assert.equal(fs.existsSync(tasksPath), true, 'tasks.md should be installed');
@@ -83,9 +85,45 @@ test('agent-session-kit installs and enforces context/freshness in a temp repo',
   assert.equal(fs.existsSync(clearRepoLockScriptPath), true, 'clearRepoWorkContextLock.mjs should be installed');
   assert.equal(fs.existsSync(resumeSessionScriptPath), true, 'resumeSession.mjs should be installed');
   assert.equal(fs.existsSync(archiveSessionLogScriptPath), true, 'archiveSessionLog.mjs should be installed');
+  assert.equal(fs.existsSync(nextTaskScriptPath), true, 'nextTask.mjs should be installed');
+  assert.equal(fs.existsSync(completeTaskScriptPath), true, 'completeTask.mjs should be installed');
   const resumeResult = run(process.execPath, ['scripts/session/resumeSession.mjs'], { cwd: repoDir });
   assert.equal(resumeResult.status, 0, resumeResult.stdout + resumeResult.stderr);
   assert.match(resumeResult.stdout, /Current branch:/);
+
+  fs.writeFileSync(
+    tasksPath,
+    `# Session Tasks
+
+Last updated: 2026-03-10
+
+## Now
+
+- [ ] current-task
+
+## Next
+
+- [ ] next-task-a
+- [ ] next-task-b
+
+## Done
+
+- [x] 2026-03-09 - old-task
+`
+  );
+  const nextTaskResult = run(process.execPath, ['scripts/session/nextTask.mjs'], { cwd: repoDir });
+  assert.equal(nextTaskResult.status, 0, nextTaskResult.stdout + nextTaskResult.stderr);
+  assert.match(nextTaskResult.stdout, /Recommended next task: current-task/);
+
+  const completeTaskResult = run(process.execPath, ['scripts/session/completeTask.mjs'], {
+    cwd: repoDir,
+  });
+  assert.equal(completeTaskResult.status, 0, completeTaskResult.stdout + completeTaskResult.stderr);
+  assert.match(completeTaskResult.stdout, /Completed task: current-task/);
+  assert.match(completeTaskResult.stdout, /Recommended next task: next-task-a/);
+  const updatedTasks = fs.readFileSync(tasksPath, 'utf8');
+  assert.match(updatedTasks, /## Now[\s\S]*- \[ \] next-task-a/);
+  assert.match(updatedTasks, /## Done[\s\S]*- \[x\] \d{4}-\d{2}-\d{2} - current-task/);
 
   fs.writeFileSync(
     sessionChangeLogPath,

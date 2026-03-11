@@ -46,6 +46,13 @@ For each meaningful cycle:
 3. Update `tasks.md` so `Now`, `Next`, and `Done` match current execution state.
 4. Update `open-loops.md` if unresolved decisions/risks changed.
 
+Soft reminder helpers:
+
+- `node scripts/session/nextTask.mjs`
+- `node scripts/session/completeTask.mjs`
+
+`completeTask` updates `tasks.md` and prints the next recommendation; `post-commit` also prints a non-blocking reminder.
+
 ## Verification Standard
 
 Before claiming completion:

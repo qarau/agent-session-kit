@@ -36,6 +36,7 @@ function main() {
 
   ensureHookExecutable(hooksDir, 'pre-commit');
   ensureHookExecutable(hooksDir, 'pre-push');
+  ensureHookExecutable(hooksDir, 'post-commit');
 
   console.log(`Configured core.hooksPath=${configured}`);
 }

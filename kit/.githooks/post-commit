@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+set -eu
+
+if [ -f scripts/session/nextTask.mjs ]; then
+  node scripts/session/nextTask.mjs || true
+fi

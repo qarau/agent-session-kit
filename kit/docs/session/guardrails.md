@@ -36,6 +36,12 @@ Active log maintenance:
 - Run `node scripts/session/archiveSessionLog.mjs --keep-sections 14` after major milestones or when `change-log.md` becomes hard to scan.
 - Archived history is stored under `docs/session/archive/change-log-YYYY-MM.md`.
 
+Task flow soft reminder:
+
+- `node scripts/session/nextTask.mjs` prints recommended next task + queue.
+- `node scripts/session/completeTask.mjs` marks current task complete and prints next recommendation.
+- `post-commit` hook runs `nextTask.mjs` as a non-blocking reminder.
+
 Strict option:
 
 - Set `strictTasksDoc: true` in `docs/session/active-work-context.json` (or `SESSION_TASKS_STRICT=1`) to make `docs/session/tasks.md` required rather than warning-level.

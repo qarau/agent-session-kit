@@ -77,6 +77,7 @@ Optional flags:
 
 - `.githooks/pre-commit`
 - `.githooks/pre-push`
+- `.githooks/post-commit`
 - `scripts/session/verifyWorkContext.mjs`
 - `scripts/session/verifySessionDocsFreshness.mjs`
 - `scripts/session/installHooks.mjs`
@@ -84,6 +85,8 @@ Optional flags:
 - `scripts/session/clearRepoWorkContextLock.mjs`
 - `scripts/session/resumeSession.mjs`
 - `scripts/session/archiveSessionLog.mjs`
+- `scripts/session/nextTask.mjs`
+- `scripts/session/completeTask.mjs`
 - `docs/session/AGENT_SESSION_LAWS.md`
 - `docs/session/guardrails.md`
 - `docs/session/active-work-context.json`
@@ -99,6 +102,8 @@ node scripts/session/installHooks.mjs
 node scripts/session/verifyWorkContext.mjs --mode=preflight
 node scripts/session/verifySessionDocsFreshness.mjs --mode=preflight
 node scripts/session/resumeSession.mjs
+node scripts/session/nextTask.mjs
+node scripts/session/archiveSessionLog.mjs --keep-sections 14
 ```
 
 ```bash
@@ -106,8 +111,22 @@ node scripts/session/installHooks.mjs
 node scripts/session/verifyWorkContext.mjs --mode preflight
 node scripts/session/verifySessionDocsFreshness.mjs --mode preflight
 node scripts/session/resumeSession.mjs
+node scripts/session/nextTask.mjs
 node scripts/session/archiveSessionLog.mjs --keep-sections 14
 ```
+
+## Task Flow Reminder (Soft)
+
+Use these helpers for a smoother agent/developer loop:
+
+```bash
+node scripts/session/nextTask.mjs
+node scripts/session/completeTask.mjs
+```
+
+`completeTask.mjs` marks the current `Now` task done, promotes the next task when needed, and prints the next recommendation.
+
+ASK also installs a soft `post-commit` reminder that runs `nextTask.mjs` automatically (non-blocking).
 
 ## Session Log Archiving
 

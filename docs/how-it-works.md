@@ -35,12 +35,16 @@ flowchart TD
 - Hook setup helper: `kit/scripts/session/installHooks.mjs`
 - Resume helper: `kit/scripts/session/resumeSession.mjs`
 - Change-log archiver: `kit/scripts/session/archiveSessionLog.mjs`
+- Task reminder helpers:
+  - `kit/scripts/session/nextTask.mjs`
+  - `kit/scripts/session/completeTask.mjs`
 - Work context validator: `kit/scripts/session/verifyWorkContext.mjs`
 - Repo lock helpers:
   - `kit/scripts/session/setRepoWorkContextLock.mjs`
   - `kit/scripts/session/clearRepoWorkContextLock.mjs`
 - Session freshness validator: `kit/scripts/session/verifySessionDocsFreshness.mjs`
 - Hook templates: `kit/.githooks/pre-commit`, `kit/.githooks/pre-push`
+- Hook template: `kit/.githooks/post-commit` (soft next-task reminder)
 - Session templates: `kit/docs/session/*`
 
 ## Optional Repo-Level Lock
@@ -68,6 +72,16 @@ node scripts/session/resumeSession.mjs
 ```
 
 The output includes current branch, HEAD, active objective, next unchecked task, and latest verification command.
+
+## Task Reminder Loop
+
+Recommended flow:
+
+```bash
+node scripts/session/completeTask.mjs
+```
+
+This updates `tasks.md` and prints the next recommendation. A soft `post-commit` hook also prints the next task after each commit.
 
 ## What "Meaningful Change" Means
 

@@ -138,7 +138,7 @@ function ensureHookExecutables(targetPath, dryRun) {
     return;
   }
 
-  const hooks = ['pre-commit', 'pre-push'];
+  const hooks = ['pre-commit', 'pre-push', 'post-commit'];
   for (const hook of hooks) {
     const hookPath = path.join(targetPath, '.githooks', hook);
     if (!fs.existsSync(hookPath)) {
@@ -181,8 +181,9 @@ function main() {
   console.log('1. node scripts/session/installHooks.mjs');
   console.log('2. node scripts/session/verifyWorkContext.mjs --mode=preflight');
   console.log('3. node scripts/session/verifySessionDocsFreshness.mjs --mode=preflight');
+  console.log('4. node scripts/session/nextTask.mjs');
   console.log(
-    '4. Optional: node scripts/session/setRepoWorkContextLock.mjs --branch <branch> --repo-suffix <suffix> --enforce-path-suffix true'
+    '5. Optional: node scripts/session/setRepoWorkContextLock.mjs --branch <branch> --repo-suffix <suffix> --enforce-path-suffix true'
   );
 }
 
