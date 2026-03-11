@@ -29,6 +29,12 @@ Agent Session Kit follows this model.
 6. Require CI status checks before merge.
 7. Optional (recommended for split-repo migrations): add repo-boundary tests to prevent forbidden path regressions.
 
+## Branch-Aware Enforcement
+
+- Protected branches (`main` and `release/*`) should be treated as fail-closed.
+- Feature branches should run in advisory mode.
+- Keep pre-push checks branch-aware so teams can iterate quickly and still block governance drift where it matters.
+
 ## Team Conventions
 
 - Update `docs/session/current-status.md` every meaningful cycle.
@@ -36,6 +42,7 @@ Agent Session Kit follows this model.
 - Keep `docs/session/tasks.md` current so `Now`, `Next`, and `Done` are visible at a glance.
 - Update `docs/session/open-loops.md` when decisions or risk status changes.
 - Keep bypass usage explicit and rare.
+- Keep `docs/ASK_Runtime/*` local-only; do not commit runtime scratch data.
 
 Optional strict mode:
 

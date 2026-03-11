@@ -203,6 +203,8 @@ node scripts/session/setRepoWorkContextLock.mjs --branch <new-branch> --repo-suf
 
 ## Enforcement behavior
 
+- `main/release*` uses fail-closed guardrails for session and release governance checks.
+- Feature branches run advisory mode so drift is visible without blocking iteration.
 - `pre-commit`: blocks if active branch/worktree context fails or meaningful staged changes do not include required session docs.
 - `pre-push`: blocks if outgoing commit range fails context or session freshness checks.
 
@@ -223,6 +225,11 @@ Optional strict mode for tasks:
 - Set `SESSION_TASKS_STRICT=1` for command/session-level strict enforcement.
 
 When strict mode is enabled, `docs/session/tasks.md` becomes required for meaningful changes.
+
+Maintainer-only local runtime notes:
+
+- `docs/ASK_Runtime/*` is local-only and must not be committed.
+- Use `docs/session/*` and `docs/releases/*` for team-visible governance state.
 
 ## Emergency Bypass
 
@@ -262,6 +269,7 @@ This runs the smoke test that installs the kit in a temp repo and validates:
 - `docs/adoption-guide.md` - rollout guidance for teams
 - `docs/repo-boundary-guards.md` - reusable repo-boundary guard patterns
 - `docs/team-sop-template.md` - copy-paste SOP template for target repositories
+- `docs/maintainer-mode.md` - branch-aware maintainer policy and verification flow
 - `docs/releases/README.md` - release ledger and version mapping
 - `docs/releases/release-checklist.md` - release publishing checklist
 - `docs/releases/latest.md` - latest released version pointers

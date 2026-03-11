@@ -21,6 +21,7 @@ Together they reduce regressions caused by long AI-assisted sessions, context dr
 2. Add a test that fails when those paths exist.
 3. Run that test in your standard CI gate (`test:runtime` or `test:architecture`).
 4. Document policy in `docs/session/open-loops.md`.
+5. Keep protected branches fail-closed (`main`/`release/*`) and feature branches advisory.
 
 ## Vitest Template
 
@@ -48,3 +49,4 @@ describe('repo boundaries', () => {
 - Keep boundary tests deterministic (no network, no time dependence).
 - Treat failures as governance regressions, not flaky tests.
 - Keep path decisions explicit in session docs so resumes stay aligned.
+- Keep local runtime scratch paths (for example `docs/ASK_Runtime/*`) out of tracked history.

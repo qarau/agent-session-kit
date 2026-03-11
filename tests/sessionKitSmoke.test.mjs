@@ -51,6 +51,18 @@ test('maintainer dogfooding assets exist in repository root', () => {
   assert.equal(fs.existsSync(path.join(kitRoot, 'docs', 'session', 'current-status.md')), true);
 });
 
+test('documentation describes branch-aware maintainer mode policy', () => {
+  const readme = fs.readFileSync(path.join(kitRoot, 'README.md'), 'utf8');
+  assert.match(readme, /main\/release\*.*fail-closed/i);
+  assert.match(readme, /feature branches.*advisory/i);
+
+  const maintainerModePath = path.join(kitRoot, 'docs', 'maintainer-mode.md');
+  assert.equal(fs.existsSync(maintainerModePath), true);
+  const maintainerMode = fs.readFileSync(maintainerModePath, 'utf8');
+  assert.match(maintainerMode, /docs\/ASK_Runtime\/\*.*local-only/i);
+  assert.match(maintainerMode, /verification evidence/i);
+});
+
 test('agent-session-kit installs and enforces context/freshness in a temp repo', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-session-kit-smoke-'));
   const repoDir = path.join(tempRoot, 'repo');
