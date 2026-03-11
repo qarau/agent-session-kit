@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
 set -eu
 
-node kit/scripts/session/verifyWorkContext.mjs --mode=pre-commit --config=docs/session/active-work-context.json
-node kit/scripts/session/verifySessionDocsFreshness.mjs --mode=pre-commit --config=docs/session/active-work-context.json
+node scripts/session/runAskCorePreCommitAdapter.mjs

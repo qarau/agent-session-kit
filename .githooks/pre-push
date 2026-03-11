@@ -1,6 +1,4 @@
 #!/usr/bin/env sh
 set -eu
 
-node kit/scripts/session/verifyWorkContext.mjs --mode=pre-push --config=docs/session/active-work-context.json
-node kit/scripts/session/verifySessionDocsFreshness.mjs --mode=pre-push --config=docs/session/active-work-context.json
-node kit/scripts/session/verifyReleaseDocsConsistency.mjs --mode=pre-push --root=.
+node scripts/session/runAskCorePrePushAdapter.mjs
