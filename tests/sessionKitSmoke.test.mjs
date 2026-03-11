@@ -44,6 +44,13 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+test('maintainer dogfooding assets exist in repository root', () => {
+  assert.equal(fs.existsSync(path.join(kitRoot, '.githooks', 'pre-commit')), true);
+  assert.equal(fs.existsSync(path.join(kitRoot, '.githooks', 'pre-push')), true);
+  assert.equal(fs.existsSync(path.join(kitRoot, 'docs', 'session', 'active-work-context.json')), true);
+  assert.equal(fs.existsSync(path.join(kitRoot, 'docs', 'session', 'current-status.md')), true);
+});
+
 test('agent-session-kit installs and enforces context/freshness in a temp repo', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-session-kit-smoke-'));
   const repoDir = path.join(tempRoot, 'repo');
