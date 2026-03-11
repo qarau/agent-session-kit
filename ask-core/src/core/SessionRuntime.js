@@ -17,6 +17,16 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function transitionMatches(left, right) {
+  return (
+    left?.sessionId === right?.sessionId &&
+    left?.from === right?.from &&
+    left?.to === right?.to &&
+    left?.at === right?.at &&
+    left?.sourceCommand === right?.sourceCommand
+  );
+}
+
 function createSession(overrides = {}) {
   return {
     sessionId: `sess_${Date.now().toString(36)}`,
@@ -82,6 +92,7 @@ export class SessionRuntime {
   }
 
   async getActiveSession() {
+    await this.recoverIfPending();
     return this.store.readJson(this.paths.activeSession(), createSession({ sessionId: '' }));
   }
 
@@ -104,6 +115,62 @@ export class SessionRuntime {
       repoRoot,
       worktree: repoRoot || this.cwd,
     };
+  }
+
+  async recoverIfPending() {
+    const pending = await this.store.readJson(this.paths.pendingTransition(), null);
+    if (!pending || !pending.sessionId) {
+      return;
+    }
+
+    const history = await this.store.readNdjson(this.paths.historyLog(), []);
+    const existsInHistory = history.some(event => transitionMatches(event, pending));
+    if (!existsInHistory) {
+      return;
+    }
+
+    const session = await this.store.readJson(this.paths.activeSession(), createSession({ sessionId: pending.sessionId }));
+    const recovered = this.projectSession(session, pending);
+    await this.store.writeJson(this.paths.activeSession(), recovered);
+    await this.store.deleteFile(this.paths.pendingTransition());
+  }
+
+  async bootstrapLegacyHistory(session) {
+    const history = await this.store.readNdjson(this.paths.historyLog(), []);
+    if (history.length > 0 || !session.sessionId) {
+      return;
+    }
+
+    const state = this.resolveState(session);
+    if (state === 'created') {
+      return;
+    }
+
+    const context = await this.getGitContext();
+    const startEvent = {
+      sessionId: session.sessionId,
+      from: 'created',
+      to: 'active',
+      at: session.startedAt || session.lastActiveAt || nowIso(),
+      reason: 'legacy snapshot bootstrap',
+      actor: session.actorId || 'local',
+      branch: session.branch || context.branch,
+      worktree: session.worktree || context.worktree,
+      repoRoot: session.repoRoot || context.repoRoot,
+      sourceCommand: 'session migrate',
+    };
+    await this.store.appendNdjson(this.paths.historyLog(), startEvent);
+
+    if (state !== 'active') {
+      const alignEvent = {
+        ...startEvent,
+        from: 'active',
+        to: state,
+        at: session.lastActiveAt || nowIso(),
+        reason: 'legacy snapshot alignment',
+      };
+      await this.store.appendNdjson(this.paths.historyLog(), alignEvent);
+    }
   }
 
   projectSession(session, transition) {
@@ -135,6 +202,7 @@ export class SessionRuntime {
     const reason = options.reason ?? '';
     const sourceCommand = options.sourceCommand ?? `session ${to}`;
     const session = await this.getActiveSession();
+    await this.bootstrapLegacyHistory(session);
     const from = this.resolveState(session);
     const allowed = VALID_TRANSITIONS[from] ?? [];
 
