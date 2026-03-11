@@ -5,5 +5,5 @@ session:
 
 checks:
   require_docs_freshness: true
-  require_tests_before_commit: false
+  require_tests_before_commit: true
 `;
