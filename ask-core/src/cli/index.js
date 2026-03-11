@@ -10,7 +10,7 @@ function printHelp() {
 
 Usage:
   ask init
-  ask session start|resume|status|close
+  ask session start|pause|resume|block|status|close
   ask context verify|status
   ask preflight
   ask can-commit
@@ -19,7 +19,7 @@ Usage:
 }
 
 export async function runCli(args) {
-  const [command, subcommand] = args;
+  const [command, subcommand, ...rest] = args;
   if (!command) {
     printHelp();
     return;
@@ -31,7 +31,7 @@ export async function runCli(args) {
   }
 
   if (command === 'session') {
-    await runSession(subcommand);
+    await runSession(subcommand, rest);
     return;
   }
 

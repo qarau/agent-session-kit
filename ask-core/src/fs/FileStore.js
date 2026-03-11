@@ -57,4 +57,12 @@ export class FileStore {
       await this.writeText(filePath, content);
     }
   }
+
+  async deleteFile(filePath) {
+    try {
+      await fs.unlink(filePath);
+    } catch {
+      // Ignore when file is absent.
+    }
+  }
 }

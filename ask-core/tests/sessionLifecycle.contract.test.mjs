@@ -97,3 +97,17 @@ test('invalid transition returns deterministic JSON error with exit 1', () => {
   assert.equal(payload.to, 'paused');
   assert.ok(Array.isArray(payload.allowed));
 });
+
+test('pause resume block and close require --reason', () => {
+  const repoDir = setupRepo();
+  runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
+
+  for (const subcommand of ['pause', 'resume', 'block', 'close']) {
+    const result = run(process.execPath, [askBinPath, 'session', subcommand], { cwd: repoDir });
+    assert.equal(result.status, 1, `expected ${subcommand} to fail without --reason`);
+    const payload = JSON.parse(result.stdout);
+    assert.equal(payload.ok, false);
+    assert.equal(payload.code, 'missing-reason');
+    assert.equal(payload.command, subcommand);
+  }
+});
