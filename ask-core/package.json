@@ -1,0 +1,13 @@
+{
+  "name": "ask-core",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Platform-agnostic developer-agent runtime",
+  "bin": {
+    "ask": "./bin/ask.js"
+  },
+  "scripts": {
+    "test": "node --test tests"
+  },
+  "license": "MIT"
+}
