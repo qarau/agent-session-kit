@@ -236,14 +236,13 @@ Last updated: 2026-03-10
   fs.writeFileSync(featurePath, 'meaningful change\n');
   runOrThrow('git', ['add', 'src/feature.txt'], { cwd: repoDir });
 
-  const freshnessFail = run(
+  const freshnessAdvisory = run(
     process.execPath,
     ['scripts/session/verifySessionDocsFreshness.mjs', '--mode', 'pre-commit'],
     { cwd: repoDir }
   );
-  assert.equal(freshnessFail.status, 1);
-  assert.match(freshnessFail.stderr, /\[session-freshness:pre-commit\] guard failed/);
-  assert.match(freshnessFail.stderr, /Missing required docs/);
+  assert.equal(freshnessAdvisory.status, 0, freshnessAdvisory.stdout + freshnessAdvisory.stderr);
+  assert.match(`${freshnessAdvisory.stdout}\n${freshnessAdvisory.stderr}`, /advisory mode/i);
 
   fs.appendFileSync(path.join(repoDir, 'docs', 'session', 'current-status.md'), '\nsmoke update\n');
   fs.appendFileSync(path.join(repoDir, 'docs', 'session', 'change-log.md'), '\nsmoke update\n');
@@ -259,7 +258,7 @@ Last updated: 2026-03-10
   assert.equal(freshnessPass.status, 0, freshnessPass.stdout + freshnessPass.stderr);
   assert.match(freshnessPass.stdout, /\[session-freshness:pre-commit\] OK/);
 
-  const strictTasksFail = run(
+  const strictTasksAdvisory = run(
     process.execPath,
     ['scripts/session/verifySessionDocsFreshness.mjs', '--mode', 'pre-commit'],
     {
@@ -267,8 +266,12 @@ Last updated: 2026-03-10
       env: { SESSION_TASKS_STRICT: '1' },
     }
   );
-  assert.equal(strictTasksFail.status, 1);
-  assert.match(strictTasksFail.stderr, /docs\/session\/tasks\.md/);
+  assert.equal(
+    strictTasksAdvisory.status,
+    0,
+    strictTasksAdvisory.stdout + strictTasksAdvisory.stderr
+  );
+  assert.match(`${strictTasksAdvisory.stdout}\n${strictTasksAdvisory.stderr}`, /advisory mode/i);
 
   fs.appendFileSync(tasksPath, '\n- [x] smoke strict task update\n');
   runOrThrow('git', ['add', 'docs/session/tasks.md'], { cwd: repoDir });

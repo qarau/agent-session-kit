@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { execFileSync } from 'node:child_process';
+import { resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.mjs';
 
 const REQUIRED_DOCS = ['docs/session/current-status.md', 'docs/session/change-log.md'];
 const TASKS_DOC = 'docs/session/tasks.md';
@@ -94,6 +95,14 @@ function getFileListForMode(mode) {
   return getPreCommitFileList();
 }
 
+function getCurrentBranch() {
+  return runGit(['branch', '--show-current'], true);
+}
+
+function hasLocalRuntimeFiles(files) {
+  return files.some(file => normalize(file).startsWith('docs/ASK_Runtime/'));
+}
+
 function isEnforcementIgnored(filePath) {
   return (
     filePath.startsWith('docs/session/') ||
@@ -148,10 +157,34 @@ function main() {
   const configPath = resolveConfigPath(argv);
   const config = loadConfig(configPath);
   const strictTasksDoc = isTasksStrict(config);
+  const branchName = getCurrentBranch();
+  const enforcementMode = resolveBranchEnforcementMode(branchName);
   const files = getFileListForMode(mode);
+
+  if (hasLocalRuntimeFiles(files)) {
+    console.error(`[session-freshness:${mode}] guard failed`);
+    console.error('Local runtime files are not allowed in commits or pushes: docs/ASK_Runtime/*');
+    process.exit(1);
+  }
+
   const result = evaluateFreshness(files, { strictTasksDoc });
 
   if (!result.ok) {
+    if (enforcementMode === 'advisory') {
+      console.warn(
+        `[session-freshness:${mode}] advisory mode (${branchName || 'detached-head'})`
+      );
+      console.warn('Missing required docs (not blocking on non-protected branch):');
+      for (const item of result.missing) {
+        console.warn(`- ${item}`);
+      }
+      console.warn('Meaningful changed files:');
+      for (const item of result.meaningfulChanges) {
+        console.warn(`- ${item}`);
+      }
+      return;
+    }
+
     console.error(`[session-freshness:${mode}] guard failed`);
     console.error('Meaningful changes detected without required session doc updates.');
     if (strictTasksDoc) {
