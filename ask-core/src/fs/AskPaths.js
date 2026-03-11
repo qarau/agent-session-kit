@@ -38,6 +38,14 @@ export class AskPaths {
     return path.join(this.sessionsDir(), 'active-session.json');
   }
 
+  historyLog() {
+    return path.join(this.sessionsDir(), 'history.ndjson');
+  }
+
+  pendingTransition() {
+    return path.join(this.sessionsDir(), 'pending-transition.json');
+  }
+
   currentStatus() {
     return path.join(this.continuityDir(), 'current-status.md');
   }

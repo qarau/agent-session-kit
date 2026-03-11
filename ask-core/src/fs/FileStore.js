@@ -33,6 +33,23 @@ export class FileStore {
     }
   }
 
+  async appendNdjson(filePath, record) {
+    await this.ensureDir(path.dirname(filePath));
+    await fs.appendFile(filePath, `${JSON.stringify(record)}\n`, 'utf8');
+  }
+
+  async readNdjson(filePath, fallback = []) {
+    const raw = await this.readText(filePath, '');
+    if (!raw.trim()) {
+      return fallback;
+    }
+    return raw
+      .split(/\r?\n/u)
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map(line => JSON.parse(line));
+  }
+
   async ensureText(filePath, content) {
     try {
       await fs.access(filePath);

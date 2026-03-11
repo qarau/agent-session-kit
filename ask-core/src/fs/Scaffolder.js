@@ -17,6 +17,7 @@ export class Scaffolder {
     await this.store.ensureDir(this.paths.stateDir());
 
     await this.store.ensureText(this.paths.runtimePolicy(), defaultPolicyYaml);
+    await this.store.ensureText(this.paths.historyLog(), '');
     await this.store.writeJson(this.paths.activeSession(), {
       sessionId: '',
       status: 'idle',
