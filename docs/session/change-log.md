@@ -1,5 +1,26 @@
 # Session Change Log
 
+## 2026-03-12
+
+- Ask-core phase-2 lifecycle depth implementation:
+  - Commits:
+    - `5512f6d` add lifecycle transition contracts.
+    - `bd1417e` add session journal storage primitives.
+    - `31af39b` implement lifecycle transitions and CLI contracts.
+    - `6d9a54f` add recovery and legacy snapshot migration.
+    - `02343c5` sync bootstrap templates and lifecycle docs.
+  - Behavior:
+    - Added lifecycle transitions (`start/pause/resume/block/close`) with required `--reason` for mutating commands.
+    - Added transactional session persistence via `active-session.json` + `history.ndjson` + `pending-transition.json`.
+    - Added recovery path that finalizes snapshot when pending transition is already in history.
+    - Added legacy snapshot bootstrap that seeds history lineage before first new transition.
+  - Verification:
+    - `cmd /c npm run test` passed.
+    - `cmd /c node --test ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/preflightCanCommit.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` passed.
+    - `cmd /c node --test tests/askCoreBootstrap.test.mjs tests/askCoreDocs.test.mjs` passed.
+
 ## 2026-03-11
 
 - Ask-core phase-1 runtime and adapter migration:

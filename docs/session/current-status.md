@@ -1,45 +1,47 @@
 # Current Status
 
-Last updated: 2026-03-11
+Last updated: 2026-03-12
 
 ## Branch and Head
 
 - Active branch: `ask-runtime`
-- Current HEAD: `182c158 docs: wire ask-core runtime references and scripts`
+- Current HEAD: `02343c5 docs: align bootstrap and lifecycle runtime guidance`
 
 ## Active Objective
 
-Complete phase-1 standalone `ask-core/` runtime bootstrap and prove adapter migration of current ASK pre-commit/pre-push governance flow.
+Complete phase-2 ask-core lifecycle depth with transactional session journal/recovery and CLI transition contracts.
 
 ## Completed In This Stream
 
-- `1143b39` bootstrap standalone `ask-core/` runtime package.
-- `10413c5` add session/context runtime contract tests.
-- `11069df` add `preflight`/`can-commit` runtime contract tests.
-- `dbf186b` migrate pre-commit/pre-push checks through ask-core adapters.
-- `182c158` wire ask-core scripts and maintainer/runtime docs references.
+- `5512f6d` add lifecycle transition contracts.
+- `bd1417e` add session journal storage primitives.
+- `31af39b` implement lifecycle transitions and session CLI contracts.
+- `6d9a54f` add lifecycle recovery and legacy migration behavior.
+- `02343c5` align bootstrap templates and docs with lifecycle runtime.
 
 ## Next Tasks
 
-1. Request implementation review for ask-core phase-1 migration branch.
-2. Decide merge/cutover path for `main` release and adapter hardening.
-3. Begin next feature phase in `ask-runtime` worktree.
+1. Request implementation review for phase-2 lifecycle depth changes.
+2. Decide phase-2 integration path to `main` release branch.
+3. Define final adapter-to-core cutover parity gate for legacy removal.
 
 Task board source of truth: `docs/session/tasks.md`.
 
 ## Blockers / Risks
 
-- Adapter flow currently executes both legacy ASK checks and ask-core policy contracts; full runtime cutover remains a deliberate follow-up.
+- Adapter flow still executes legacy ASK checks plus ask-core contracts; full cutover remains pending parity-gate agreement.
+- Recovery logic currently finalizes only when pending event exists in journal; unresolved pending markers still need maintainer policy handling.
 - `.ask/*` runtime state is intentionally local and ignored; accidental staging must remain blocked by policy.
 
 ## Verification Baseline (latest run)
 
 - `cmd /c npm run test` (pass)
-- `cmd /c node --test ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/preflightCanCommit.contract.test.mjs` (pass)
+- `cmd /c node --test ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/preflightCanCommit.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` (pass)
 - `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` (pass)
 - `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` (pass)
+- `cmd /c node --test tests/askCoreBootstrap.test.mjs tests/askCoreDocs.test.mjs` (pass)
 
-Latest status: `pass (2026-03-11)`.
+Latest status: `pass (2026-03-12)`.
 
 ## Resume Commands
 

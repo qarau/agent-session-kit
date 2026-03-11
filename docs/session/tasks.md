@@ -1,16 +1,16 @@
 # Session Tasks
 
-Last updated: 2026-03-11
+Last updated: 2026-03-12
 
 ## Now
 
-- [ ] Request code review for ask-core phase-1 migration and adapter proof.
+- [ ] Request code review for phase-2 lifecycle depth and recovery migration.
 
 ## Next
 
-- [ ] Decide integration path to `main` release for ask-core phase-1.
-- [ ] Define adapter-to-core full cutover criteria and timeline.
-- [ ] Start the next ask-core feature phase in `ask-runtime`.
+- [ ] Decide integration path to `main` release for phase-2 lifecycle changes.
+- [ ] Define adapter-to-core full cutover parity gate and timeline.
+- [ ] Start phase-3 policy integration (`preflight`/`can-commit` lifecycle-state awareness).
 
 ## Done
 
@@ -19,6 +19,11 @@ Last updated: 2026-03-11
 - [x] 2026-03-11 - add preflight/can-commit runtime contracts (`11069df`)
 - [x] 2026-03-11 - migrate pre-commit and pre-push through ask-core adapters (`dbf186b`)
 - [x] 2026-03-11 - wire ask-core scripts and runtime migration docs (`182c158`)
+- [x] 2026-03-12 - add lifecycle transition contract tests (`5512f6d`)
+- [x] 2026-03-12 - add lifecycle journal storage primitives (`bd1417e`)
+- [x] 2026-03-12 - implement lifecycle transition engine and CLI contracts (`31af39b`)
+- [x] 2026-03-12 - add lifecycle recovery and legacy snapshot migration (`6d9a54f`)
+- [x] 2026-03-12 - sync bootstrap templates and lifecycle docs (`02343c5`)
 
 ## Usage Rules
 
