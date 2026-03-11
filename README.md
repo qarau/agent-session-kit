@@ -209,6 +209,7 @@ From `agent-session-kit/`:
 
 ```bash
 npm run test
+npm run test:release-docs
 ```
 
 This runs the smoke test that installs the kit in a temp repo and validates:
@@ -217,6 +218,7 @@ This runs the smoke test that installs the kit in a temp repo and validates:
 - repo-level work-context lock pass/fail behavior
 - session freshness guard pass/fail behavior
 - installer wiring and hook setup path
+- release-doc mapping guard behavior (released vs draft + latest pointer checks)
 
 ## Open Source Files
 

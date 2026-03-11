@@ -17,6 +17,7 @@ Use this checklist before publishing any ASK release docs/tag.
 
 ## 3) Verify Claims
 
+- [ ] Run: `npm --prefix agent-session-kit run test:release-docs`
 - [ ] Run: `npm --prefix agent-session-kit run test`
 - [ ] Run: `npm --prefix apps/gumatua-v2 run fast-check` (when release notes reference fast-check/V2 behavior)
 - [ ] Ensure verification lines in release docs match commands that were actually run.
