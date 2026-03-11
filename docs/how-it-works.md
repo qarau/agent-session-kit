@@ -12,6 +12,8 @@ The kit enforces three things:
 4. Optional repo-level lock can override file context to prevent branch drift.
 5. Optional repo-boundary tests can enforce architecture boundaries in CI.
 
+The runtime is being extracted into `ask-core/` so policy contracts and session runtime behavior can be tested independently from hook wrapper scripts.
+
 ## Flow Overview
 
 ```mermaid
@@ -47,6 +49,7 @@ flowchart TD
 - Hook templates: `kit/.githooks/pre-commit`, `kit/.githooks/pre-push`
 - Hook template: `kit/.githooks/post-commit` (soft next-task reminder)
 - Session templates: `kit/docs/session/*`
+- Standalone runtime package: `ask-core/*` (core session runtime, policy, and adapter contracts)
 
 ## Optional Repo-Level Lock
 

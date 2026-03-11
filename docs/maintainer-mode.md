@@ -12,6 +12,12 @@ This mode is for teams maintaining ASK itself.
 
 - Tracked governance docs live in `docs/session/*` and `docs/releases/*`.
 - `docs/ASK_Runtime/*` is local-only scratch/runtime data and must never be committed.
+- `ask-core/` is tracked and is the standalone runtime target; maintain adapter parity while migration is in progress.
+
+## Adapter Migration Guard
+
+- `pre-commit` and `pre-push` hooks should route through the ask-core adapter wrappers (`scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`).
+- Adapter behavior must stay policy-equivalent with existing ASK script expectations until full runtime cutover.
 
 ## Required Maintainer Signals
 

@@ -9,6 +9,8 @@
   },
   "scripts": {
     "test": "node --test tests/sessionKitSmoke.test.mjs tests/releaseDocsConsistency.test.mjs tests/resolveBranchEnforcementMode.test.mjs tests/sessionFreshnessBranchMode.test.mjs tests/releaseDocsBranchMode.test.mjs",
-    "test:release-docs": "node scripts/verifyReleaseDocsConsistency.mjs"
+    "test:release-docs": "node scripts/verifyReleaseDocsConsistency.mjs",
+    "bootstrap:ask-core": "node scripts/bootstrapAskCore.cjs",
+    "test:ask-core": "node --test ask-core/tests"
   }
 }
