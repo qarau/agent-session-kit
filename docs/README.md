@@ -9,7 +9,8 @@ Use this folder for deeper reading beyond the quick-start `README.md`.
 3. `adoption-guide.md`
 4. `team-sop-template.md`
 5. `releases/README.md` (release ledger and version mapping)
-6. `releases/latest.md` (latest released version pointers)
+6. `releases/release-checklist.md` (release publishing discipline)
+7. `releases/latest.md` (latest released version pointers)
 
 ## Who Should Read What
 

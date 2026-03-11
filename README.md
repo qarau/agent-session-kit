@@ -232,4 +232,5 @@ This runs the smoke test that installs the kit in a temp repo and validates:
 - `docs/adoption-guide.md` - rollout guidance for teams
 - `docs/team-sop-template.md` - copy-paste SOP template for target repositories
 - `docs/releases/README.md` - release ledger and version mapping
+- `docs/releases/release-checklist.md` - release publishing checklist
 - `docs/releases/latest.md` - latest released version pointers
