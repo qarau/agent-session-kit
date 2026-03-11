@@ -231,4 +231,4 @@ This runs the smoke test that installs the kit in a temp repo and validates:
 - `docs/how-it-works.md` - architecture and flow overview
 - `docs/adoption-guide.md` - rollout guidance for teams
 - `docs/team-sop-template.md` - copy-paste SOP template for target repositories
-- `docs/releases/v0.1.6.md` - latest release notes
+- `docs/releases/latest.md` - latest release notes and announcement pointers

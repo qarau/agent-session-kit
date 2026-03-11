@@ -8,7 +8,7 @@ Use this folder for deeper reading beyond the quick-start `README.md`.
 2. `how-it-works.md`
 3. `adoption-guide.md`
 4. `team-sop-template.md`
-5. `releases/v0.1.6.md` (latest release notes)
+5. `releases/latest.md` (latest release notes and announcement pointers)
 
 ## Who Should Read What
 
