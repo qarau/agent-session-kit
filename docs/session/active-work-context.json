@@ -1,7 +1,7 @@
 {
-  "expectedBranch": "main",
-  "expectedRepoPathSuffix": "",
-  "enforceRepoPathSuffix": false,
+  "expectedBranch": "ask-runtime",
+  "expectedRepoPathSuffix": ".worktrees/ask-runtime",
+  "enforceRepoPathSuffix": true,
   "strictTasksDoc": false,
   "bypassEnvVar": "SESSION_CONTEXT_BYPASS"
 }
