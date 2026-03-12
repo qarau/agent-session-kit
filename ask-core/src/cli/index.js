@@ -4,6 +4,7 @@ import { runContext } from './commands/context.js';
 import { runPreflight } from './commands/preflight.js';
 import { runCanCommit } from './commands/canCommit.js';
 import { runPreCommitCheck } from './commands/preCommitCheck.js';
+import { runPrePushCheck } from './commands/prePushCheck.js';
 import { runHandoff } from './commands/handoff.js';
 
 function printHelp() {
@@ -16,6 +17,7 @@ Usage:
   ask preflight
   ask can-commit
   ask pre-commit-check
+  ask pre-push-check
   ask handoff create
 `);
 }
@@ -54,6 +56,11 @@ export async function runCli(args) {
 
   if (command === 'pre-commit-check') {
     await runPreCommitCheck();
+    return;
+  }
+
+  if (command === 'pre-push-check') {
+    await runPrePushCheck();
     return;
   }
 
