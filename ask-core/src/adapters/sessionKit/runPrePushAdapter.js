@@ -35,12 +35,7 @@ function writeEvidence(cwd) {
       {
         docsFresh: true,
         testsPassed: true,
-        checks: [
-          'session-kit-work-context',
-          'session-kit-freshness',
-          'session-kit-release-docs',
-          'ask-core-preflight',
-        ],
+        checks: ['ask-core-pre-push-check'],
       },
       null,
       2
@@ -53,22 +48,6 @@ export function runPrePushAdapter(cwd = process.cwd()) {
   runOrThrow(process.execPath, [askBinPath, 'init'], cwd);
   runOrThrow(process.execPath, [askBinPath, 'session', 'start'], cwd);
   runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], cwd);
-  runOrThrow(
-    process.execPath,
-    ['kit/scripts/session/verifyWorkContext.mjs', '--mode=pre-push', '--config=docs/session/active-work-context.json'],
-    cwd
-  );
-  runOrThrow(
-    process.execPath,
-    ['kit/scripts/session/verifySessionDocsFreshness.mjs', '--mode=pre-push', '--config=docs/session/active-work-context.json'],
-    cwd
-  );
-  runOrThrow(
-    process.execPath,
-    ['kit/scripts/session/verifyReleaseDocsConsistency.mjs', '--mode=pre-push', '--root=.'],
-    cwd
-  );
   writeEvidence(cwd);
-  runOrThrow(process.execPath, [askBinPath, 'preflight'], cwd);
-  runOrThrow(process.execPath, [askBinPath, 'can-commit'], cwd);
+  runOrThrow(process.execPath, [askBinPath, 'pre-push-check'], cwd);
 }

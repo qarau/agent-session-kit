@@ -70,12 +70,11 @@ test('pre-commit adapter wrapper exits 0 in healthy ask-runtime worktree', () =>
 });
 
 test('pre-push adapter wrapper exits 0 in healthy ask-runtime worktree', () => {
-  const result = run(process.execPath, ['scripts/session/runAskCorePrePushAdapter.mjs'], {
-    cwd: repoRoot,
-    env: {
-      SESSION_CONTEXT_BYPASS: '1',
-      SESSION_DOCS_BYPASS: '1',
-    },
+  const repoDir = setupTempRepo();
+  const adapterWrapperPath = path.join(repoRoot, 'scripts', 'session', 'runAskCorePrePushAdapter.mjs');
+
+  const result = run(process.execPath, [adapterWrapperPath], {
+    cwd: repoDir,
   });
   assert.equal(result.status, 0, result.stdout + result.stderr);
 });
