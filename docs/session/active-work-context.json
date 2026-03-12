@@ -1,6 +1,6 @@
 {
-  "expectedBranch": "ask-runtime",
-  "expectedRepoPathSuffix": ".worktrees/ask-runtime",
+  "expectedBranch": "ask-hard-cutover",
+  "expectedRepoPathSuffix": ".worktrees/ask-hard-cutover",
   "enforceRepoPathSuffix": true,
   "strictTasksDoc": false,
   "bypassEnvVar": "SESSION_CONTEXT_BYPASS"

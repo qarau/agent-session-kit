@@ -1,19 +1,19 @@
 # Open Loops
 
-## 1) Pre-Push Full Cutover Criteria
+## 1) Pre-Push Full Cutover Criteria (Closed 2026-03-12)
 
-- Issue: Define the objective threshold for moving pre-push from hybrid execution to ask-core-only execution.
+- Issue: Define threshold for moving pre-push from hybrid to ask-core-only execution.
 - Owner: ASK maintainers.
-- Decision needed: What minimum parity matrix (outgoing-range checks, release-doc consistency, branch modes) is required before pre-push cutover.
-- Current state: pre-commit is now ask-core-only; pre-push intentionally remains hybrid for safety during staged rollout.
-- Default if no response: Keep hybrid pre-push and defer cutover until parity criteria are documented and validated.
+- Resolution: Completed in hard-cutover commits `8dc109f`, `d77d652`, `d8c4748`, and `1c6bd84`.
+- Current state: pre-commit and pre-push both run ask-core-only checks.
+- Follow-up: none.
 
-## 2) Main Release Integration Path (Phase-3 + Phase-4)
+## 2) Main Release Integration Path (Hard Cutover)
 
-- Issue: Choose merge strategy for phase-3 lifecycle-policy integration changes into protected release flow.
+- Issue: Choose merge strategy for hard-cutover branch into protected release flow.
 - Owner: ASK maintainers.
 - Decision needed: Merge directly to `main` after review vs stage via release candidate branch.
-- Current state: Phase-3 lifecycle-policy integration and phase-4 pre-commit cutover are complete in `ask-runtime` with verification evidence recorded.
+- Current state: Hard cutover is complete in `ask-hard-cutover` with verification evidence recorded.
 - Default if no response: Request review, then merge to `main` with standard protected-branch checks.
 
 ## 3) Pending Marker Escalation Policy

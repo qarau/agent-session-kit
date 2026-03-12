@@ -2,6 +2,27 @@
 
 ## 2026-03-12
 
+- Ask-core hard cutover completion:
+  - Commits:
+    - `8dc109f` add pre-push-check hard-cutover contracts.
+    - `d77d652` add ask-core pre-push-check contract and release-doc engine.
+    - `d8c4748` cut pre-push adapter over to ask-core pre-push-check.
+    - `1c6bd84` cut installer payload to ask-core-only runtime.
+    - `38fec70` centralize branch enforcement mode in ask-core runtime.
+    - `186c61a` publish ask-core-only runtime docs and maintainer guidance.
+  - Behavior:
+    - Removed hybrid pre-push runtime path; both hooks now enforce ask-core-only adapters.
+    - Moved branch enforcement mode helper into ask-core core module and rewired branch-mode tests.
+    - Updated release-doc script + maintainer/adoption docs to remove legacy `kit/scripts/session/verify*` runtime references.
+    - Aligned `docs/session/active-work-context.json` to `ask-hard-cutover` worktree for local wrapper verification.
+  - Verification:
+    - `cmd /c npm run test` passed.
+    - `cmd /c node --test ask-core/tests/preCommitCheck.contract.test.mjs ask-core/tests/prePushCheck.contract.test.mjs ask-core/tests/preflightCanCommit.contract.test.mjs ask-core/tests/policyLifecycleStates.contract.test.mjs ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` passed.
+    - `cmd /c node --test tests/askCoreAdapterMigration.test.mjs tests/askCoreBootstrap.test.mjs tests/askCoreDocs.test.mjs` passed.
+    - `cmd /c node --test tests/releaseDocsBranchMode.test.mjs tests/sessionFreshnessBranchMode.test.mjs tests/resolveBranchEnforcementMode.test.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` passed.
+
 - Ask-core phase-4 pre-commit cutover:
   - Commits:
     - `3212d49` add pre-commit-check and adapter cutover contracts.
