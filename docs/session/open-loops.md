@@ -1,19 +1,19 @@
 # Open Loops
 
-## 1) Ask-Core Full Cutover Criteria
+## 1) Pre-Push Full Cutover Criteria
 
-- Issue: Define the objective threshold for removing legacy ASK script checks from adapter wrappers and relying on ask-core only.
+- Issue: Define the objective threshold for moving pre-push from hybrid execution to ask-core-only execution.
 - Owner: ASK maintainers.
-- Decision needed: What minimum parity matrix (commands, hooks, branch modes, release checks) is required before cutover.
-- Current state: Lifecycle depth plus lifecycle-aware preflight/can-commit policy gating are implemented; adapters still run dual-path checks for safety.
-- Default if no response: Keep dual-execution adapters and defer hard cutover until parity criteria are documented and validated.
+- Decision needed: What minimum parity matrix (outgoing-range checks, release-doc consistency, branch modes) is required before pre-push cutover.
+- Current state: pre-commit is now ask-core-only; pre-push intentionally remains hybrid for safety during staged rollout.
+- Default if no response: Keep hybrid pre-push and defer cutover until parity criteria are documented and validated.
 
-## 2) Main Release Integration Path
+## 2) Main Release Integration Path (Phase-3 + Phase-4)
 
 - Issue: Choose merge strategy for phase-3 lifecycle-policy integration changes into protected release flow.
 - Owner: ASK maintainers.
 - Decision needed: Merge directly to `main` after review vs stage via release candidate branch.
-- Current state: Phase-3 lifecycle-policy integration is complete in `ask-runtime` with verification evidence recorded.
+- Current state: Phase-3 lifecycle-policy integration and phase-4 pre-commit cutover are complete in `ask-runtime` with verification evidence recorded.
 - Default if no response: Request review, then merge to `main` with standard protected-branch checks.
 
 ## 3) Pending Marker Escalation Policy

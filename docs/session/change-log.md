@@ -2,6 +2,23 @@
 
 ## 2026-03-12
 
+- Ask-core phase-4 pre-commit cutover:
+  - Commits:
+    - `3212d49` add pre-commit-check and adapter cutover contracts.
+    - `feaa7d4` add ask-core pre-commit-check contract command.
+    - `68e7495` cut pre-commit adapter over to ask-core pre-commit-check.
+    - `5956341` publish phase-4 pre-commit cutover docs/bootstrap guidance.
+  - Behavior:
+    - Added deterministic `ask pre-commit-check` contract with checks: `work-context`, `docs-freshness`, `session-preflight`, `session-can-commit`.
+    - Cut pre-commit adapter to ask-core-only execution path (removed direct legacy `kit/scripts/session/*` pre-commit checks from adapter flow).
+    - Kept pre-push as hybrid by design for staged rollout.
+  - Verification:
+    - `cmd /c npm run test` passed.
+    - `cmd /c node --test ask-core/tests/preCommitCheck.contract.test.mjs ask-core/tests/preflightCanCommit.contract.test.mjs ask-core/tests/policyLifecycleStates.contract.test.mjs ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` passed.
+    - `cmd /c node --test tests/askCoreAdapterMigration.test.mjs tests/askCoreBootstrap.test.mjs tests/askCoreDocs.test.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` passed.
+
 - Ask-core phase-3 lifecycle policy integration:
   - Commits:
     - `3c605ff` add lifecycle matrix contracts for preflight/can-commit.

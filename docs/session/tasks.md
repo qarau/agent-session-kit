@@ -4,16 +4,20 @@ Last updated: 2026-03-12
 
 ## Now
 
-- [ ] Request code review for phase-3 lifecycle-policy integration.
+- [ ] Request code review for phase-4 pre-commit cutover.
 
 ## Next
 
-- [ ] Decide integration path to `main` release for phase-3 lifecycle-policy changes.
-- [ ] Define adapter-to-core full cutover parity gate and timeline.
-- [ ] Start phase-4 adapter cutover planning for legacy check reduction.
+- [ ] Decide integration path to `main` release for phase-3 + phase-4 changes.
+- [ ] Define phase-5 pre-push full cutover parity gate and timeline.
+- [ ] Document governance policy for unmatched `pending-transition.json` markers.
 
 ## Done
 
+- [x] 2026-03-12 - add pre-commit-check and adapter cutover contracts (`3212d49`)
+- [x] 2026-03-12 - add ask-core pre-commit-check command (`feaa7d4`)
+- [x] 2026-03-12 - cut pre-commit adapter over to ask-core pre-commit-check (`68e7495`)
+- [x] 2026-03-12 - publish phase-4 pre-commit cutover docs/bootstrap guidance (`5956341`)
 - [x] 2026-03-11 - bootstrap standalone ask-core runtime package (`1143b39`)
 - [x] 2026-03-11 - add session/context runtime contract coverage (`10413c5`)
 - [x] 2026-03-11 - add preflight/can-commit runtime contracts (`11069df`)

@@ -5,31 +5,30 @@ Last updated: 2026-03-12
 ## Branch and Head
 
 - Active branch: `ask-runtime`
-- Current HEAD: `d9bee48 docs: add lifecycle policy integration guidance`
+- Current HEAD: `5956341 docs: publish phase-4 pre-commit cutover guidance`
 
 ## Active Objective
 
-Complete phase-3 lifecycle-policy integration so `preflight` and `can-commit` are lifecycle-state aware.
+Complete phase-4 pre-commit cutover evidence capture after moving pre-commit adapter flow to ask-core-only `ask pre-commit-check`.
 
 ## Completed In This Stream
 
-- `3c605ff` add lifecycle-state matrix contracts for `preflight`/`can-commit`.
-- `a3251da` add lifecycle allowed-state policy defaults and parsing.
-- `40dc299` enforce lifecycle allowed states in `preflight`.
-- `b7b014e` enforce lifecycle allowed states in `can-commit`.
-- `d9bee48` add lifecycle-policy integration docs and regression assertions.
+- `3212d49` add pre-commit-check and adapter cutover contracts.
+- `feaa7d4` add ask-core `pre-commit-check` contract command.
+- `68e7495` cut over pre-commit adapter to ask-core `pre-commit-check`.
+- `5956341` publish phase-4 pre-commit cutover docs/bootstrap guidance.
 
 ## Next Tasks
 
-1. Request implementation review for phase-3 lifecycle-policy integration changes.
-2. Decide phase-3 integration path to `main` release branch.
-3. Define phase-4 cutover work to reduce legacy dual-path checks in adapters.
+1. Request implementation review for phase-4 pre-commit cutover changes.
+2. Decide release integration path to `main` for phase-3 + phase-4 commits.
+3. Define phase-5 plan for pre-push full cutover from hybrid to ask-core-only.
 
 Task board source of truth: `docs/session/tasks.md`.
 
 ## Blockers / Risks
 
-- Adapter flow still executes legacy ASK checks plus ask-core contracts; full cutover remains pending parity-gate agreement.
+- `pre-push` remains hybrid; parity drift risk remains until full ask-core cutover.
 - Recovery logic finalizes only when pending event exists in journal; unresolved pending markers still require explicit maintainer policy handling.
 - Lifecycle policy defaults are now explicit; divergence risk exists if downstream repos override allowed states without team agreement.
 - `.ask/*` runtime state is intentionally local and ignored; accidental staging must remain blocked by policy.
@@ -37,10 +36,10 @@ Task board source of truth: `docs/session/tasks.md`.
 ## Verification Baseline (latest run)
 
 - `cmd /c npm run test` (pass)
-- `cmd /c node --test ask-core/tests/preflightCanCommit.contract.test.mjs ask-core/tests/policyLifecycleStates.contract.test.mjs ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` (pass)
+- `cmd /c node --test ask-core/tests/preCommitCheck.contract.test.mjs ask-core/tests/preflightCanCommit.contract.test.mjs ask-core/tests/policyLifecycleStates.contract.test.mjs ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` (pass)
+- `cmd /c node --test tests/askCoreAdapterMigration.test.mjs tests/askCoreBootstrap.test.mjs tests/askCoreDocs.test.mjs` (pass)
 - `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` (pass)
 - `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` (pass)
-- `cmd /c node --test tests/askCoreBootstrap.test.mjs tests/askCoreDocs.test.mjs` (pass)
 
 Latest status: `pass (2026-03-12)`.
 
