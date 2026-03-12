@@ -388,12 +388,14 @@ This runs the smoke test that installs the kit in a temp repo and validates:
 
 ## Documentation
 
-- `docs/README.md` - doc index and reading order
-- `docs/how-it-works.md` - architecture and flow overview
-- `docs/adoption-guide.md` - rollout guidance for teams
-- `docs/repo-boundary-guards.md` - reusable repo-boundary guard patterns
-- `docs/team-sop-template.md` - copy-paste SOP template for target repositories
-- `docs/maintainer-mode.md` - branch-aware maintainer policy and verification flow
-- `docs/releases/README.md` - release ledger and version mapping
-- `docs/releases/release-checklist.md` - release publishing checklist
-- `docs/releases/latest.md` - latest released version pointers
+- [docs/README.md](docs/README.md) - doc index and reading order
+- [docs/how-it-works.md](docs/how-it-works.md) - architecture and flow overview
+- [docs/adoption-guide.md](docs/adoption-guide.md) - rollout guidance for teams
+- [docs/repo-boundary-guards.md](docs/repo-boundary-guards.md) - reusable repo-boundary guard patterns
+- [docs/team-sop-template.md](docs/team-sop-template.md) - copy-paste SOP template for target repositories
+- [docs/maintainer-mode.md](docs/maintainer-mode.md) - branch-aware maintainer policy and verification flow
+- [docs/releases/README.md](docs/releases/README.md) - release ledger and version mapping
+- [docs/releases/release-checklist.md](docs/releases/release-checklist.md) - release publishing checklist
+- [docs/releases/latest.md](docs/releases/latest.md) - latest released version pointers
+- [docs/releases/v2.0.0.md](docs/releases/v2.0.0.md) - ASK 2.0 release notes
+- [docs/releases/v2.0.0-announcement.md](docs/releases/v2.0.0-announcement.md) - ASK 2.0 announcement copy

@@ -6,6 +6,9 @@ Checklist: `release-checklist.md`
 
 ## Released
 
+- `v2.0.0` - ASK 2.0: Developer-Agent Runtime
+  - Notes: `v2.0.0.md`
+  - Announcement: `v2.0.0-announcement.md`
 - `v0.1.6` - Efficiency Workflow Upgrade (Resume + Archive + Fast-Check)
   - Notes: `v0.1.6.md`
   - Announcement: `v0.1.6-announcement.md`
