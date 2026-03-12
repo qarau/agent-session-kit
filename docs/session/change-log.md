@@ -1,5 +1,29 @@
 # Session Change Log
 
+## 2026-03-13
+
+- Pre-push governance mode split (`project` vs `maintainer`):
+  - Files:
+    - `ask-core/src/core/PrePushCheckEngine.js`
+    - `ask-core/tests/prePushCheck.contract.test.mjs`
+    - `tests/releaseDocsBranchMode.test.mjs`
+    - `tests/sessionKitSmoke.test.mjs`
+    - `kit/docs/session/active-work-context.json`
+    - `docs/session/active-work-context.json`
+    - `docs/how-it-works.md`
+    - `docs/adoption-guide.md`
+    - `docs/maintainer-mode.md`
+  - Behavior:
+    - Added `governanceMode` resolution for pre-push checks (`project` or `maintainer`) with optional env override `ASK_GOVERNANCE_MODE`.
+    - In `project` mode, pre-push skips release-doc consistency checks and omits `release-docs` from check list.
+    - In `maintainer` mode, protected branches keep release-doc consistency enforcement.
+    - Installer template now sets `governanceMode: "project"` for downstream repos.
+  - Verification:
+    - `cmd /c node --test ask-core/tests/prePushCheck.contract.test.mjs tests/releaseDocsBranchMode.test.mjs tests/sessionKitSmoke.test.mjs` passed.
+    - `cmd /c npm run test` passed.
+    - `cmd /c npm run test:release-docs` passed.
+    - `node --test <all ask-core tests via explicit file list>` passed (32/32).
+
 ## 2026-03-12
 
 - Ask-core optional Codex context-budget integration:

@@ -1,66 +1,49 @@
 # Current Status
 
-Last updated: 2026-03-12
+Last updated: 2026-03-13
 
 ## Branch and Head
 
-- Active branch: `ask-hard-cutover`
-- Current HEAD: `45b76ea feat: include codex context summary in session doctor`
+- Active branch: `main`
+- Current HEAD: `b572331 docs: reduce redundancy and centralize runtime documentation`
 
 ## Active Objective
 
-Complete optional Codex context-budget integration and verification before merge.
+Add a project-vs-maintainer governance mode switch so ASK pre-push works cleanly for downstream repos while preserving maintainer release-doc enforcement.
 
 ## Completed In This Stream
 
-- `8dc109f` add pre-push-check hard-cutover contracts.
-- `d77d652` add ask-core `pre-push-check` contract and release-doc engine.
-- `d8c4748` cut pre-push adapter to ask-core `pre-push-check`.
-- `1c6bd84` cut installer payload to ask-core-only runtime.
-- `38fec70` centralize branch enforcement mode in ask-core runtime/tests.
-- `186c61a` publish ask-core-only runtime docs and maintainer guidance.
-- `9e2fb05` add guarded command runner stall-recovery contracts.
-- `9ea1a5b` add guarded runner + runtime operation state tracking.
-- `4aac026` wire pre-commit/pre-push adapters through guarded runtime execution.
-- `d8fd57b` add `ask session doctor` runtime diagnostics command.
-- `50e1b4a` add codex context budget command contracts.
-- `65867e0` add codex context budget manager + CLI commands.
-- `45b76ea` include codex context summary in `ask session doctor`.
+- Added `governanceMode` handling in pre-push runtime (`project` vs `maintainer`).
+- Set installer template default to `governanceMode: "project"` in `kit/docs/session/active-work-context.json`.
+- Set this repo to `governanceMode: "maintainer"` for maintainer strictness.
+- Added contract tests for project-mode pre-push behavior and updated docs/smoke expectations.
+- Reduced doc overlap while clarifying mode semantics in `how-it-works`, `adoption-guide`, and `maintainer-mode`.
 
 ## Next Tasks
 
-1. Request implementation review for hard-cutover branch.
-2. Choose release integration path to `main`.
-3. Resolve remaining governance open loops for pending markers and lifecycle override policy.
+1. Commit and push governance mode implementation.
+2. Optionally add a short migration note for existing downstream installs without `governanceMode`.
+3. Decide if `ASK_GOVERNANCE_MODE` should be documented as a temporary CI/session override.
 
 Task board source of truth: `docs/session/tasks.md`.
 
 ## Blockers / Risks
 
-- Pending marker escalation policy remains undecided for unmatched `.ask/sessions/pending-transition.json`.
-- Lifecycle override governance is still open for non-default `allowed_preflight_states` / `allowed_can_commit_states`.
-- `.ask/*` runtime state remains local-only and must continue to be blocked from staging.
-- Runtime stall handling now retries once, but maintainers still need explicit policy for unmatched pending markers.
-- Codex context integration is optional and requires policy enablement plus Responses API credentials.
+- Existing downstream repos that already installed older templates may still be in maintainer-like behavior until they add `governanceMode: "project"`.
 
 ## Verification Baseline (latest run)
 
+- `cmd /c node --test ask-core/tests/prePushCheck.contract.test.mjs tests/releaseDocsBranchMode.test.mjs tests/sessionKitSmoke.test.mjs` (pass)
 - `cmd /c npm run test` (pass)
-- `cmd /c node --test ask-core/tests/preCommitCheck.contract.test.mjs ask-core/tests/prePushCheck.contract.test.mjs ask-core/tests/preflightCanCommit.contract.test.mjs ask-core/tests/policyLifecycleStates.contract.test.mjs ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` (pass)
-- `cmd /c node --test ask-core/tests/guardedCommandRunner.contract.test.mjs ask-core/tests/sessionDoctor.contract.test.mjs ask-core/tests/preCommitCheck.contract.test.mjs ask-core/tests/prePushCheck.contract.test.mjs` (pass)
-- `cmd /c node --test ask-core/tests/codexContext.contract.test.mjs ask-core/tests/sessionDoctor.contract.test.mjs ask-core/tests/guardedCommandRunner.contract.test.mjs` (pass)
-- `cmd /c node --test tests/askCoreAdapterMigration.test.mjs tests/askCoreBootstrap.test.mjs tests/askCoreDocs.test.mjs` (pass)
-- `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` (pass)
-- `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` (pass)
-- `cmd /c node ask-core/bin/ask.js codex context status` (pass; disabled-by-default state)
-- `cmd /c node ask-core/bin/ask.js session doctor` (pass)
+- `cmd /c npm run test:release-docs` (pass)
+- `node --test <all ask-core test files>` via explicit file list (pass, 32/32)
 
-Latest status: `pass (2026-03-12)`.
+Latest status: `pass (2026-03-13)`.
 
 ## Resume Commands
 
 ```powershell
-git checkout ask-hard-cutover
-git log -8 --oneline
+git checkout main
+git log -5 --oneline
 cmd /c npm run test
 ```

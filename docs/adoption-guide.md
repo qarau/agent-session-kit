@@ -34,6 +34,8 @@ Agent Session Kit follows this model.
 - Protected branches (`main` and `release/*`) should be treated as fail-closed.
 - Feature branches should run in advisory mode.
 - Keep ask-core pre-push checks branch-aware so teams can iterate quickly and still block governance drift where it matters.
+- For most downstream repos, keep `governanceMode: "project"` in `docs/session/active-work-context.json` so release-doc checks are not required.
+- Use `governanceMode: "maintainer"` only for repos that publish and enforce ASK release docs.
 
 ## Team Conventions
 

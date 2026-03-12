@@ -1,7 +1,8 @@
 {
-  "expectedBranch": "ask-hard-cutover",
-  "expectedRepoPathSuffix": ".worktrees/ask-hard-cutover",
-  "enforceRepoPathSuffix": true,
+  "expectedBranch": "main",
+  "expectedRepoPathSuffix": "",
+  "enforceRepoPathSuffix": false,
+  "governanceMode": "maintainer",
   "strictTasksDoc": false,
   "bypassEnvVar": "SESSION_CONTEXT_BYPASS"
 }

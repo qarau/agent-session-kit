@@ -17,6 +17,9 @@ The runtime lives in `ask-core/` so policy contracts and session behavior can be
 Session lifecycle depth is persisted with snapshot + journal files under `.ask/sessions/active-session.json`, `.ask/sessions/history.ndjson`, and `.ask/sessions/pending-transition.json`.
 Lifecycle-aware `preflight` and `can-commit` checks use policy keys `allowed_preflight_states` and `allowed_can_commit_states` (default `active,paused`) to reject disallowed states (`blocked`, `closed`, `created`).
 Pre-commit is ask-core-only (`ask pre-commit-check`) and pre-push is ask-core-only (`ask pre-push-check`).
+Pre-push release-doc checks are mode-aware via `docs/session/active-work-context.json`:
+- `governanceMode: "project"` (default) skips release-doc consistency checks.
+- `governanceMode: "maintainer"` enforces release-doc consistency on protected branches (`main`, `release/*`).
 Adapter command execution uses guarded runtime behavior: `180s` wall/no-output timeout with one automatic retry on detected stall before failing.
 
 ## Flow Overview

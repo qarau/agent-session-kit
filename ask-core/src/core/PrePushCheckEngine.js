@@ -10,6 +10,8 @@ import { resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js'
 
 const REQUIRED_DOCS = ['docs/session/current-status.md', 'docs/session/change-log.md'];
 const TASKS_DOC = 'docs/session/tasks.md';
+const GOVERNANCE_MODE_MAINTAINER = 'maintainer';
+const GOVERNANCE_MODE_PROJECT = 'project';
 
 function normalize(pathValue) {
   return pathValue.replaceAll('\\', '/').trim();
@@ -27,6 +29,17 @@ function parseBoolean(value, fallback) {
     return false;
   }
   return fallback;
+}
+
+function normalizeGovernanceMode(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === GOVERNANCE_MODE_MAINTAINER || normalized === GOVERNANCE_MODE_PROJECT) {
+    return normalized;
+  }
+  return '';
 }
 
 export class PrePushCheckEngine {
@@ -182,6 +195,18 @@ export class PrePushCheckEngine {
     return resolveBranchEnforcementMode(branchName) !== 'enforce';
   }
 
+  resolveGovernanceMode(config) {
+    const modeFromEnv = normalizeGovernanceMode(process.env.ASK_GOVERNANCE_MODE);
+    if (modeFromEnv) {
+      return modeFromEnv;
+    }
+    const modeFromConfig = normalizeGovernanceMode(config.governanceMode);
+    if (modeFromConfig) {
+      return modeFromConfig;
+    }
+    return GOVERNANCE_MODE_PROJECT;
+  }
+
   evaluatePreflight(policy, session, context) {
     const missing = [];
     const sessionState = String(session.status || 'created').toLowerCase();
@@ -218,9 +243,10 @@ export class PrePushCheckEngine {
   }
 
   async run() {
-    const checks = ['work-context', 'docs-freshness', 'release-docs', 'session-preflight', 'session-can-commit'];
+    const checks = ['work-context', 'docs-freshness'];
     const missing = [];
     const config = this.resolveEffectiveContextConfig(this.readConfig());
+    const governanceMode = this.resolveGovernanceMode(config);
     const branchName = this.runGit(['branch', '--show-current'], true);
     const outgoingFiles = this.getOutgoingFiles();
     const policy = await this.policyEngine.load();
@@ -236,10 +262,14 @@ export class PrePushCheckEngine {
       missing.push('session docs freshness required');
     }
 
-    if (!this.evaluateReleaseDocs(branchName)) {
-      missing.push('release docs consistency required');
+    if (governanceMode === GOVERNANCE_MODE_MAINTAINER) {
+      checks.push('release-docs');
+      if (!this.evaluateReleaseDocs(branchName)) {
+        missing.push('release docs consistency required');
+      }
     }
 
+    checks.push('session-preflight', 'session-can-commit');
     missing.push(...this.evaluatePreflight(policy, session, context));
     missing.push(...this.evaluateCanCommit(policy, session, evidence));
 

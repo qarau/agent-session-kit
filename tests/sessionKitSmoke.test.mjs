@@ -50,12 +50,13 @@ test('maintainer dogfooding assets exist in repository root', () => {
 
 test('documentation describes branch-aware maintainer mode policy', () => {
   const readme = fs.readFileSync(path.join(kitRoot, 'README.md'), 'utf8');
-  assert.match(readme, /main\/release\*.*fail-closed/i);
-  assert.match(readme, /feature branches.*advisory/i);
+  assert.match(readme, /ASK 2\.0/i);
 
   const maintainerModePath = path.join(kitRoot, 'docs', 'maintainer-mode.md');
   assert.equal(fs.existsSync(maintainerModePath), true);
   const maintainerMode = fs.readFileSync(maintainerModePath, 'utf8');
+  assert.match(maintainerMode, /main\/release\*.*fail-closed/i);
+  assert.match(maintainerMode, /feature branches.*advisory/i);
   assert.match(maintainerMode, /docs\/ASK_Runtime\/\*.*local-only/i);
   assert.match(maintainerMode, /verification evidence/i);
 });

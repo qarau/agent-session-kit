@@ -13,11 +13,13 @@ This mode is for teams maintaining ASK itself.
 - Tracked governance docs live in `docs/session/*` and `docs/releases/*`.
 - `docs/ASK_Runtime/*` is local-only scratch/runtime data and must never be committed.
 - `ask-core/` is tracked and is the standalone runtime target for governance checks.
+- Maintainer repos should set `governanceMode: "maintainer"` in `docs/session/active-work-context.json`.
 
 ## Runtime Guard
 
 - Hooks must route through the ask-core adapter wrappers (`scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`).
 - Runtime command behavior, stall handling, and codex context flow are documented in `how-it-works.md`.
+- In maintainer mode, pre-push includes release-doc consistency checks on protected branches.
 - Runtime behavior should remain policy-equivalent with ASK governance expectations.
 - Session lifecycle recovery relies on `.ask/sessions/pending-transition.json`; maintainers should treat stale pending markers as recovery signals, not noise.
 

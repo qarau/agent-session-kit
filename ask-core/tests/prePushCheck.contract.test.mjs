@@ -44,7 +44,7 @@ function writeJson(filePath, payload) {
   fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
-function setupRepo(branchName = 'ask-runtime') {
+function setupRepo(branchName = 'ask-runtime', governanceMode = 'maintainer') {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-core-pre-push-check-'));
   runOrThrow('git', ['init'], { cwd: tempRoot });
   runOrThrow('git', ['config', 'user.email', 'test@example.com'], { cwd: tempRoot });
@@ -56,6 +56,7 @@ function setupRepo(branchName = 'ask-runtime') {
     expectedRepoPathSuffix: '',
     enforceRepoPathSuffix: false,
     bypassEnvVar: 'SESSION_CONTEXT_BYPASS',
+    governanceMode,
     strictTasksDoc: false,
   });
   return tempRoot;
@@ -98,6 +99,7 @@ test('pre-push-check fails with deterministic missing entries', () => {
     expectedRepoPathSuffix: '',
     enforceRepoPathSuffix: false,
     bypassEnvVar: 'SESSION_CONTEXT_BYPASS',
+    governanceMode: 'maintainer',
     strictTasksDoc: false,
   });
 
@@ -114,4 +116,17 @@ test('pre-push-check fails with deterministic missing entries', () => {
     'session-preflight',
     'session-can-commit',
   ]);
+});
+
+test('pre-push-check in project mode skips release-docs check', () => {
+  const repoDir = setupRepo('main', 'project');
+  makeHealthyPrePushState(repoDir);
+
+  const result = run(process.execPath, [askBinPath, 'pre-push-check'], { cwd: repoDir });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.passed, true);
+  assert.deepEqual(payload.missing, []);
+  assert.deepEqual(payload.checks, ['work-context', 'docs-freshness', 'session-preflight', 'session-can-commit']);
 });

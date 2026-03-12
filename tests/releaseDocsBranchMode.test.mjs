@@ -45,7 +45,7 @@ function writeJson(filePath, payload) {
   fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
-function setupRepo(branchName) {
+function setupRepo(branchName, governanceMode = 'maintainer') {
   const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-release-docs-branch-mode-'));
   runOrThrow('git', ['init'], { cwd: repoDir });
   runOrThrow('git', ['config', 'user.email', 'test@example.com'], { cwd: repoDir });
@@ -57,6 +57,7 @@ function setupRepo(branchName) {
     expectedRepoPathSuffix: '',
     enforceRepoPathSuffix: false,
     bypassEnvVar: 'SESSION_CONTEXT_BYPASS',
+    governanceMode,
     strictTasksDoc: false,
   });
   runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
@@ -85,4 +86,14 @@ test('main branch fails for release-doc inconsistencies', () => {
   assert.equal(result.status, 1, result.stdout + result.stderr);
   const payload = JSON.parse(result.stdout);
   assert.match(JSON.stringify(payload.missing), /release docs consistency required/i);
+});
+
+test('main branch in project mode ignores release-doc checks', () => {
+  const repoDir = setupRepo('main', 'project');
+  const result = run(process.execPath, [askBinPath, 'pre-push-check'], {
+    cwd: repoDir,
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.doesNotMatch(JSON.stringify(payload.checks), /release-docs/i);
 });

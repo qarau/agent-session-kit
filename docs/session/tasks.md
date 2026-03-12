@@ -1,14 +1,14 @@
 # Session Tasks
 
-Last updated: 2026-03-12
+Last updated: 2026-03-13
 
 ## Now
 
-- [ ] Request code review for ask-core hard cutover branch.
+- [ ] Commit and push governance mode split for pre-push (`project` vs `maintainer`).
 
 ## Next
 
-- [ ] Decide integration strategy to merge `ask-hard-cutover` into `main`.
+- [ ] Add downstream migration note for repos missing `governanceMode` in `active-work-context.json`.
 - [ ] Define maintainer policy for unmatched `pending-transition.json` markers.
 - [ ] Define governance policy for lifecycle-state override keys.
 
