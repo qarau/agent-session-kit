@@ -2,6 +2,24 @@
 
 ## 2026-03-12
 
+- Ask-core phase-3 lifecycle policy integration:
+  - Commits:
+    - `3c605ff` add lifecycle matrix contracts for preflight/can-commit.
+    - `a3251da` add allowed-state policy defaults and parser support.
+    - `40dc299` enforce lifecycle policy in preflight.
+    - `b7b014e` enforce lifecycle policy in can-commit.
+    - `d9bee48` publish lifecycle-policy docs/regression updates.
+  - Behavior:
+    - `preflight` now allows `active` and `paused`, and rejects `blocked`, `closed`, `created` per policy.
+    - `can-commit` now includes lifecycle-state gating in addition to docs/tests evidence.
+    - Policy keys `allowed_preflight_states` and `allowed_can_commit_states` are parsed as normalized state lists.
+  - Verification:
+    - `cmd /c npm run test` passed.
+    - `cmd /c node --test ask-core/tests/preflightCanCommit.contract.test.mjs ask-core/tests/policyLifecycleStates.contract.test.mjs ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` passed.
+    - `cmd /c node --test tests/askCoreBootstrap.test.mjs tests/askCoreDocs.test.mjs` passed.
+
 - Ask-core phase-2 lifecycle depth implementation:
   - Commits:
     - `5512f6d` add lifecycle transition contracts.

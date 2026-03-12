@@ -4,13 +4,13 @@ Last updated: 2026-03-12
 
 ## Now
 
-- [ ] Request code review for phase-2 lifecycle depth and recovery migration.
+- [ ] Request code review for phase-3 lifecycle-policy integration.
 
 ## Next
 
-- [ ] Decide integration path to `main` release for phase-2 lifecycle changes.
+- [ ] Decide integration path to `main` release for phase-3 lifecycle-policy changes.
 - [ ] Define adapter-to-core full cutover parity gate and timeline.
-- [ ] Start phase-3 policy integration (`preflight`/`can-commit` lifecycle-state awareness).
+- [ ] Start phase-4 adapter cutover planning for legacy check reduction.
 
 ## Done
 
@@ -24,6 +24,11 @@ Last updated: 2026-03-12
 - [x] 2026-03-12 - implement lifecycle transition engine and CLI contracts (`31af39b`)
 - [x] 2026-03-12 - add lifecycle recovery and legacy snapshot migration (`6d9a54f`)
 - [x] 2026-03-12 - sync bootstrap templates and lifecycle docs (`02343c5`)
+- [x] 2026-03-12 - add lifecycle-state matrix contracts for preflight/can-commit (`3c605ff`)
+- [x] 2026-03-12 - add lifecycle allowed-state policy defaults and parser support (`a3251da`)
+- [x] 2026-03-12 - enforce lifecycle allowed states in preflight (`40dc299`)
+- [x] 2026-03-12 - enforce lifecycle allowed states in can-commit (`b7b014e`)
+- [x] 2026-03-12 - publish lifecycle-policy integration docs (`d9bee48`)
 
 ## Usage Rules
 
