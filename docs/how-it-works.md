@@ -107,6 +107,17 @@ node ask-core/bin/ask.js session doctor
 
 Doctor reads `.ask/runtime/last-operation.json` and reports latest runtime status, retry attempt metadata, and deterministic recovery guidance.
 
+## Optional Codex Context Budget Flow
+
+For Codex Responses API workflows, ASK can run context budget checks and proactive compaction at safe checkpoints:
+
+```bash
+node ask-core/bin/ask.js codex context status
+node ask-core/bin/ask.js codex context ensure
+```
+
+Runtime state is persisted to `.ask/runtime/context-session.json` and summarized by `ask session doctor`.
+
 ## Task Reminder Loop
 
 Recommended flow:

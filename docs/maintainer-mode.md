@@ -20,6 +20,7 @@ This mode is for teams maintaining ASK itself.
 - `pre-commit` runs `ask pre-commit-check`; `pre-push` runs `ask pre-push-check`.
 - Adapter runtime execution uses guarded stall handling (`180s` wall/no-output timeout, one automatic retry).
 - Runtime operation state is recorded at `.ask/runtime/last-operation.json`; use `ask session doctor` for diagnostics.
+- Optional Codex context budgeting is available via `ask codex context status|ensure|compact` when `codex_context.enabled=true`.
 - Runtime behavior should remain policy-equivalent with ASK governance expectations.
 - Session lifecycle recovery relies on `.ask/sessions/pending-transition.json`; maintainers should treat stale pending markers as recovery signals, not noise.
 
@@ -42,6 +43,7 @@ npm run test
 node scripts/verifyReleaseDocsConsistency.mjs --root .
 node scripts/session/runAskCorePreCommitAdapter.mjs
 node scripts/session/runAskCorePrePushAdapter.mjs
+node ask-core/bin/ask.js codex context status
 node ask-core/bin/ask.js session doctor
 ```
 

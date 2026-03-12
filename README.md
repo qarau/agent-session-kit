@@ -24,6 +24,7 @@ The runtime is now a standalone `ask-core/` package for shared policy and CLI lo
 `ask preflight` and `ask can-commit` are lifecycle-policy aware with defaults that allow `active` and `paused`, and reject `blocked` and `closed`.
 `ask pre-commit-check` and `ask pre-push-check` are the runtime parity contracts, and both hooks now route ask-core-only.
 Adapter execution now uses guarded command runtime behavior with `180s` stall detection and a one-time automatic retry before failing.
+Optional Codex context-budget commands are available for Responses API users to proactively compact at low remaining context budgets.
 
 Instead of relying on developer memory or discipline, ASK ensures key checks and validation steps happen automatically as part of the development process.
 
@@ -335,6 +336,31 @@ Optional timeout overrides (advanced use):
 
 - `ASK_STALL_WALL_TIMEOUT_MS`
 - `ASK_STALL_NO_OUTPUT_TIMEOUT_MS`
+
+## Optional Codex Context Budget
+
+When enabled in runtime policy, ASK can track and manage Codex Responses API context budgets:
+
+- `ask codex context status`
+- `ask codex context ensure`
+- `ask codex context compact`
+
+Policy keys in `.ask/policy/runtime-policy.yaml`:
+
+```yaml
+codex_context:
+  enabled: false
+  min_remaining_ratio: 0.10
+  reserve_output_tokens: 12000
+  max_context_tokens: 400000
+  strategy: explicit
+```
+
+Notes:
+
+- Default is disabled (no behavior change for non-Codex users).
+- API/network issues are advisory for `status`/`ensure` commands.
+- `session doctor` includes codex summary when `.ask/runtime/context-session.json` exists.
 
 ## Local Development
 

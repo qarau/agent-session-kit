@@ -5,11 +5,11 @@ Last updated: 2026-03-12
 ## Branch and Head
 
 - Active branch: `ask-hard-cutover`
-- Current HEAD: `d8fd57b feat: add ask session doctor for runtime stall diagnostics`
+- Current HEAD: `45b76ea feat: include codex context summary in session doctor`
 
 ## Active Objective
 
-Complete runtime stall-recovery hardening and verification before merging hard-cutover work.
+Complete optional Codex context-budget integration and verification before merge.
 
 ## Completed In This Stream
 
@@ -23,6 +23,9 @@ Complete runtime stall-recovery hardening and verification before merging hard-c
 - `9ea1a5b` add guarded runner + runtime operation state tracking.
 - `4aac026` wire pre-commit/pre-push adapters through guarded runtime execution.
 - `d8fd57b` add `ask session doctor` runtime diagnostics command.
+- `50e1b4a` add codex context budget command contracts.
+- `65867e0` add codex context budget manager + CLI commands.
+- `45b76ea` include codex context summary in `ask session doctor`.
 
 ## Next Tasks
 
@@ -38,15 +41,18 @@ Task board source of truth: `docs/session/tasks.md`.
 - Lifecycle override governance is still open for non-default `allowed_preflight_states` / `allowed_can_commit_states`.
 - `.ask/*` runtime state remains local-only and must continue to be blocked from staging.
 - Runtime stall handling now retries once, but maintainers still need explicit policy for unmatched pending markers.
+- Codex context integration is optional and requires policy enablement plus Responses API credentials.
 
 ## Verification Baseline (latest run)
 
 - `cmd /c npm run test` (pass)
 - `cmd /c node --test ask-core/tests/preCommitCheck.contract.test.mjs ask-core/tests/prePushCheck.contract.test.mjs ask-core/tests/preflightCanCommit.contract.test.mjs ask-core/tests/policyLifecycleStates.contract.test.mjs ask-core/tests/sessionContext.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` (pass)
 - `cmd /c node --test ask-core/tests/guardedCommandRunner.contract.test.mjs ask-core/tests/sessionDoctor.contract.test.mjs ask-core/tests/preCommitCheck.contract.test.mjs ask-core/tests/prePushCheck.contract.test.mjs` (pass)
+- `cmd /c node --test ask-core/tests/codexContext.contract.test.mjs ask-core/tests/sessionDoctor.contract.test.mjs ask-core/tests/guardedCommandRunner.contract.test.mjs` (pass)
 - `cmd /c node --test tests/askCoreAdapterMigration.test.mjs tests/askCoreBootstrap.test.mjs tests/askCoreDocs.test.mjs` (pass)
 - `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` (pass)
 - `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` (pass)
+- `cmd /c node ask-core/bin/ask.js codex context status` (pass; disabled-by-default state)
 - `cmd /c node ask-core/bin/ask.js session doctor` (pass)
 
 Latest status: `pass (2026-03-12)`.

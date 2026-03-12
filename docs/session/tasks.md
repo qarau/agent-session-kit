@@ -14,6 +14,9 @@ Last updated: 2026-03-12
 
 ## Done
 
+- [x] 2026-03-12 - add codex context budget command contracts (`50e1b4a`)
+- [x] 2026-03-12 - add codex context budget manager + CLI commands (`65867e0`)
+- [x] 2026-03-12 - include codex context summary in session doctor (`45b76ea`)
 - [x] 2026-03-12 - add guarded command runner stall-recovery contracts (`9e2fb05`)
 - [x] 2026-03-12 - add guarded runner + runtime operation state tracking (`9ea1a5b`)
 - [x] 2026-03-12 - wire adapters through guarded runtime execution (`4aac026`)

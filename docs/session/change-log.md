@@ -2,6 +2,21 @@
 
 ## 2026-03-12
 
+- Ask-core optional Codex context-budget integration:
+  - Commits:
+    - `50e1b4a` add codex context budget command contracts.
+    - `65867e0` add codex context budget manager + CLI commands.
+    - `45b76ea` include codex context summary in `session doctor`.
+  - Behavior:
+    - Added `ask codex context status|ensure|compact` commands.
+    - Added policy-driven codex context section (`enabled`, threshold, reserve, max context, strategy).
+    - Added persisted context budget state at `.ask/runtime/context-session.json`.
+    - Added `session doctor` codex summary fields when context state is present.
+  - Verification:
+    - `cmd /c node --test ask-core/tests/codexContext.contract.test.mjs` passed.
+    - `cmd /c node --test ask-core/tests/sessionDoctor.contract.test.mjs ask-core/tests/codexContext.contract.test.mjs` passed.
+    - `cmd /c node ask-core/bin/ask.js codex context status` passed.
+
 - Ask-core runtime stall recovery hardening:
   - Commits:
     - `9e2fb05` add guarded command runner stall-recovery contracts.
