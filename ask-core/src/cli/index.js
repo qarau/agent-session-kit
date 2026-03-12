@@ -3,6 +3,7 @@ import { runSession } from './commands/session.js';
 import { runContext } from './commands/context.js';
 import { runPreflight } from './commands/preflight.js';
 import { runCanCommit } from './commands/canCommit.js';
+import { runPreCommitCheck } from './commands/preCommitCheck.js';
 import { runHandoff } from './commands/handoff.js';
 
 function printHelp() {
@@ -14,6 +15,7 @@ Usage:
   ask context verify|status
   ask preflight
   ask can-commit
+  ask pre-commit-check
   ask handoff create
 `);
 }
@@ -47,6 +49,11 @@ export async function runCli(args) {
 
   if (command === 'can-commit') {
     await runCanCommit();
+    return;
+  }
+
+  if (command === 'pre-commit-check') {
+    await runPreCommitCheck();
     return;
   }
 
