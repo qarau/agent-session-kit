@@ -29,6 +29,9 @@ test('docs describe ask-core runtime and adapter proof flow', () => {
   assert.match(howItWorks, /preflight/i);
   assert.match(howItWorks, /can-commit/i);
   assert.match(maintainerMode, /allowed_(preflight|can_commit)_states/i);
+  assert.match(readme, /pre-commit-check/i);
+  assert.match(howItWorks, /pre-commit.*ask-core-only/i);
+  assert.match(maintainerMode, /pre-push.*hybrid/i);
 });
 
 test('package scripts expose ask-core bootstrap and tests', () => {

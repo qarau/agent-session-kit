@@ -15,6 +15,7 @@ The kit enforces three things:
 The runtime is being extracted into `ask-core/` so policy contracts and session runtime behavior can be tested independently from hook wrapper scripts.
 Session lifecycle depth is persisted with snapshot + journal files under `.ask/sessions/active-session.json`, `.ask/sessions/history.ndjson`, and `.ask/sessions/pending-transition.json`.
 Lifecycle-aware `preflight` and `can-commit` checks use policy keys `allowed_preflight_states` and `allowed_can_commit_states` (default `active,paused`) to reject disallowed states (`blocked`, `closed`, `created`).
+Phase-4 cutover routes `pre-commit` through ask-core-only checks (`ask pre-commit-check`), while `pre-push` remains hybrid during migration.
 
 ## Flow Overview
 

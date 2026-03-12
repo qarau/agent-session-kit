@@ -17,6 +17,7 @@ This mode is for teams maintaining ASK itself.
 ## Adapter Migration Guard
 
 - `pre-commit` and `pre-push` hooks should route through the ask-core adapter wrappers (`scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`).
+- `pre-commit` is now ask-core-only via `ask pre-commit-check`; `pre-push` remains hybrid until full cutover.
 - Adapter behavior must stay policy-equivalent with existing ASK script expectations until full runtime cutover.
 - Session lifecycle recovery relies on `.ask/sessions/pending-transition.json`; maintainers should treat stale pending markers as recovery signals, not noise.
 

@@ -22,6 +22,7 @@ ASK adds lightweight guardrails around standard Git workflows so workflow integr
 The next runtime direction is a standalone `ask-core/` package that hosts shared policy/CLI logic, while this repository keeps the migration adapters and governance docs.
 `ask-core` now carries lifecycle-depth session commands (`session pause`, `session resume`, `session block`, `session close`) and transactional session history persistence.
 `ask preflight` and `ask can-commit` are lifecycle-policy aware with defaults that allow `active` and `paused`, and reject `blocked` and `closed`.
+`ask pre-commit-check` is the phase-4 parity contract, and `pre-commit` now routes ask-core-only while `pre-push` stays hybrid during rollout.
 
 Instead of relying on developer memory or discipline, ASK ensures key checks and validation steps happen automatically as part of the development process.
 
@@ -208,8 +209,8 @@ node scripts/session/setRepoWorkContextLock.mjs --branch <new-branch> --repo-suf
 
 - `main/release*` uses fail-closed guardrails for session and release governance checks.
 - Feature branches run advisory mode so drift is visible without blocking iteration.
-- `pre-commit`: blocks if active branch/worktree context fails or meaningful staged changes do not include required session docs.
-- `pre-push`: blocks if outgoing commit range fails context or session freshness checks.
+- `pre-commit`: ask-core-only (`ask pre-commit-check`) and blocks if active branch/worktree context fails or meaningful staged changes do not include required session docs.
+- `pre-push`: hybrid during rollout and blocks if outgoing commit range fails context or session freshness checks.
 
 Required session docs for meaningful changes:
 

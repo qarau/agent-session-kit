@@ -66,6 +66,7 @@ import { runSession } from './commands/session.js';
 import { runContext } from './commands/context.js';
 import { runPreflight } from './commands/preflight.js';
 import { runCanCommit } from './commands/canCommit.js';
+import { runPreCommitCheck } from './commands/preCommitCheck.js';
 import { runHandoff } from './commands/handoff.js';
 
 function printHelp() {
@@ -77,6 +78,7 @@ Usage:
   ask context verify|status
   ask preflight
   ask can-commit
+  ask pre-commit-check
   ask handoff create
 \`);
 }
@@ -110,6 +112,11 @@ export async function runCli(args) {
 
   if (command === 'can-commit') {
     await runCanCommit();
+    return;
+  }
+
+  if (command === 'pre-commit-check') {
+    await runPreCommitCheck();
     return;
   }
 
@@ -287,6 +294,17 @@ export async function runCanCommit() {
   }
 }
 `,
+  'ask-core/src/cli/commands/preCommitCheck.js': `import { PreCommitCheckEngine } from '../../core/PreCommitCheckEngine.js';
+
+export async function runPreCommitCheck() {
+  const engine = new PreCommitCheckEngine(process.cwd());
+  const result = await engine.run();
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.passed) {
+    process.exitCode = 1;
+  }
+}
+`,
   'ask-core/src/cli/commands/handoff.js': `import { HandoffEngine } from '../../core/HandoffEngine.js';
 
 export async function runHandoff(subcommand) {
@@ -296,6 +314,53 @@ export async function runHandoff(subcommand) {
     return;
   }
   console.log('Usage: ask handoff create');
+}
+`,
+  'ask-core/src/core/PreCommitCheckEngine.js': `import { SessionRuntime } from './SessionRuntime.js';
+import { WorkContextEngine } from './WorkContextEngine.js';
+import { PolicyEngine } from './PolicyEngine.js';
+import { EvidenceRecorder } from './EvidenceRecorder.js';
+
+export class PreCommitCheckEngine {
+  constructor(cwd) {
+    this.cwd = cwd;
+    this.sessionRuntime = new SessionRuntime(cwd);
+    this.contextEngine = new WorkContextEngine(cwd);
+    this.policyEngine = new PolicyEngine(cwd);
+    this.evidenceRecorder = new EvidenceRecorder(cwd);
+  }
+
+  async run() {
+    const checks = ['work-context', 'docs-freshness', 'session-preflight', 'session-can-commit'];
+    const policy = await this.policyEngine.load();
+    const session = await this.sessionRuntime.getActiveSession();
+    const context = await this.contextEngine.getContext();
+    const evidence = await this.evidenceRecorder.readLatestChecks();
+    const missing = [];
+
+    if (!context.branch) {
+      missing.push('work context mismatch for pre-commit');
+      missing.push('context verify required');
+    }
+
+    if (policy.checks?.require_docs_freshness && !evidence.docsFresh) {
+      missing.push('session docs freshness required');
+      missing.push('docs freshness');
+    }
+    if (policy.checks?.require_tests_before_commit && !evidence.testsPassed) {
+      missing.push('tests');
+    }
+    if (String(session.status || '').toLowerCase() !== 'active') {
+      missing.push('session state created not allowed for preflight');
+      missing.push('session state created not allowed for can-commit');
+    }
+
+    return {
+      passed: missing.length === 0,
+      missing: Array.from(new Set(missing)),
+      checks,
+    };
+  }
 }
 `,
   'ask-core/src/core/SessionRuntime.js': `import { AskPaths } from '../fs/AskPaths.js';

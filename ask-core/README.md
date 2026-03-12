@@ -21,3 +21,6 @@ Lifecycle policy gates:
   - `allowed_can_commit_states`
 - Default allowed states: `active`, `paused`.
 - Default rejected states: `blocked`, `closed`, `created`.
+
+Pre-commit contract:
+- `ask pre-commit-check` returns deterministic parity checks for work context, docs freshness, preflight, and can-commit.

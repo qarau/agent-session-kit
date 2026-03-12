@@ -48,6 +48,10 @@ test('bootstrap creates ask-core and ask init scaffolds .ask control plane', () 
   const askBinPath = path.join(tempRoot, 'ask-core', 'bin', 'ask.js');
   assert.equal(fs.existsSync(askBinPath), true, 'ask CLI entrypoint should exist');
 
+  const helpResult = run(process.execPath, [askBinPath], { cwd: tempRoot });
+  assert.equal(helpResult.status, 0, helpResult.stdout + helpResult.stderr);
+  assert.match(helpResult.stdout, /pre-commit-check/i);
+
   runOrThrow(process.execPath, [askBinPath, 'init'], {
     cwd: tempRoot,
   });
