@@ -159,10 +159,23 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   const targetPath = path.resolve(args.target || process.cwd());
   const thisFilePath = fileURLToPath(import.meta.url);
-  const kitPath = path.resolve(path.dirname(thisFilePath), 'kit');
+  const repoRoot = path.dirname(thisFilePath);
+  const kitPath = path.resolve(repoRoot, 'kit');
+  const askCorePath = path.resolve(repoRoot, 'ask-core');
+  const wrapperScriptsPath = path.resolve(repoRoot, 'scripts', 'session');
+  const hooksPath = path.resolve(repoRoot, '.githooks');
 
   if (!fs.existsSync(kitPath)) {
     throw new Error(`Missing kit directory: ${kitPath}`);
+  }
+  if (!fs.existsSync(askCorePath)) {
+    throw new Error(`Missing ask-core directory: ${askCorePath}`);
+  }
+  if (!fs.existsSync(wrapperScriptsPath)) {
+    throw new Error(`Missing wrapper scripts directory: ${wrapperScriptsPath}`);
+  }
+  if (!fs.existsSync(hooksPath)) {
+    throw new Error(`Missing hooks directory: ${hooksPath}`);
   }
 
   if (!fs.existsSync(targetPath)) {
@@ -171,6 +184,9 @@ function main() {
 
   ensureGitRepo(targetPath);
   copyDirectory(kitPath, targetPath, args.force, args.dryRun);
+  copyDirectory(askCorePath, path.join(targetPath, 'ask-core'), true, args.dryRun);
+  copyDirectory(wrapperScriptsPath, path.join(targetPath, 'scripts', 'session'), true, args.dryRun);
+  copyDirectory(hooksPath, path.join(targetPath, '.githooks'), true, args.dryRun);
   updateActiveWorkContext(targetPath, args);
   ensureHookExecutables(targetPath, args.dryRun);
   configureHooks(targetPath, args.dryRun);
@@ -179,8 +195,8 @@ function main() {
   console.log(`Target: ${targetPath}`);
   console.log('\nNext steps:');
   console.log('1. node scripts/session/installHooks.mjs');
-  console.log('2. node scripts/session/verifyWorkContext.mjs --mode=preflight');
-  console.log('3. node scripts/session/verifySessionDocsFreshness.mjs --mode=preflight');
+  console.log('2. node scripts/session/runAskCorePreCommitAdapter.mjs');
+  console.log('3. node scripts/session/runAskCorePrePushAdapter.mjs');
   console.log('4. node scripts/session/nextTask.mjs');
   console.log(
     '5. Optional: node scripts/session/setRepoWorkContextLock.mjs --branch <branch> --repo-suffix <suffix> --enforce-path-suffix true'

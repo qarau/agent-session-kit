@@ -1,6 +1,0 @@
-#!/usr/bin/env sh
-set -eu
-
-node scripts/session/verifyWorkContext.mjs --mode=pre-push
-node scripts/session/verifySessionDocsFreshness.mjs --mode=pre-push
-node scripts/session/verifyReleaseDocsConsistency.mjs --mode=pre-push

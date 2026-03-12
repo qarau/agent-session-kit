@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 set -eu
 
-if [ -f kit/scripts/session/nextTask.mjs ]; then
-  node kit/scripts/session/nextTask.mjs --tasks=docs/session/tasks.md || true
+if [ -f scripts/session/nextTask.mjs ]; then
+  node scripts/session/nextTask.mjs --tasks=docs/session/tasks.md || true
 fi
