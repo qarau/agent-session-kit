@@ -11,9 +11,13 @@ export async function runPreflight() {
   const context = await contextEngine.getContext();
   const policy = await policyEngine.load();
   const missing = [];
+  const sessionState = String(session.status || 'created').toLowerCase();
+  const allowedStates = Array.isArray(policy.session?.allowed_preflight_states)
+    ? policy.session.allowed_preflight_states
+    : ['active', 'paused'];
 
-  if (policy.session?.require_resume_before_edit && session.status !== 'active') {
-    missing.push('active session required');
+  if (policy.session?.require_resume_before_edit !== false && !allowedStates.includes(sessionState)) {
+    missing.push(`session state ${sessionState} not allowed for preflight`);
   }
 
   if (!context.branch) {
