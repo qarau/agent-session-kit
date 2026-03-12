@@ -48,31 +48,6 @@ ASK 2.0 provides:
 - guarded adapter execution (`180s` stall timeout, one automatic retry)
 - optional Codex context-budget commands for long-session resilience
 
-## Why Agent Session Kit Exists
-
-AI-assisted development has dramatically accelerated how quickly code can be written, explored, and refactored.
-
-As iteration speed increases, workflow discipline often lags behind.
-
-During internal development sessions, we repeatedly encountered problems such as:
-
-- commits landing in the wrong branch
-- session context documentation drifting out of date
-- interrupted sessions resuming with stale assumptions
-- inconsistent environments between machines
-- skipped validation checks before pushing changes
-
-These issues are not new, but AI-assisted development increases their frequency because sessions become longer, faster, and more exploratory.
-
-## Why this exists
-
-This keeps AI-agent work deterministic across long sessions and compaction:
-
-- current state is always documented
-- open decisions are tracked
-- change history includes verification evidence
-- hooks block commits/pushes when context is wrong or session docs are stale
-
 ## Prerequisites
 
 - Node.js 20+
