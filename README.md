@@ -48,6 +48,43 @@ ASK 2.0 provides:
 - guarded adapter execution (`180s` stall timeout, one automatic retry)
 - optional Codex context-budget commands for long-session resilience
 
+## ASK CLI Quick Reference
+
+Run the CLI directly from this repository:
+
+```bash
+node ask-core/bin/ask.js <command>
+```
+
+Core command groups:
+
+- Session lifecycle:
+  - `ask session start|pause|resume|block|status|close|doctor`
+  - Use this to track active work state, enforce lifecycle policy, and inspect runtime health.
+- Work context:
+  - `ask context verify|status`
+  - Use this to validate branch/worktree/repo context before commit/push.
+- Policy checks:
+  - `ask preflight`
+  - `ask can-commit`
+  - Use this to evaluate readiness and policy requirements for current session state.
+- Git gate contracts:
+  - `ask pre-commit-check`
+  - `ask pre-push-check`
+  - These are the runtime commands wired into hook adapters.
+- Codex context budget (optional):
+  - `ask codex context status|ensure|compact`
+  - Use this when Codex Responses API workflows need context-budget monitoring/compaction.
+
+Common examples:
+
+```bash
+node ask-core/bin/ask.js session start
+node ask-core/bin/ask.js context verify
+node ask-core/bin/ask.js pre-commit-check
+node ask-core/bin/ask.js session doctor
+```
+
 ## Prerequisites
 
 - Node.js 20+
@@ -193,173 +230,15 @@ node scripts/session/clearRepoWorkContextLock.mjs
 - [ ] `pre-push` is ask-core-only (`ask pre-push-check`).
 - [ ] Adapter command execution has stall recovery (`180s` wall/no-output timeout + one retry).
 
-## Task Flow Reminder (Soft)
+## Operational Details
 
-Use these helpers for a smoother agent/developer loop:
+Use the focused docs below instead of repeating operational policy in this README:
 
-```bash
-node scripts/session/nextTask.mjs
-node scripts/session/completeTask.mjs
-```
-
-`completeTask.mjs` marks the current `Now` task done, promotes the next task when needed, and prints the next recommendation.
-
-ASK also installs a soft `post-commit` reminder that runs `nextTask.mjs` automatically (non-blocking).
-
-## Session Log Archiving
-
-Use this to keep active `docs/session/change-log.md` compact while preserving history:
-
-```bash
-node scripts/session/archiveSessionLog.mjs --keep-sections 14
-```
-
-This keeps the most recent sections in `change-log.md` and moves older dated sections to:
-
-- `docs/session/archive/change-log-YYYY-MM.md`
-
-## Optional Repo-Level Context Lock
-
-Use this when working with multiple branches/worktrees to prevent commits on the wrong branch after context drift.
-
-```bash
-node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <path-suffix> --enforce-path-suffix true
-```
-
-Clear lock:
-
-```bash
-node scripts/session/clearRepoWorkContextLock.mjs
-```
-
-`ask context verify` automatically prefers repo lock values when lock is enabled.
-
-## Optional Repo Boundary Guards
-
-Use this when your architecture depends on specific repo boundaries (for example, split repos or extracted toolkits) and you want CI to detect boundary regressions early.
-
-Add a runtime/architecture test in your target repo that fails when forbidden paths appear.
-
-Example (Vitest):
-
-```ts
-import fs from 'node:fs';
-import path from 'node:path';
-import { describe, expect, it } from 'vitest';
-
-describe('repo boundaries', () => {
-  it('fails if forbidden embedded path exists', () => {
-    const appRoot = process.cwd();
-    const forbiddenPath = path.resolve(appRoot, 'agent-session-kit');
-    expect(fs.existsSync(forbiddenPath)).toBe(false);
-  });
-});
-```
-
-Recommended policy:
-
-- Keep this test in your standard CI lane (for example `test:runtime` or `test:architecture`).
-- Use it for high-risk boundaries (embedded repos, generated directories, or forbidden coupling points).
-- Record boundary policy decisions in `docs/session/open-loops.md`.
-
-### Migration Quick Commands
-
-```bash
-# 1) clear any previous lock (safe to run repeatedly)
-node scripts/session/clearRepoWorkContextLock.mjs
-
-# 2) set lock for your current worktree branch
-node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <worktree-path-suffix> --enforce-path-suffix true
-
-# 3) verify lock is active
-node ask-core/bin/ask.js context verify
-
-# 4) when intentionally changing branch/worktree policy
-node scripts/session/clearRepoWorkContextLock.mjs
-node scripts/session/setRepoWorkContextLock.mjs --branch <new-branch> --repo-suffix <new-worktree-path-suffix> --enforce-path-suffix true
-```
-
-## Enforcement behavior
-
-- `main/release*` uses fail-closed guardrails for session and release governance checks.
-- Feature branches run advisory mode so drift is visible without blocking iteration.
-- `pre-commit`: ask-core-only (`ask pre-commit-check`) and blocks if active branch/worktree context fails or meaningful staged changes do not include required session docs.
-- `pre-push`: ask-core-only (`ask pre-push-check`) and blocks if outgoing commit range fails context, docs freshness, release-doc consistency, or lifecycle policy checks.
-
-Required session docs for meaningful changes:
-
-- `docs/session/current-status.md`
-- `docs/session/change-log.md`
-
-Warning-level session docs for meaningful changes:
-
-- `docs/session/tasks.md` (recommended to reflect Now/Next/Done)
-- `docs/session/open-loops.md` (recommended when decisions/risks change)
-
-Optional strict mode for tasks:
-
-- Default policy: `strictTasksDoc` stays `false` (soft enforcement).
-- Set `strictTasksDoc: true` in `docs/session/active-work-context.json`, or
-- Set `SESSION_TASKS_STRICT=1` for command/session-level strict enforcement.
-
-When strict mode is enabled, `docs/session/tasks.md` becomes required for meaningful changes.
-
-Maintainer-only local runtime notes:
-
-- `docs/ASK_Runtime/*` is local-only and must not be committed.
-- Use `docs/session/*` and `docs/releases/*` for team-visible governance state.
-
-## Emergency Bypass
-
-- `SESSION_CONTEXT_BYPASS=1`
-- `SESSION_DOCS_BYPASS=1`
-
-Use only for controlled recovery flows; bypass is intended to be explicit and auditable.
-
-## Runtime Stall Recovery
-
-ASK adapter wrappers apply guarded runtime execution for each ask-core command step:
-
-- Wall timeout default: `180s`
-- No-output timeout default: `180s`
-- Automatic retries on stall: `1`
-- Operation state file: `.ask/runtime/last-operation.json`
-
-Runtime diagnostics command:
-
-```bash
-node ask-core/bin/ask.js session doctor
-```
-
-Optional timeout overrides (advanced use):
-
-- `ASK_STALL_WALL_TIMEOUT_MS`
-- `ASK_STALL_NO_OUTPUT_TIMEOUT_MS`
-
-## Optional Codex Context Budget
-
-When enabled in runtime policy, ASK can track and manage Codex Responses API context budgets:
-
-- `ask codex context status`
-- `ask codex context ensure`
-- `ask codex context compact`
-
-Policy keys in `.ask/policy/runtime-policy.yaml`:
-
-```yaml
-codex_context:
-  enabled: false
-  min_remaining_ratio: 0.10
-  reserve_output_tokens: 12000
-  max_context_tokens: 400000
-  strategy: explicit
-```
-
-Notes:
-
-- Default is disabled (no behavior change for non-Codex users).
-- API/network issues are advisory for `status`/`ensure` commands.
-- `session doctor` includes codex summary when `.ask/runtime/context-session.json` exists.
+- [docs/how-it-works.md](docs/how-it-works.md) - runtime flow, enforcement behavior, strict mode, bypass, and diagnostics
+- [docs/adoption-guide.md](docs/adoption-guide.md) - rollout sequence, branch policy, team conventions, and branch protection
+- [docs/repo-boundary-guards.md](docs/repo-boundary-guards.md) - CI architecture boundary guard patterns
+- [docs/session/guardrails.md](docs/session/guardrails.md) - maintainer guardrails and session documentation discipline
+- [docs/maintainer-mode.md](docs/maintainer-mode.md) - maintainer-only governance and protected-branch verification flow
 
 ## Local Development
 

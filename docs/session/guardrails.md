@@ -7,7 +7,7 @@ See `docs/session/AGENT_SESSION_LAWS.md`.
 ## Branch/Worktree Enforcement
 
 - Active context file: `docs/session/active-work-context.json`
-- Validator: `node scripts/session/verifyWorkContext.mjs --mode=preflight`
+- Validator: `node ask-core/bin/ask.js context verify`
 - Hook scripts:
   - `.githooks/pre-commit`
   - `.githooks/pre-push`
@@ -20,7 +20,7 @@ Optional repo-level lock:
 - `node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <path-suffix> --enforce-path-suffix true`
 - `node scripts/session/clearRepoWorkContextLock.mjs`
 
-When enabled, `verifyWorkContext` uses `session.workContextLock.*` values from git config before reading file expectations.
+When enabled, `ask context verify` uses `session.workContextLock.*` values from git config before reading file expectations.
 
 ## Session Docs Freshness (Always-On)
 

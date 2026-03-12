@@ -16,11 +16,8 @@ This mode is for teams maintaining ASK itself.
 
 ## Runtime Guard
 
-- `pre-commit` and `pre-push` hooks should route through the ask-core adapter wrappers (`scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`).
-- `pre-commit` runs `ask pre-commit-check`; `pre-push` runs `ask pre-push-check`.
-- Adapter runtime execution uses guarded stall handling (`180s` wall/no-output timeout, one automatic retry).
-- Runtime operation state is recorded at `.ask/runtime/last-operation.json`; use `ask session doctor` for diagnostics.
-- Optional Codex context budgeting is available via `ask codex context status|ensure|compact` when `codex_context.enabled=true`.
+- Hooks must route through the ask-core adapter wrappers (`scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`).
+- Runtime command behavior, stall handling, and codex context flow are documented in `how-it-works.md`.
 - Runtime behavior should remain policy-equivalent with ASK governance expectations.
 - Session lifecycle recovery relies on `.ask/sessions/pending-transition.json`; maintainers should treat stale pending markers as recovery signals, not noise.
 
@@ -36,15 +33,17 @@ This mode is for teams maintaining ASK itself.
 
 ## Verification Flow
 
-Run before protected-branch push:
+Before protected-branch push, run release discipline from `docs/releases/release-checklist.md`.
+Then run maintainer-specific runtime diagnostics:
 
 ```bash
-npm run test
-node scripts/verifyReleaseDocsConsistency.mjs --root .
-node scripts/session/runAskCorePreCommitAdapter.mjs
-node scripts/session/runAskCorePrePushAdapter.mjs
-node ask-core/bin/ask.js codex context status
 node ask-core/bin/ask.js session doctor
+```
+
+If `codex_context.enabled=true`, also run:
+
+```bash
+node ask-core/bin/ask.js codex context status
 ```
 
 Record verification evidence in `docs/session/change-log.md` with exact commands and result status.

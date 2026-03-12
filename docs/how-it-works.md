@@ -1,6 +1,7 @@
 # How Agent Session Kit Works
 
 This document explains the runtime flow in simple terms.
+For maintainer-specific governance and protected-branch release discipline, see `maintainer-mode.md`.
 
 ## Core Idea
 
@@ -128,30 +129,14 @@ node scripts/session/completeTask.mjs
 
 This updates `tasks.md` and prints the next recommendation. A soft `post-commit` hook also prints the next task after each commit.
 
-## What "Meaningful Change" Means
+## Session Documentation Policy
 
-The freshness validator ignores changes to:
+Canonical session documentation rules live in `docs/session/guardrails.md`:
 
-- `docs/session/*`
-- `scripts/session/*`
-- `.githooks/*`
-
-If other files changed, it requires updates to:
-
-- `docs/session/current-status.md`
-- `docs/session/change-log.md`
-
-Warning-level docs by default:
-
-- `docs/session/tasks.md`
-- `docs/session/open-loops.md`
-
-Optional strict mode:
-
-- `strictTasksDoc: true` in `docs/session/active-work-context.json`, or
-- `SESSION_TASKS_STRICT=1`
-
-With strict mode, `docs/session/tasks.md` is required (not warning-level).
+- meaningful cycle definition
+- required and warning-level session docs
+- strict tasks mode (`strictTasksDoc` / `SESSION_TASKS_STRICT`)
+- expected task helper usage
 
 ## Bypass Behavior
 
@@ -160,4 +145,4 @@ Emergency bypass exists for controlled recovery:
 - `SESSION_CONTEXT_BYPASS=1`
 - `SESSION_DOCS_BYPASS=1`
 
-Use bypass only when unavoidable and document why in `change-log.md`.
+Use bypass only when unavoidable and document why in `change-log.md`. Governance expectations are defined in `docs/session/guardrails.md`.

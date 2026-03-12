@@ -59,29 +59,7 @@ Optional repo-boundary guards:
 - Keep them in your normal CI path so regressions fail fast.
 - Use `docs/repo-boundary-guards.md` templates to standardize this across repos.
 
-Session log compaction:
-
-- Use `archiveSessionLog.mjs` to keep active `change-log.md` readable and move older entries into monthly archives.
-- Suggested trigger:
-  - after major milestones, or
-  - when active `change-log.md` exceeds ~300 lines.
-
-Migration quick commands:
-
-```bash
-node scripts/session/clearRepoWorkContextLock.mjs
-node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <worktree-path-suffix> --enforce-path-suffix true
-node ask-core/bin/ask.js context verify
-node scripts/session/archiveSessionLog.mjs --keep-sections 14
-```
-
-Soft next-task reminder flow:
-
-```bash
-node scripts/session/completeTask.mjs
-```
-
-This updates `tasks.md` and prints the next recommendation. A non-blocking `post-commit` hook also prints `nextTask` automatically.
+For command-level operational detail (repo lock transitions, session log compaction, and next-task helper flow), use `docs/how-it-works.md`.
 
 ## Suggested Branch Protection
 
