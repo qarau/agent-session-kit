@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { resolveBranchEnforcementMode } from '../kit/scripts/session/resolveBranchEnforcementMode.mjs';
+import { resolveBranchEnforcementMode } from '../ask-core/src/core/resolveBranchEnforcementMode.js';
 
 test('main uses enforce mode', () => {
   assert.equal(resolveBranchEnforcementMode('main'), 'enforce');

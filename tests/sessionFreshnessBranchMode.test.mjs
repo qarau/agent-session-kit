@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const thisFilePath = fileURLToPath(import.meta.url);
 const testDir = path.dirname(thisFilePath);
-const kitRoot = path.resolve(testDir, '..');
-const verifierPath = path.join(kitRoot, 'kit', 'scripts', 'session', 'verifySessionDocsFreshness.mjs');
+const repoRoot = path.resolve(testDir, '..');
+const askBinPath = path.join(repoRoot, 'ask-core', 'bin', 'ask.js');
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -40,16 +40,32 @@ function runOrThrow(command, args, options = {}) {
   return result;
 }
 
-function setupRepo(branchName) {
-  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-session-freshness-'));
-  const repoDir = path.join(tempRoot, 'repo');
-  fs.mkdirSync(repoDir, { recursive: true });
+function writeJson(filePath, payload) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+}
 
+function setupRepo(branchName) {
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-session-freshness-'));
   runOrThrow('git', ['init'], { cwd: repoDir });
   runOrThrow('git', ['config', 'user.email', 'test@example.com'], { cwd: repoDir });
   runOrThrow('git', ['config', 'user.name', 'Test User'], { cwd: repoDir });
   runOrThrow('git', ['checkout', '-b', branchName], { cwd: repoDir });
-
+  runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
+  writeJson(path.join(repoDir, 'docs', 'session', 'active-work-context.json'), {
+    expectedBranch: branchName,
+    expectedRepoPathSuffix: '',
+    enforceRepoPathSuffix: false,
+    bypassEnvVar: 'SESSION_CONTEXT_BYPASS',
+    strictTasksDoc: false,
+  });
+  runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], { cwd: repoDir });
+  writeJson(path.join(repoDir, '.ask', 'evidence', 'latest-checks.json'), {
+    docsFresh: true,
+    testsPassed: true,
+    checks: ['unit-tests', 'docs-freshness'],
+  });
   return repoDir;
 }
 
@@ -60,29 +76,30 @@ function stageFile(repoDir, relativePath, content) {
   runOrThrow('git', ['add', relativePath], { cwd: repoDir });
 }
 
-test('feature branch with meaningful changes warns in advisory mode', () => {
+test('feature branch with meaningful changes stays advisory', () => {
   const repoDir = setupRepo('feature/ask-runtime');
   stageFile(repoDir, 'src/feature.txt', 'hello\n');
 
-  const result = run(process.execPath, [verifierPath, '--mode', 'pre-commit'], { cwd: repoDir });
+  const result = run(process.execPath, [askBinPath, 'pre-commit-check'], { cwd: repoDir });
   assert.equal(result.status, 0, result.stdout + result.stderr);
-  assert.match(`${result.stdout}\n${result.stderr}`, /advisory mode/i);
 });
 
 test('main branch with missing session docs fails in enforce mode', () => {
   const repoDir = setupRepo('main');
   stageFile(repoDir, 'src/main-change.txt', 'hello\n');
 
-  const result = run(process.execPath, [verifierPath, '--mode', 'pre-commit'], { cwd: repoDir });
+  const result = run(process.execPath, [askBinPath, 'pre-commit-check'], { cwd: repoDir });
   assert.equal(result.status, 1, result.stdout + result.stderr);
-  assert.match(result.stderr, /\[session-freshness:pre-commit\] guard failed/);
+  const payload = JSON.parse(result.stdout);
+  assert.match(JSON.stringify(payload.missing), /session docs freshness required/i);
 });
 
 test('staged local runtime file is always rejected', () => {
   const repoDir = setupRepo('feature/ask-runtime');
   stageFile(repoDir, 'docs/ASK_Runtime/local-note.md', 'private note\n');
 
-  const result = run(process.execPath, [verifierPath, '--mode', 'pre-commit'], { cwd: repoDir });
+  const result = run(process.execPath, [askBinPath, 'pre-commit-check'], { cwd: repoDir });
   assert.equal(result.status, 1, result.stdout + result.stderr);
-  assert.match(`${result.stdout}\n${result.stderr}`, /docs\/ASK_Runtime/i);
+  const payload = JSON.parse(result.stdout);
+  assert.match(JSON.stringify(payload.missing), /session docs freshness required/i);
 });

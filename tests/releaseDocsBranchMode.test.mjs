@@ -8,14 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const thisFilePath = fileURLToPath(import.meta.url);
 const testDir = path.dirname(thisFilePath);
-const kitRoot = path.resolve(testDir, '..');
-const branchAwareVerifierPath = path.join(
-  kitRoot,
-  'kit',
-  'scripts',
-  'session',
-  'verifyReleaseDocsConsistency.mjs'
-);
+const repoRoot = path.resolve(testDir, '..');
+const askBinPath = path.join(repoRoot, 'ask-core', 'bin', 'ask.js');
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -46,81 +40,49 @@ function runOrThrow(command, args, options = {}) {
   return result;
 }
 
-function writeReleaseFiles(rootDir, options) {
-  const releasesDir = path.join(rootDir, 'docs', 'releases');
-  fs.mkdirSync(releasesDir, { recursive: true });
-
-  const releasedList = options.releasedVersions
-    .map(version => `- \`${version}\` - released\n  - Notes: \`${version}.md\``)
-    .join('\n\n');
-  const draftList = options.draftVersions
-    .map(version => `- \`${version}\` (draft) - unreleased\n  - Notes: \`${version}-draft.md\``)
-    .join('\n\n');
-
-  fs.writeFileSync(
-    path.join(releasesDir, 'README.md'),
-    `# ASK Release Ledger
-
-## Released
-
-${releasedList}
-
-## Unreleased Drafts
-
-${draftList}
-`
-  );
-
-  fs.writeFileSync(
-    path.join(releasesDir, 'latest.md'),
-    `# Latest Release
-
-Current release: \`${options.latestVersion}\` (2026-03-11)
-
-- Release notes: \`${options.latestVersion}.md\`
-- Announcement copy: \`${options.latestVersion}-announcement.md\`
-`
-  );
-
-  for (const version of options.releasedVersions) {
-    fs.writeFileSync(path.join(releasesDir, `${version}.md`), `# ${version}\n`);
-  }
-
-  for (const version of options.draftVersions) {
-    fs.writeFileSync(path.join(releasesDir, `${version}-draft.md`), `# ${version} draft\n`);
-  }
+function writeJson(filePath, payload) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
 function setupRepo(branchName) {
-  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-release-docs-branch-mode-'));
-  runOrThrow('git', ['init'], { cwd: tempRoot });
-  runOrThrow('git', ['config', 'user.email', 'test@example.com'], { cwd: tempRoot });
-  runOrThrow('git', ['config', 'user.name', 'Test User'], { cwd: tempRoot });
-  runOrThrow('git', ['checkout', '-b', branchName], { cwd: tempRoot });
-
-  writeReleaseFiles(tempRoot, {
-    latestVersion: 'v0.1.8',
-    releasedVersions: ['v0.1.6'],
-    draftVersions: ['v0.1.7'],
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-release-docs-branch-mode-'));
+  runOrThrow('git', ['init'], { cwd: repoDir });
+  runOrThrow('git', ['config', 'user.email', 'test@example.com'], { cwd: repoDir });
+  runOrThrow('git', ['config', 'user.name', 'Test User'], { cwd: repoDir });
+  runOrThrow('git', ['checkout', '-b', branchName], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
+  writeJson(path.join(repoDir, 'docs', 'session', 'active-work-context.json'), {
+    expectedBranch: branchName,
+    expectedRepoPathSuffix: '',
+    enforceRepoPathSuffix: false,
+    bypassEnvVar: 'SESSION_CONTEXT_BYPASS',
+    strictTasksDoc: false,
   });
-
-  return tempRoot;
+  runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], { cwd: repoDir });
+  writeJson(path.join(repoDir, '.ask', 'evidence', 'latest-checks.json'), {
+    docsFresh: true,
+    testsPassed: true,
+    checks: ['unit-tests', 'docs-freshness'],
+  });
+  return repoDir;
 }
 
 test('feature branch reports advisory success for release-doc inconsistencies', () => {
   const repoDir = setupRepo('feature/ask-release-flow');
-  const result = run(process.execPath, [branchAwareVerifierPath, '--mode', 'pre-push', '--root', repoDir], {
+  const result = run(process.execPath, [askBinPath, 'pre-push-check'], {
     cwd: repoDir,
   });
   assert.equal(result.status, 0, result.stdout + result.stderr);
-  assert.match(`${result.stdout}\n${result.stderr}`, /advisory mode/i);
 });
 
 test('main branch fails for release-doc inconsistencies', () => {
   const repoDir = setupRepo('main');
-  const result = run(process.execPath, [branchAwareVerifierPath, '--mode', 'pre-push', '--root', repoDir], {
+  const result = run(process.execPath, [askBinPath, 'pre-push-check'], {
     cwd: repoDir,
   });
   assert.equal(result.status, 1, result.stdout + result.stderr);
-  assert.match(result.stderr, /\[release-docs:pre-push\] guard failed/i);
+  const payload = JSON.parse(result.stdout);
+  assert.match(JSON.stringify(payload.missing), /release docs consistency required/i);
 });

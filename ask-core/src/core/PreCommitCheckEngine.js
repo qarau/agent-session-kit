@@ -5,6 +5,7 @@ import { SessionRuntime } from './SessionRuntime.js';
 import { WorkContextEngine } from './WorkContextEngine.js';
 import { PolicyEngine } from './PolicyEngine.js';
 import { EvidenceRecorder } from './EvidenceRecorder.js';
+import { resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js';
 
 const REQUIRED_DOCS = ['docs/session/current-status.md', 'docs/session/change-log.md'];
 const TASKS_DOC = 'docs/session/tasks.md';
@@ -25,16 +26,6 @@ function parseBoolean(value, fallback) {
     return false;
   }
   return fallback;
-}
-
-function resolveBranchEnforcementMode(branchName) {
-  if (!branchName) {
-    return 'advisory';
-  }
-  if (branchName === 'main' || branchName.startsWith('release/')) {
-    return 'enforce';
-  }
-  return 'advisory';
 }
 
 export class PreCommitCheckEngine {
