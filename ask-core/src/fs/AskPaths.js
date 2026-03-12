@@ -30,6 +30,10 @@ export class AskPaths {
     return path.join(this.root, 'state');
   }
 
+  runtimeDir() {
+    return path.join(this.root, 'runtime');
+  }
+
   runtimePolicy() {
     return path.join(this.policyDir(), 'runtime-policy.yaml');
   }
@@ -68,5 +72,9 @@ export class AskPaths {
 
   workContext() {
     return path.join(this.stateDir(), 'work-context.json');
+  }
+
+  lastOperation() {
+    return path.join(this.runtimeDir(), 'last-operation.json');
   }
 }
