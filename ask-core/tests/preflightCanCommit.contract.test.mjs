@@ -49,16 +49,72 @@ function setupRepo() {
   return tempRoot;
 }
 
-test('preflight returns passed=false with missing requirements when session not active', () => {
-  const repoDir = setupRepo();
+function writeJson(filePath, payload) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+}
 
-  const result = run(process.execPath, [askBinPath, 'preflight'], { cwd: repoDir });
-  assert.equal(result.status, 1, result.stdout + result.stderr);
+function seedContext(repoDir) {
+  writeJson(path.join(repoDir, '.ask', 'state', 'work-context.json'), {
+    repoRoot: repoDir,
+    branch: 'ask-runtime',
+    worktree: repoDir,
+    verifiedAt: '2026-03-12T00:00:00.000Z',
+  });
+}
 
-  const payload = JSON.parse(result.stdout);
-  assert.equal(payload.passed, false);
-  assert.match(JSON.stringify(payload.missing), /active session required/i);
-  assert.match(JSON.stringify(payload.missing), /context verify required/i);
+function seedSession(repoDir, status) {
+  writeJson(path.join(repoDir, '.ask', 'sessions', 'active-session.json'), {
+    sessionId: 'sess_contract',
+    status,
+    branch: 'ask-runtime',
+    worktree: repoDir,
+    repoRoot: repoDir,
+    taskId: '',
+    actorType: 'human',
+    actorId: 'local',
+    startedAt: '2026-03-12T00:00:00.000Z',
+    lastActiveAt: '2026-03-12T00:00:00.000Z',
+    closedAt: '',
+  });
+}
+
+function seedEvidence(repoDir, docsFresh, testsPassed) {
+  writeJson(path.join(repoDir, '.ask', 'evidence', 'latest-checks.json'), {
+    docsFresh,
+    testsPassed,
+    checks: [],
+  });
+}
+
+test('preflight accepts active and paused session states when context is verified', () => {
+  for (const allowedStatus of ['active', 'paused']) {
+    const repoDir = setupRepo();
+    seedContext(repoDir);
+    seedSession(repoDir, allowedStatus);
+
+    const result = run(process.execPath, [askBinPath, 'preflight'], { cwd: repoDir });
+    assert.equal(result.status, 0, `${allowedStatus} should pass preflight: ${result.stdout}${result.stderr}`);
+
+    const payload = JSON.parse(result.stdout);
+    assert.equal(payload.passed, true);
+    assert.deepEqual(payload.missing, []);
+  }
+});
+
+test('preflight rejects blocked, closed, and created session states', () => {
+  for (const disallowedStatus of ['blocked', 'closed', 'created']) {
+    const repoDir = setupRepo();
+    seedContext(repoDir);
+    seedSession(repoDir, disallowedStatus);
+
+    const result = run(process.execPath, [askBinPath, 'preflight'], { cwd: repoDir });
+    assert.equal(result.status, 1, `${disallowedStatus} should fail preflight`);
+
+    const payload = JSON.parse(result.stdout);
+    assert.equal(payload.passed, false);
+    assert.match(JSON.stringify(payload.missing), /session state .* not allowed for preflight/i);
+  }
 });
 
 test('can-commit returns ok=false with docs and tests missing when evidence is false', () => {
@@ -71,4 +127,19 @@ test('can-commit returns ok=false with docs and tests missing when evidence is f
   assert.equal(payload.ok, false);
   assert.match(JSON.stringify(payload.missing), /docs freshness/i);
   assert.match(JSON.stringify(payload.missing), /tests/i);
+});
+
+test('can-commit rejects blocked, closed, and created states even with evidence true', () => {
+  for (const disallowedStatus of ['blocked', 'closed', 'created']) {
+    const repoDir = setupRepo();
+    seedSession(repoDir, disallowedStatus);
+    seedEvidence(repoDir, true, true);
+
+    const result = run(process.execPath, [askBinPath, 'can-commit'], { cwd: repoDir });
+    assert.equal(result.status, 1, `${disallowedStatus} should fail can-commit`);
+
+    const payload = JSON.parse(result.stdout);
+    assert.equal(payload.ok, false);
+    assert.match(JSON.stringify(payload.missing), /session state .* not allowed for can-commit/i);
+  }
 });
