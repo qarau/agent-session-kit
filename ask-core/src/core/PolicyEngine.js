@@ -9,6 +9,9 @@ function coerceYamlValue(value) {
   if (value === 'false') {
     return false;
   }
+  if (/^-?\d+(\.\d+)?$/u.test(value)) {
+    return Number(value);
+  }
   return value;
 }
 

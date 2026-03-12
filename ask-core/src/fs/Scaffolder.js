@@ -15,6 +15,7 @@ export class Scaffolder {
     await this.store.ensureDir(this.paths.evidenceDir());
     await this.store.ensureDir(this.paths.handoffsDir());
     await this.store.ensureDir(this.paths.stateDir());
+    await this.store.ensureDir(this.paths.runtimeDir());
 
     await this.store.ensureText(this.paths.runtimePolicy(), defaultPolicyYaml);
     await this.store.ensureText(this.paths.historyLog(), '');

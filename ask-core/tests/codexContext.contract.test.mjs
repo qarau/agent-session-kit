@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -40,6 +40,32 @@ function runOrThrow(command, args, options = {}) {
   return result;
 }
 
+function runAsync(command, args, options = {}) {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd,
+      env: options.env ? { ...process.env, ...options.env } : process.env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString('utf8');
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString('utf8');
+    });
+    child.on('close', (status) => {
+      resolve({
+        status,
+        stdout,
+        stderr,
+      });
+    });
+  });
+}
+
 function setupRepo() {
   const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-codex-context-'));
   runOrThrow('git', ['init'], { cwd: repoDir });
@@ -57,6 +83,7 @@ function writePolicy(repoDir, content) {
 }
 
 async function withMockServer(handler, callback) {
+  const sockets = new Set();
   const server = http.createServer(async (req, res) => {
     let body = '';
     req.on('data', chunk => {
@@ -72,6 +99,12 @@ async function withMockServer(handler, callback) {
       }
     });
   });
+  server.on('connection', (socket) => {
+    sockets.add(socket);
+    socket.on('close', () => {
+      sockets.delete(socket);
+    });
+  });
 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
@@ -79,6 +112,12 @@ async function withMockServer(handler, callback) {
   try {
     await callback(baseUrl);
   } finally {
+    for (const socket of sockets) {
+      socket.destroy();
+    }
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
     await new Promise((resolve) => server.close(resolve));
   }
 }
@@ -135,7 +174,7 @@ codex_context:
     res.statusCode = 404;
     res.end();
   }, async (baseUrl) => {
-    const result = run(process.execPath, [askBinPath, 'codex', 'context', 'ensure'], {
+    const result = await runAsync(process.execPath, [askBinPath, 'codex', 'context', 'ensure'], {
       cwd: repoDir,
       env: {
         OPENAI_API_KEY: 'test-key',
@@ -194,7 +233,7 @@ codex_context:
     res.statusCode = 404;
     res.end();
   }, async (baseUrl) => {
-    const result = run(process.execPath, [askBinPath, 'codex', 'context', 'ensure'], {
+    const result = await runAsync(process.execPath, [askBinPath, 'codex', 'context', 'ensure'], {
       cwd: repoDir,
       env: {
         OPENAI_API_KEY: 'test-key',

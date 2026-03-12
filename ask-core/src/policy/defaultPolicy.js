@@ -8,4 +8,11 @@ session:
 checks:
   require_docs_freshness: true
   require_tests_before_commit: true
+
+codex_context:
+  enabled: false
+  min_remaining_ratio: 0.10
+  reserve_output_tokens: 12000
+  max_context_tokens: 400000
+  strategy: explicit
 `;

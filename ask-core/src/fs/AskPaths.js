@@ -77,4 +77,8 @@ export class AskPaths {
   lastOperation() {
     return path.join(this.runtimeDir(), 'last-operation.json');
   }
+
+  contextSession() {
+    return path.join(this.runtimeDir(), 'context-session.json');
+  }
 }
