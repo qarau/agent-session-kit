@@ -12,6 +12,13 @@ function coerceYamlValue(value) {
   return value;
 }
 
+function parseStateList(value) {
+  return String(value)
+    .split(',')
+    .map(entry => entry.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 function parseSimpleYaml(text) {
   const result = {};
   let section = '';
@@ -32,7 +39,11 @@ function parseSimpleYaml(text) {
       const split = line.trim().split(':');
       const key = split.shift().trim();
       const value = split.join(':').trim();
-      result[section][key] = coerceYamlValue(value);
+      if (section === 'session' && (key === 'allowed_preflight_states' || key === 'allowed_can_commit_states')) {
+        result[section][key] = parseStateList(value);
+      } else {
+        result[section][key] = coerceYamlValue(value);
+      }
     }
   }
   return result;
