@@ -35,7 +35,7 @@ function writeEvidence(cwd) {
       {
         docsFresh: true,
         testsPassed: true,
-        checks: ['session-kit-work-context', 'session-kit-freshness', 'ask-core-preflight'],
+        checks: ['ask-core-pre-commit-check'],
       },
       null,
       2
@@ -48,17 +48,6 @@ export function runPreCommitAdapter(cwd = process.cwd()) {
   runOrThrow(process.execPath, [askBinPath, 'init'], cwd);
   runOrThrow(process.execPath, [askBinPath, 'session', 'start'], cwd);
   runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], cwd);
-  runOrThrow(
-    process.execPath,
-    ['kit/scripts/session/verifyWorkContext.mjs', '--mode=pre-commit', '--config=docs/session/active-work-context.json'],
-    cwd
-  );
-  runOrThrow(
-    process.execPath,
-    ['kit/scripts/session/verifySessionDocsFreshness.mjs', '--mode=pre-commit', '--config=docs/session/active-work-context.json'],
-    cwd
-  );
   writeEvidence(cwd);
-  runOrThrow(process.execPath, [askBinPath, 'preflight'], cwd);
-  runOrThrow(process.execPath, [askBinPath, 'can-commit'], cwd);
+  runOrThrow(process.execPath, [askBinPath, 'pre-commit-check'], cwd);
 }
