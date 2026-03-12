@@ -2,6 +2,25 @@
 
 ## 2026-03-12
 
+- Ask-core runtime stall recovery hardening:
+  - Commits:
+    - `9e2fb05` add guarded command runner stall-recovery contracts.
+    - `9ea1a5b` add guarded runner + runtime operation state tracking.
+    - `4aac026` wire pre-commit/pre-push adapters through guarded runtime execution.
+    - `d8fd57b` add `ask session doctor` runtime diagnostics.
+  - Behavior:
+    - Added guarded command runner with default `180s` wall timeout + `180s` no-output timeout.
+    - Added one automatic retry for stall reasons (`no-output-timeout`, `wall-timeout`) before hard failure.
+    - Added persistent runtime operation state at `.ask/runtime/last-operation.json`.
+    - Added `ask session doctor` to report last runtime operation status and recovery guidance.
+  - Verification:
+    - `cmd /c npm run test` passed.
+    - `cmd /c node --test ask-core/tests/guardedCommandRunner.contract.test.mjs ask-core/tests/sessionDoctor.contract.test.mjs ask-core/tests/preCommitCheck.contract.test.mjs ask-core/tests/prePushCheck.contract.test.mjs` passed.
+    - `cmd /c node --test tests/askCoreAdapterMigration.test.mjs tests/askCoreDocs.test.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePreCommitAdapter.mjs` passed.
+    - `cmd /c node scripts/session/runAskCorePrePushAdapter.mjs` passed.
+    - `cmd /c node ask-core/bin/ask.js session doctor` passed.
+
 - Ask-core hard cutover completion:
   - Commits:
     - `8dc109f` add pre-push-check hard-cutover contracts.

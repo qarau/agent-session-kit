@@ -16,6 +16,7 @@ The runtime lives in `ask-core/` so policy contracts and session behavior can be
 Session lifecycle depth is persisted with snapshot + journal files under `.ask/sessions/active-session.json`, `.ask/sessions/history.ndjson`, and `.ask/sessions/pending-transition.json`.
 Lifecycle-aware `preflight` and `can-commit` checks use policy keys `allowed_preflight_states` and `allowed_can_commit_states` (default `active,paused`) to reject disallowed states (`blocked`, `closed`, `created`).
 Pre-commit is ask-core-only (`ask pre-commit-check`) and pre-push is ask-core-only (`ask pre-push-check`).
+Adapter command execution uses guarded runtime behavior: `180s` wall/no-output timeout with one automatic retry on detected stall before failing.
 
 ## Flow Overview
 
@@ -52,6 +53,7 @@ flowchart TD
 - Ask-core adapter wrappers:
   - `scripts/session/runAskCorePreCommitAdapter.mjs`
   - `scripts/session/runAskCorePrePushAdapter.mjs`
+- Runtime operation state: `.ask/runtime/last-operation.json`
 - Hook templates: `.githooks/pre-commit`, `.githooks/pre-push`
 - Hook template: `.githooks/post-commit` (soft next-task reminder)
 - Session templates: `docs/session/*`
@@ -94,6 +96,16 @@ node scripts/session/resumeSession.mjs
 ```
 
 The output includes current branch, HEAD, active objective, next unchecked task, and latest verification command.
+
+## Stall Recovery Diagnostics
+
+If adapter execution appears stuck:
+
+```bash
+node ask-core/bin/ask.js session doctor
+```
+
+Doctor reads `.ask/runtime/last-operation.json` and reports latest runtime status, retry attempt metadata, and deterministic recovery guidance.
 
 ## Task Reminder Loop
 

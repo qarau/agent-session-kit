@@ -18,6 +18,8 @@ This mode is for teams maintaining ASK itself.
 
 - `pre-commit` and `pre-push` hooks should route through the ask-core adapter wrappers (`scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`).
 - `pre-commit` runs `ask pre-commit-check`; `pre-push` runs `ask pre-push-check`.
+- Adapter runtime execution uses guarded stall handling (`180s` wall/no-output timeout, one automatic retry).
+- Runtime operation state is recorded at `.ask/runtime/last-operation.json`; use `ask session doctor` for diagnostics.
 - Runtime behavior should remain policy-equivalent with ASK governance expectations.
 - Session lifecycle recovery relies on `.ask/sessions/pending-transition.json`; maintainers should treat stale pending markers as recovery signals, not noise.
 
@@ -40,6 +42,7 @@ npm run test
 node scripts/verifyReleaseDocsConsistency.mjs --root .
 node scripts/session/runAskCorePreCommitAdapter.mjs
 node scripts/session/runAskCorePrePushAdapter.mjs
+node ask-core/bin/ask.js session doctor
 ```
 
 Record verification evidence in `docs/session/change-log.md` with exact commands and result status.

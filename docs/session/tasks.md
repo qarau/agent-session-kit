@@ -14,6 +14,10 @@ Last updated: 2026-03-12
 
 ## Done
 
+- [x] 2026-03-12 - add guarded command runner stall-recovery contracts (`9e2fb05`)
+- [x] 2026-03-12 - add guarded runner + runtime operation state tracking (`9ea1a5b`)
+- [x] 2026-03-12 - wire adapters through guarded runtime execution (`4aac026`)
+- [x] 2026-03-12 - add `ask session doctor` runtime diagnostics (`d8fd57b`)
 - [x] 2026-03-12 - add pre-push-check hard-cutover contracts (`8dc109f`)
 - [x] 2026-03-12 - add ask-core pre-push-check and release-doc engine (`d77d652`)
 - [x] 2026-03-12 - cut pre-push adapter over to ask-core pre-push-check (`d8c4748`)

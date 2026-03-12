@@ -1,5 +1,13 @@
 # Open Loops
 
+## 0) Runtime Stall Handling Reliability (Closed 2026-03-12)
+
+- Issue: Runtime adapter checks could appear hung and require manual interrupt + resume.
+- Owner: ASK maintainers.
+- Resolution: Added guarded runtime execution and diagnostics in commits `9e2fb05`, `9ea1a5b`, `4aac026`, and `d8fd57b`.
+- Current state: adapters now use `180s` stall detection with one automatic retry; `ask session doctor` reports last operation state.
+- Follow-up: none.
+
 ## 1) Pre-Push Full Cutover Criteria (Closed 2026-03-12)
 
 - Issue: Define threshold for moving pre-push from hybrid to ask-core-only execution.

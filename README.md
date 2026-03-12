@@ -23,6 +23,7 @@ The runtime is now a standalone `ask-core/` package for shared policy and CLI lo
 `ask-core` now carries lifecycle-depth session commands (`session pause`, `session resume`, `session block`, `session close`) and transactional session history persistence.
 `ask preflight` and `ask can-commit` are lifecycle-policy aware with defaults that allow `active` and `paused`, and reject `blocked` and `closed`.
 `ask pre-commit-check` and `ask pre-push-check` are the runtime parity contracts, and both hooks now route ask-core-only.
+Adapter execution now uses guarded command runtime behavior with `180s` stall detection and a one-time automatic retry before failing.
 
 Instead of relying on developer memory or discipline, ASK ensures key checks and validation steps happen automatically as part of the development process.
 
@@ -190,6 +191,7 @@ node scripts/session/clearRepoWorkContextLock.mjs
 
 - [ ] `pre-commit` is ask-core-only (`ask pre-commit-check`).
 - [ ] `pre-push` is ask-core-only (`ask pre-push-check`).
+- [ ] Adapter command execution has stall recovery (`180s` wall/no-output timeout + one retry).
 
 ## Task Flow Reminder (Soft)
 
@@ -313,6 +315,26 @@ Maintainer-only local runtime notes:
 - `SESSION_DOCS_BYPASS=1`
 
 Use only for controlled recovery flows; bypass is intended to be explicit and auditable.
+
+## Runtime Stall Recovery
+
+ASK adapter wrappers apply guarded runtime execution for each ask-core command step:
+
+- Wall timeout default: `180s`
+- No-output timeout default: `180s`
+- Automatic retries on stall: `1`
+- Operation state file: `.ask/runtime/last-operation.json`
+
+Runtime diagnostics command:
+
+```bash
+node ask-core/bin/ask.js session doctor
+```
+
+Optional timeout overrides (advanced use):
+
+- `ASK_STALL_WALL_TIMEOUT_MS`
+- `ASK_STALL_NO_OUTPUT_TIMEOUT_MS`
 
 ## Local Development
 
