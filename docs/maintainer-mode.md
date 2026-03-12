@@ -12,13 +12,13 @@ This mode is for teams maintaining ASK itself.
 
 - Tracked governance docs live in `docs/session/*` and `docs/releases/*`.
 - `docs/ASK_Runtime/*` is local-only scratch/runtime data and must never be committed.
-- `ask-core/` is tracked and is the standalone runtime target; maintain adapter parity while migration is in progress.
+- `ask-core/` is tracked and is the standalone runtime target for governance checks.
 
-## Adapter Migration Guard
+## Runtime Guard
 
 - `pre-commit` and `pre-push` hooks should route through the ask-core adapter wrappers (`scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`).
-- `pre-commit` is now ask-core-only via `ask pre-commit-check`; `pre-push` remains hybrid until full cutover.
-- Adapter behavior must stay policy-equivalent with existing ASK script expectations until full runtime cutover.
+- `pre-commit` runs `ask pre-commit-check`; `pre-push` runs `ask pre-push-check`.
+- Runtime behavior should remain policy-equivalent with ASK governance expectations.
 - Session lifecycle recovery relies on `.ask/sessions/pending-transition.json`; maintainers should treat stale pending markers as recovery signals, not noise.
 
 ## Required Maintainer Signals
@@ -38,7 +38,8 @@ Run before protected-branch push:
 ```bash
 npm run test
 node scripts/verifyReleaseDocsConsistency.mjs --root .
-node kit/scripts/session/verifySessionDocsFreshness.mjs --mode preflight --config docs/session/active-work-context.json
+node scripts/session/runAskCorePreCommitAdapter.mjs
+node scripts/session/runAskCorePrePushAdapter.mjs
 ```
 
 Record verification evidence in `docs/session/change-log.md` with exact commands and result status.

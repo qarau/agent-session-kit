@@ -19,7 +19,8 @@ Use this checklist before publishing any ASK release docs/tag.
 
 - [ ] Run: `npm --prefix agent-session-kit run test:release-docs`
 - [ ] Run: `npm --prefix agent-session-kit run test`
-- [ ] Run: `node agent-session-kit/kit/scripts/session/verifyReleaseDocsConsistency.mjs --mode pre-push --root .` (protected branches must pass fail-closed checks)
+- [ ] Run: `node agent-session-kit/scripts/verifyReleaseDocsConsistency.mjs --root .` (release docs consistency must pass)
+- [ ] Run: `node agent-session-kit/scripts/session/runAskCorePrePushAdapter.mjs` (protected branches must pass fail-closed checks)
 - [ ] Run: `npm --prefix apps/gumatua-v2 run fast-check` (when release notes reference fast-check/V2 behavior)
 - [ ] Ensure verification lines in release docs match commands that were actually run.
 
@@ -35,4 +36,4 @@ Use this checklist before publishing any ASK release docs/tag.
 - [ ] Update `docs/session/tasks.md`.
 - [ ] Update `docs/session/change-log.md`.
 - [ ] Add a compact verification evidence line in `docs/session/change-log.md` with exact commands and pass/fail outcome.
-- [ ] Run: `node agent-session-kit/kit/scripts/session/verifySessionDocsFreshness.mjs --mode preflight`.
+- [ ] Run: `node agent-session-kit/scripts/session/runAskCorePreCommitAdapter.mjs`.

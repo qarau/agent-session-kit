@@ -19,10 +19,10 @@ These issues are not new, but AI-assisted development increases their frequency 
 Agent Session Kit (ASK) was created to address this gap.
 
 ASK adds lightweight guardrails around standard Git workflows so workflow integrity keeps pace with coding speed.
-The next runtime direction is a standalone `ask-core/` package that hosts shared policy/CLI logic, while this repository keeps the migration adapters and governance docs.
+The runtime is now a standalone `ask-core/` package for shared policy and CLI logic, while this repository keeps installer, wrapper, and governance documentation assets.
 `ask-core` now carries lifecycle-depth session commands (`session pause`, `session resume`, `session block`, `session close`) and transactional session history persistence.
 `ask preflight` and `ask can-commit` are lifecycle-policy aware with defaults that allow `active` and `paused`, and reject `blocked` and `closed`.
-`ask pre-commit-check` is the phase-4 parity contract, and `pre-commit` now routes ask-core-only while `pre-push` stays hybrid during rollout.
+`ask pre-commit-check` and `ask pre-push-check` are the runtime parity contracts, and both hooks now route ask-core-only.
 
 Instead of relying on developer memory or discipline, ASK ensures key checks and validation steps happen automatically as part of the development process.
 
@@ -82,8 +82,9 @@ Optional flags:
 - `.githooks/pre-commit`
 - `.githooks/pre-push`
 - `.githooks/post-commit`
-- `scripts/session/verifyWorkContext.mjs`
-- `scripts/session/verifySessionDocsFreshness.mjs`
+- `ask-core/**`
+- `scripts/session/runAskCorePreCommitAdapter.mjs`
+- `scripts/session/runAskCorePrePushAdapter.mjs`
 - `scripts/session/installHooks.mjs`
 - `scripts/session/setRepoWorkContextLock.mjs`
 - `scripts/session/clearRepoWorkContextLock.mjs`
@@ -103,8 +104,8 @@ Optional flags:
 
 ```powershell
 node scripts/session/installHooks.mjs
-node scripts/session/verifyWorkContext.mjs --mode=preflight
-node scripts/session/verifySessionDocsFreshness.mjs --mode=preflight
+node scripts/session/runAskCorePreCommitAdapter.mjs
+node scripts/session/runAskCorePrePushAdapter.mjs
 node scripts/session/resumeSession.mjs
 node scripts/session/nextTask.mjs
 node scripts/session/archiveSessionLog.mjs --keep-sections 14
@@ -112,8 +113,8 @@ node scripts/session/archiveSessionLog.mjs --keep-sections 14
 
 ```bash
 node scripts/session/installHooks.mjs
-node scripts/session/verifyWorkContext.mjs --mode preflight
-node scripts/session/verifySessionDocsFreshness.mjs --mode preflight
+node scripts/session/runAskCorePreCommitAdapter.mjs
+node scripts/session/runAskCorePrePushAdapter.mjs
 node scripts/session/resumeSession.mjs
 node scripts/session/nextTask.mjs
 node scripts/session/archiveSessionLog.mjs --keep-sections 14
@@ -188,7 +189,7 @@ node scripts/session/clearRepoWorkContextLock.mjs
 ### 7) Runtime Status (2026-03-12)
 
 - [ ] `pre-commit` is ask-core-only (`ask pre-commit-check`).
-- [ ] `pre-push` remains hybrid during staged cutover.
+- [ ] `pre-push` is ask-core-only (`ask pre-push-check`).
 
 ## Task Flow Reminder (Soft)
 
@@ -229,7 +230,7 @@ Clear lock:
 node scripts/session/clearRepoWorkContextLock.mjs
 ```
 
-`verifyWorkContext` automatically prefers repo lock values when lock is enabled.
+`ask context verify` automatically prefers repo lock values when lock is enabled.
 
 ## Optional Repo Boundary Guards
 
@@ -269,7 +270,7 @@ node scripts/session/clearRepoWorkContextLock.mjs
 node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <worktree-path-suffix> --enforce-path-suffix true
 
 # 3) verify lock is active
-node scripts/session/verifyWorkContext.mjs --mode preflight
+node ask-core/bin/ask.js context verify
 
 # 4) when intentionally changing branch/worktree policy
 node scripts/session/clearRepoWorkContextLock.mjs
@@ -281,7 +282,7 @@ node scripts/session/setRepoWorkContextLock.mjs --branch <new-branch> --repo-suf
 - `main/release*` uses fail-closed guardrails for session and release governance checks.
 - Feature branches run advisory mode so drift is visible without blocking iteration.
 - `pre-commit`: ask-core-only (`ask pre-commit-check`) and blocks if active branch/worktree context fails or meaningful staged changes do not include required session docs.
-- `pre-push`: hybrid during rollout and blocks if outgoing commit range fails context or session freshness checks.
+- `pre-push`: ask-core-only (`ask pre-push-check`) and blocks if outgoing commit range fails context, docs freshness, release-doc consistency, or lifecycle policy checks.
 
 Required session docs for meaningful changes:
 

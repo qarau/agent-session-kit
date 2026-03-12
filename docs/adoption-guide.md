@@ -19,8 +19,8 @@ Agent Session Kit follows this model.
    - `node install-session-kit.mjs --target /path/to/repo --branch main`
 2. Run setup and preflight checks:
    - `node scripts/session/installHooks.mjs`
-   - `node scripts/session/verifyWorkContext.mjs --mode preflight`
-   - `node scripts/session/verifySessionDocsFreshness.mjs --mode preflight`
+   - `node scripts/session/runAskCorePreCommitAdapter.mjs`
+   - `node scripts/session/runAskCorePrePushAdapter.mjs`
    - `node scripts/session/nextTask.mjs`
 3. Optional (recommended for worktrees): set repo-level lock:
    - `node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <path-suffix> --enforce-path-suffix true`
@@ -33,7 +33,7 @@ Agent Session Kit follows this model.
 
 - Protected branches (`main` and `release/*`) should be treated as fail-closed.
 - Feature branches should run in advisory mode.
-- Keep pre-push checks branch-aware so teams can iterate quickly and still block governance drift where it matters.
+- Keep ask-core pre-push checks branch-aware so teams can iterate quickly and still block governance drift where it matters.
 
 ## Team Conventions
 
@@ -71,7 +71,7 @@ Migration quick commands:
 ```bash
 node scripts/session/clearRepoWorkContextLock.mjs
 node scripts/session/setRepoWorkContextLock.mjs --branch <branch-name> --repo-suffix <worktree-path-suffix> --enforce-path-suffix true
-node scripts/session/verifyWorkContext.mjs --mode preflight
+node ask-core/bin/ask.js context verify
 node scripts/session/archiveSessionLog.mjs --keep-sections 14
 ```
 

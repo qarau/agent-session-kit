@@ -12,10 +12,10 @@ The kit enforces three things:
 4. Optional repo-level lock can override file context to prevent branch drift.
 5. Optional repo-boundary tests can enforce architecture boundaries in CI.
 
-The runtime is being extracted into `ask-core/` so policy contracts and session runtime behavior can be tested independently from hook wrapper scripts.
+The runtime lives in `ask-core/` so policy contracts and session behavior can be tested independently from hook wrapper scripts.
 Session lifecycle depth is persisted with snapshot + journal files under `.ask/sessions/active-session.json`, `.ask/sessions/history.ndjson`, and `.ask/sessions/pending-transition.json`.
 Lifecycle-aware `preflight` and `can-commit` checks use policy keys `allowed_preflight_states` and `allowed_can_commit_states` (default `active,paused`) to reject disallowed states (`blocked`, `closed`, `created`).
-Phase-4 cutover routes `pre-commit` through ask-core-only checks (`ask pre-commit-check`), while `pre-push` remains hybrid during migration.
+Pre-commit is ask-core-only (`ask pre-commit-check`) and pre-push is ask-core-only (`ask pre-push-check`).
 
 ## Flow Overview
 
@@ -25,34 +25,37 @@ flowchart TD
     B --> C[Configure core.hooksPath to .githooks]
     C --> D[Developer runs git commit]
     D --> E[pre-commit hook]
-    E --> F[verifyWorkContext]
-    E --> G[verifySessionDocsFreshness]
-    F --> H{Pass?}
-    G --> H
-    H -- No --> I[Commit blocked with clear error]
-    H -- Yes --> J[Commit allowed]
-    J --> K[Developer runs git push]
-    K --> L[pre-push hook runs same checks]
+    E --> F[runAskCorePreCommitAdapter]
+    F --> G{Pass?}
+    G -- No --> H[Commit blocked with clear error]
+    G -- Yes --> I[Commit allowed]
+    I --> J[Developer runs git push]
+    J --> K[pre-push hook]
+    K --> L[runAskCorePrePushAdapter]
+    L --> M{Pass?}
+    M -- No --> N[Push blocked with clear error]
+    M -- Yes --> O[Push allowed]
 ```
 
 ## Components
 
 - Installer: `install-session-kit.mjs`
-- Hook setup helper: `kit/scripts/session/installHooks.mjs`
-- Resume helper: `kit/scripts/session/resumeSession.mjs`
-- Change-log archiver: `kit/scripts/session/archiveSessionLog.mjs`
+- Hook setup helper: `scripts/session/installHooks.mjs`
+- Resume helper: `scripts/session/resumeSession.mjs`
+- Change-log archiver: `scripts/session/archiveSessionLog.mjs`
 - Task reminder helpers:
-  - `kit/scripts/session/nextTask.mjs`
-  - `kit/scripts/session/completeTask.mjs`
-- Work context validator: `kit/scripts/session/verifyWorkContext.mjs`
+  - `scripts/session/nextTask.mjs`
+  - `scripts/session/completeTask.mjs`
 - Repo lock helpers:
-  - `kit/scripts/session/setRepoWorkContextLock.mjs`
-  - `kit/scripts/session/clearRepoWorkContextLock.mjs`
-- Session freshness validator: `kit/scripts/session/verifySessionDocsFreshness.mjs`
-- Hook templates: `kit/.githooks/pre-commit`, `kit/.githooks/pre-push`
-- Hook template: `kit/.githooks/post-commit` (soft next-task reminder)
-- Session templates: `kit/docs/session/*`
-- Standalone runtime package: `ask-core/*` (core session runtime, policy, and adapter contracts)
+  - `scripts/session/setRepoWorkContextLock.mjs`
+  - `scripts/session/clearRepoWorkContextLock.mjs`
+- Ask-core adapter wrappers:
+  - `scripts/session/runAskCorePreCommitAdapter.mjs`
+  - `scripts/session/runAskCorePrePushAdapter.mjs`
+- Hook templates: `.githooks/pre-commit`, `.githooks/pre-push`
+- Hook template: `.githooks/post-commit` (soft next-task reminder)
+- Session templates: `docs/session/*`
+- Standalone runtime package: `ask-core/*` (core session runtime, policy, and governance checks)
 
 ## Optional Repo-Level Lock
 
@@ -68,7 +71,7 @@ Clear lock:
 node scripts/session/clearRepoWorkContextLock.mjs
 ```
 
-When enabled, `verifyWorkContext` uses `git config` lock values (`session.workContextLock.*`) instead of `active-work-context.json`.
+When enabled, `ask context verify` uses `git config` lock values (`session.workContextLock.*`) instead of `active-work-context.json`.
 
 ## Optional Repo Boundary Guards
 
