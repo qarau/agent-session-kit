@@ -1,5 +1,53 @@
 # Agent Session Kit
 
+## ASK 2.0 Status
+
+Current release: `v2.0.0` (2026-03-12)
+
+- [Release notes](docs/releases/v2.0.0.md)
+- [Announcement copy](docs/releases/v2.0.0-announcement.md)
+- [Latest release pointer](docs/releases/latest.md)
+
+ASK 2.0 is a major architectural shift from script-first checks to a standalone runtime core.
+
+## What ASK Is
+
+Agent Session Kit (ASK) is a Developer-Agent Runtime that governs developer-agent work in progress.
+
+The runtime is implemented in `ask-core/` and this repository packages installer, adapters, hooks, and governance docs for rollout into target repositories.
+
+## Why ASK 2.0 Exists
+
+ASK 2.0 exists because AI-assisted development made script-first guardrails too fragile at team scale.
+
+Before 2.0, teams repeatedly hit the same failure pattern:
+
+- branch/worktree mistakes discovered too late
+- session docs drift during long-running agent work
+- split logic across wrappers and scripts causing policy drift
+- stalled agent runs without reliable recovery behavior
+- context-loss interruptions that slowed resume and handoff
+
+ASK 2.0 addresses this by moving governance into one runtime core (`ask-core`) with a single enforcement path for commit/push checks.
+
+The practical buy-in for developers:
+
+- fewer avoidable workflow mistakes before CI
+- consistent policy behavior across machines and agents
+- faster, cleaner resume and handoff in long sessions
+- less time debugging guardrail inconsistencies
+
+ASK 2.0 provides:
+
+- session docs control plane (`docs/session/**`)
+- branch/worktree guard validator
+- session freshness validator
+- pre-commit and pre-push hooks
+- lifecycle-policy aware runtime commands (`ask preflight`, `ask can-commit`)
+- runtime-only commit/push gates (`ask pre-commit-check`, `ask pre-push-check`)
+- guarded adapter execution (`180s` stall timeout, one automatic retry)
+- optional Codex context-budget commands for long-session resilience
+
 ## Why Agent Session Kit Exists
 
 AI-assisted development has dramatically accelerated how quickly code can be written, explored, and refactored.
@@ -15,30 +63,6 @@ During internal development sessions, we repeatedly encountered problems such as
 - skipped validation checks before pushing changes
 
 These issues are not new, but AI-assisted development increases their frequency because sessions become longer, faster, and more exploratory.
-
-Agent Session Kit (ASK) was created to address this gap.
-
-ASK adds lightweight guardrails around standard Git workflows so workflow integrity keeps pace with coding speed.
-The runtime is now a standalone `ask-core/` package for shared policy and CLI logic, while this repository keeps installer, wrapper, and governance documentation assets.
-`ask-core` now carries lifecycle-depth session commands (`session pause`, `session resume`, `session block`, `session close`) and transactional session history persistence.
-`ask preflight` and `ask can-commit` are lifecycle-policy aware with defaults that allow `active` and `paused`, and reject `blocked` and `closed`.
-`ask pre-commit-check` and `ask pre-push-check` are the runtime parity contracts, and both hooks now route ask-core-only.
-Adapter execution now uses guarded command runtime behavior with `180s` stall detection and a one-time automatic retry before failing.
-Optional Codex context-budget commands are available for Responses API users to proactively compact at low remaining context budgets.
-
-Instead of relying on developer memory or discipline, ASK ensures key checks and validation steps happen automatically as part of the development process.
-
-The result is a workflow that remains predictable, reproducible, and easier to collaborate on, even when AI agents are heavily involved in coding sessions.
-
-Portable session-control package for any git repo.
-
-It provides:
-
-- session docs control plane (`docs/session/**`)
-- branch/worktree guard validator
-- session freshness validator
-- pre-commit and pre-push hooks
-- installer to copy and wire everything
 
 ## Why this exists
 
