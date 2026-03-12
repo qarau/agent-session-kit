@@ -12,7 +12,7 @@ function printHelp() {
 
 Usage:
   ask init
-  ask session start|pause|resume|block|status|close
+  ask session start|pause|resume|block|status|close|doctor
   ask context verify|status
   ask preflight
   ask can-commit
