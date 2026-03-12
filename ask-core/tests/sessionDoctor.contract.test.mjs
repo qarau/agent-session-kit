@@ -116,3 +116,37 @@ test('session doctor reports succeeded state after healthy run', async () => {
   assert.equal(payload.failureReason, '');
   assert.equal(payload.suggestedRecovery, 'none');
 });
+
+test('session doctor includes codex context summary when present', () => {
+  const repoDir = setupRepo();
+  writeJson(path.join(repoDir, '.ask', 'runtime', 'last-operation.json'), {
+    operation: 'pre-commit-adapter:ask pre-commit-check',
+    status: 'succeeded',
+    attempt: 1,
+    maxAttempts: 2,
+    startedAt: '2026-03-12T12:00:00.000Z',
+    updatedAt: '2026-03-12T12:02:00.000Z',
+    lastOutputAt: '2026-03-12T12:01:00.000Z',
+    failureReason: '',
+    command: {
+      bin: process.execPath,
+      args: [askBinPath, 'pre-commit-check'],
+    },
+  });
+  writeJson(path.join(repoDir, '.ask', 'runtime', 'context-session.json'), {
+    enabled: true,
+    status: 'below-threshold',
+    remainingRatio: 0.08,
+    suggestedAction: 'compact-now',
+  });
+
+  const result = run(process.execPath, [askBinPath, 'session', 'doctor'], { cwd: repoDir });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.status, 'succeeded');
+  assert.equal(payload.codexContext.enabled, true);
+  assert.equal(payload.codexContext.status, 'below-threshold');
+  assert.equal(payload.codexContext.remainingRatio, 0.08);
+  assert.equal(payload.codexContext.suggestedAction, 'compact-now');
+});

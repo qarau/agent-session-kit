@@ -87,11 +87,29 @@ function buildDoctorPayload(lastOperation) {
   };
 }
 
+function buildCodexSummary(contextState) {
+  if (!contextState || typeof contextState !== 'object') {
+    return null;
+  }
+
+  return {
+    enabled: contextState.enabled === true,
+    status: contextState.status ?? '',
+    remainingRatio: Number(contextState.remainingRatio ?? 0),
+    suggestedAction: contextState.suggestedAction ?? 'none',
+  };
+}
+
 async function runDoctor(cwd) {
   const store = new FileStore();
   const paths = new AskPaths(cwd);
   const lastOperation = await store.readJson(paths.lastOperation(), null);
+  const contextState = await store.readJson(paths.contextSession(), null);
   const payload = buildDoctorPayload(lastOperation);
+  const codexSummary = buildCodexSummary(contextState);
+  if (codexSummary) {
+    payload.codexContext = codexSummary;
+  }
   console.log(JSON.stringify(payload, null, 2));
 }
 
