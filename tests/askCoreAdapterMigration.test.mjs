@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
@@ -21,6 +23,42 @@ function run(command, args, options = {}) {
   };
 }
 
+function runOrThrow(command, args, options = {}) {
+  const result = run(command, args, options);
+  if (result.status !== 0) {
+    throw new Error(
+      [
+        `Command failed: ${command} ${args.join(' ')}`,
+        `status=${String(result.status)}`,
+        result.stdout,
+        result.stderr,
+      ].join('\n')
+    );
+  }
+  return result;
+}
+
+function writeJson(filePath, payload) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+}
+
+function setupTempRepo() {
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-core-adapter-'));
+  runOrThrow('git', ['init'], { cwd: repoDir });
+  runOrThrow('git', ['config', 'user.email', 'test@example.com'], { cwd: repoDir });
+  runOrThrow('git', ['config', 'user.name', 'Test User'], { cwd: repoDir });
+  runOrThrow('git', ['checkout', '-b', 'ask-runtime'], { cwd: repoDir });
+  writeJson(path.join(repoDir, 'docs', 'session', 'active-work-context.json'), {
+    expectedBranch: 'ask-runtime',
+    expectedRepoPathSuffix: '',
+    enforceRepoPathSuffix: false,
+    bypassEnvVar: 'SESSION_CONTEXT_BYPASS',
+    strictTasksDoc: false,
+  });
+  return repoDir;
+}
+
 test('pre-commit adapter wrapper exits 0 in healthy ask-runtime worktree', () => {
   const result = run(process.execPath, ['scripts/session/runAskCorePreCommitAdapter.mjs'], {
     cwd: repoRoot,
@@ -31,6 +69,16 @@ test('pre-commit adapter wrapper exits 0 in healthy ask-runtime worktree', () =>
 test('pre-push adapter wrapper exits 0 in healthy ask-runtime worktree', () => {
   const result = run(process.execPath, ['scripts/session/runAskCorePrePushAdapter.mjs'], {
     cwd: repoRoot,
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
+test('pre-commit adapter wrapper exits 0 in temp repo without legacy kit scripts', () => {
+  const repoDir = setupTempRepo();
+  const adapterWrapperPath = path.join(repoRoot, 'scripts', 'session', 'runAskCorePreCommitAdapter.mjs');
+
+  const result = run(process.execPath, [adapterWrapperPath], {
+    cwd: repoDir,
   });
   assert.equal(result.status, 0, result.stdout + result.stderr);
 });
