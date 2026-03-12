@@ -14,3 +14,10 @@ Session state persistence:
 - snapshot: `.ask/sessions/active-session.json`
 - append-only history: `.ask/sessions/history.ndjson`
 - in-flight transition marker: `.ask/sessions/pending-transition.json`
+
+Lifecycle policy gates:
+- `ask preflight` and `ask can-commit` read policy keys:
+  - `allowed_preflight_states`
+  - `allowed_can_commit_states`
+- Default allowed states: `active`, `paused`.
+- Default rejected states: `blocked`, `closed`, `created`.

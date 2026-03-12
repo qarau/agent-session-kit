@@ -25,6 +25,10 @@ This mode is for teams maintaining ASK itself.
 - Keep `docs/session/current-status.md` and `docs/session/change-log.md` current for meaningful work.
 - Keep release ledger, `latest.md`, and release notes aligned.
 - Keep entries concise and team-readable.
+- Keep lifecycle policy keys explicit in runtime policy:
+  - `allowed_preflight_states`
+  - `allowed_can_commit_states`
+  - default intent is `active,paused` allowed while `blocked,closed` are rejected for commit-readiness flows.
 
 ## Verification Flow
 

@@ -24,6 +24,11 @@ test('docs describe ask-core runtime and adapter proof flow', () => {
   assert.match(readme, /session (pause|resume|block|close)/i);
   assert.match(howItWorks, /history\.ndjson/i);
   assert.match(maintainerMode, /pending-transition\.json/i);
+  assert.match(readme, /active.*paused/i);
+  assert.match(readme, /blocked.*closed/i);
+  assert.match(howItWorks, /preflight/i);
+  assert.match(howItWorks, /can-commit/i);
+  assert.match(maintainerMode, /allowed_(preflight|can_commit)_states/i);
 });
 
 test('package scripts expose ask-core bootstrap and tests', () => {
