@@ -119,6 +119,77 @@ node scripts/session/nextTask.mjs
 node scripts/session/archiveSessionLog.mjs --keep-sections 14
 ```
 
+## Project Onboarding Checklist
+
+### 1) One-Time Repo Setup (Owner)
+
+- [ ] Install ASK into the repo:
+
+```bash
+node /path/to/agent-session-kit/install-session-kit.mjs --target . --branch main
+```
+
+- [ ] Install git hooks:
+
+```bash
+node scripts/session/installHooks.mjs
+```
+
+- [ ] Create initial session baseline:
+
+```bash
+node scripts/session/resumeSession.mjs
+```
+
+- [ ] Commit installed ASK files (`.githooks/*`, `scripts/session/*`, `docs/session/*`).
+
+### 2) Team Setup (Each Developer)
+
+- [ ] Pull latest repo changes.
+- [ ] Confirm hooks are active (`.githooks/pre-commit`, `.githooks/pre-push`).
+- [ ] Run:
+
+```bash
+node scripts/session/resumeSession.mjs
+```
+
+### 3) Daily Workflow
+
+- [ ] Start by updating `docs/session/current-status.md`.
+- [ ] Track active work in `docs/session/tasks.md`.
+- [ ] Update `docs/session/open-loops.md` when decisions or risks change.
+- [ ] Append verification evidence to `docs/session/change-log.md`.
+- [ ] Commit and push normally (hooks enforce context/freshness checks).
+
+### 4) Required Session Docs For Meaningful Code Changes
+
+- [ ] `docs/session/current-status.md`
+- [ ] `docs/session/change-log.md`
+
+### 5) Optional Guardrails
+
+- [ ] Enable repo lock for multi-worktree safety:
+
+```bash
+node scripts/session/setRepoWorkContextLock.mjs --branch <branch> --repo-suffix <path-suffix> --enforce-path-suffix true
+```
+
+- [ ] Clear lock when changing branch/worktree policy:
+
+```bash
+node scripts/session/clearRepoWorkContextLock.mjs
+```
+
+### 6) Recovery / Emergency
+
+- [ ] Use bypass only for controlled recovery (`SESSION_CONTEXT_BYPASS=1`, `SESSION_DOCS_BYPASS=1`).
+- [ ] If bypass is used, document why in `docs/session/change-log.md`.
+
+### 7) Runtime Status (2026-03-12)
+
+- [ ] `pre-commit` is ask-core-only (`ask pre-commit-check`).
+- [ ] `pre-push` remains hybrid during staged cutover.
+
 ## Task Flow Reminder (Soft)
 
 Use these helpers for a smoother agent/developer loop:
