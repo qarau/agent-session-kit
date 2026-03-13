@@ -6,7 +6,7 @@ import { WorkContextEngine } from './WorkContextEngine.js';
 import { PolicyEngine } from './PolicyEngine.js';
 import { EvidenceRecorder } from './EvidenceRecorder.js';
 import { ReleaseDocsConsistencyEngine } from './ReleaseDocsConsistencyEngine.js';
-import { resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js';
+import { normalizeBranchEnforcementMode, resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js';
 
 const REQUIRED_DOCS = ['docs/session/current-status.md', 'docs/session/change-log.md'];
 const TASKS_DOC = 'docs/session/tasks.md';
@@ -163,7 +163,19 @@ export class PrePushCheckEngine {
     return config.strictTasksDoc === true;
   }
 
-  evaluateDocsFreshness(files, config, branchName) {
+  resolveBranchEnforcementMode(config) {
+    const modeFromEnv = normalizeBranchEnforcementMode(process.env.ASK_BRANCH_ENFORCEMENT_MODE);
+    if (modeFromEnv) {
+      return modeFromEnv;
+    }
+    const modeFromConfig = normalizeBranchEnforcementMode(config.branchEnforcementMode);
+    if (modeFromConfig) {
+      return modeFromConfig;
+    }
+    return 'protected';
+  }
+
+  evaluateDocsFreshness(files, config, branchName, branchEnforcementMode) {
     if (files.some(file => file.startsWith('docs/ASK_Runtime/'))) {
       return false;
     }
@@ -181,18 +193,18 @@ export class PrePushCheckEngine {
     const strictTasksDoc = this.isTasksStrict(config);
     const requiredDocs = strictTasksDoc ? [...REQUIRED_DOCS, TASKS_DOC] : [...REQUIRED_DOCS];
     const hasAllRequired = requiredDocs.every(required => files.includes(required));
-    if (!hasAllRequired && resolveBranchEnforcementMode(branchName) === 'enforce') {
+    if (!hasAllRequired && resolveBranchEnforcementMode(branchName, branchEnforcementMode) === 'enforce') {
       return false;
     }
     return true;
   }
 
-  evaluateReleaseDocs(branchName) {
+  evaluateReleaseDocs(branchName, branchEnforcementMode) {
     const errors = this.releaseDocsEngine.verify(this.cwd);
     if (errors.length === 0) {
       return true;
     }
-    return resolveBranchEnforcementMode(branchName) !== 'enforce';
+    return resolveBranchEnforcementMode(branchName, branchEnforcementMode) !== 'enforce';
   }
 
   resolveGovernanceMode(config) {
@@ -247,6 +259,7 @@ export class PrePushCheckEngine {
     const missing = [];
     const config = this.resolveEffectiveContextConfig(this.readConfig());
     const governanceMode = this.resolveGovernanceMode(config);
+    const branchEnforcementMode = this.resolveBranchEnforcementMode(config);
     const branchName = this.runGit(['branch', '--show-current'], true);
     const outgoingFiles = this.getOutgoingFiles();
     const policy = await this.policyEngine.load();
@@ -258,13 +271,13 @@ export class PrePushCheckEngine {
       missing.push('work context mismatch for pre-push');
     }
 
-    if (!this.evaluateDocsFreshness(outgoingFiles, config, branchName)) {
+    if (!this.evaluateDocsFreshness(outgoingFiles, config, branchName, branchEnforcementMode)) {
       missing.push('session docs freshness required');
     }
 
     if (governanceMode === GOVERNANCE_MODE_MAINTAINER) {
       checks.push('release-docs');
-      if (!this.evaluateReleaseDocs(branchName)) {
+      if (!this.evaluateReleaseDocs(branchName, branchEnforcementMode)) {
         missing.push('release docs consistency required');
       }
     }

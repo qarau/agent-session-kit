@@ -1,5 +1,30 @@
 # Session Change Log
 
+## 2026-03-14
+
+- Branch enforcement mode expansion (`protected` / `all` / `advisory`) and maintainer all-branch policy:
+  - Files:
+    - `ask-core/src/core/resolveBranchEnforcementMode.js`
+    - `ask-core/src/core/PreCommitCheckEngine.js`
+    - `ask-core/src/core/PrePushCheckEngine.js`
+    - `tests/sessionFreshnessBranchMode.test.mjs`
+    - `tests/releaseDocsBranchMode.test.mjs`
+    - `tests/sessionKitSmoke.test.mjs`
+    - `docs/session/active-work-context.json`
+    - `kit/docs/session/active-work-context.json`
+    - `docs/how-it-works.md`
+    - `docs/adoption-guide.md`
+    - `docs/maintainer-mode.md`
+  - Behavior:
+    - Added configurable `branchEnforcementMode` resolution with optional env override `ASK_BRANCH_ENFORCEMENT_MODE`.
+    - Supported modes: `protected` (default), `all`, `advisory`.
+    - Pre-commit docs-freshness and pre-push docs/release-doc checks now follow resolved branch-enforcement mode.
+    - Set this maintainer repo context to `branchEnforcementMode: "all"` and kept installer template default at `branchEnforcementMode: "protected"`.
+  - Verification:
+    - `cmd /c node --test tests/sessionFreshnessBranchMode.test.mjs tests/releaseDocsBranchMode.test.mjs` passed (8/8).
+    - `cmd /c node --test ask-core/tests/preCommitCheck.contract.test.mjs ask-core/tests/prePushCheck.contract.test.mjs tests/sessionFreshnessBranchMode.test.mjs tests/releaseDocsBranchMode.test.mjs` passed (13/13).
+    - `cmd /c npm run test` passed (17/17).
+
 ## 2026-03-13
 
 - Pre-push governance mode split (`project` vs `maintainer`):

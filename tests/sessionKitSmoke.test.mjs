@@ -55,8 +55,8 @@ test('documentation describes branch-aware maintainer mode policy', () => {
   const maintainerModePath = path.join(kitRoot, 'docs', 'maintainer-mode.md');
   assert.equal(fs.existsSync(maintainerModePath), true);
   const maintainerMode = fs.readFileSync(maintainerModePath, 'utf8');
-  assert.match(maintainerMode, /main\/release\*.*fail-closed/i);
-  assert.match(maintainerMode, /feature branches.*advisory/i);
+  assert.match(maintainerMode, /protected-branch.*fail-closed/i);
+  assert.match(maintainerMode, /branchEnforcementMode:\s*"all"/i);
   assert.match(maintainerMode, /docs\/ASK_Runtime\/\*.*local-only/i);
   assert.match(maintainerMode, /verification evidence/i);
 });

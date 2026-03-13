@@ -31,9 +31,10 @@ Agent Session Kit follows this model.
 
 ## Branch-Aware Enforcement
 
-- Protected branches (`main` and `release/*`) should be treated as fail-closed.
-- Feature branches should run in advisory mode.
-- Keep ask-core pre-push checks branch-aware so teams can iterate quickly and still block governance drift where it matters.
+- Configure `branchEnforcementMode` in `docs/session/active-work-context.json`:
+  - `"protected"` (default): fail-closed on `main` and `release/*`, advisory on feature branches.
+  - `"all"`: fail-closed on every branch.
+  - `"advisory"`: advisory on every branch.
 - For most downstream repos, keep `governanceMode: "project"` in `docs/session/active-work-context.json` so release-doc checks are not required.
 - Use `governanceMode: "maintainer"` only for repos that publish and enforce ASK release docs.
 

@@ -1,19 +1,20 @@
 # Session Tasks
 
-Last updated: 2026-03-13
+Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Commit and push governance mode split for pre-push (`project` vs `maintainer`).
+- [ ] Commit and push all-branches branch-enforcement update (`branchEnforcementMode`).
 
 ## Next
 
-- [ ] Add downstream migration note for repos missing `governanceMode` in `active-work-context.json`.
+- [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
 - [ ] Define maintainer policy for unmatched `pending-transition.json` markers.
 - [ ] Define governance policy for lifecycle-state override keys.
 
 ## Done
 
+- [x] 2026-03-14 - add configurable branch enforcement mode and all-branch maintainer policy wiring
 - [x] 2026-03-12 - add codex context budget command contracts (`50e1b4a`)
 - [x] 2026-03-12 - add codex context budget manager + CLI commands (`65867e0`)
 - [x] 2026-03-12 - include codex context summary in session doctor (`45b76ea`)

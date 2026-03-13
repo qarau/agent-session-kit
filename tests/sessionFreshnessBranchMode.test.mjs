@@ -45,20 +45,24 @@ function writeJson(filePath, payload) {
   fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
-function setupRepo(branchName) {
+function setupRepo(branchName, branchEnforcementMode = null) {
   const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-session-freshness-'));
   runOrThrow('git', ['init'], { cwd: repoDir });
   runOrThrow('git', ['config', 'user.email', 'test@example.com'], { cwd: repoDir });
   runOrThrow('git', ['config', 'user.name', 'Test User'], { cwd: repoDir });
   runOrThrow('git', ['checkout', '-b', branchName], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
-  writeJson(path.join(repoDir, 'docs', 'session', 'active-work-context.json'), {
+  const activeContext = {
     expectedBranch: branchName,
     expectedRepoPathSuffix: '',
     enforceRepoPathSuffix: false,
     bypassEnvVar: 'SESSION_CONTEXT_BYPASS',
     strictTasksDoc: false,
-  });
+  };
+  if (branchEnforcementMode) {
+    activeContext.branchEnforcementMode = branchEnforcementMode;
+  }
+  writeJson(path.join(repoDir, 'docs', 'session', 'active-work-context.json'), activeContext);
   runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], { cwd: repoDir });
   writeJson(path.join(repoDir, '.ask', 'evidence', 'latest-checks.json'), {
@@ -87,6 +91,16 @@ test('feature branch with meaningful changes stays advisory', () => {
 test('main branch with missing session docs fails in enforce mode', () => {
   const repoDir = setupRepo('main');
   stageFile(repoDir, 'src/main-change.txt', 'hello\n');
+
+  const result = run(process.execPath, [askBinPath, 'pre-commit-check'], { cwd: repoDir });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.match(JSON.stringify(payload.missing), /session docs freshness required/i);
+});
+
+test('feature branch with branchEnforcementMode=all fails for missing session docs', () => {
+  const repoDir = setupRepo('feature/ask-runtime', 'all');
+  stageFile(repoDir, 'src/feature-strict.txt', 'hello\n');
 
   const result = run(process.execPath, [askBinPath, 'pre-commit-check'], { cwd: repoDir });
   assert.equal(result.status, 1, result.stdout + result.stderr);

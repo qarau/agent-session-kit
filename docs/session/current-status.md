@@ -1,44 +1,43 @@
 # Current Status
 
-Last updated: 2026-03-13
+Last updated: 2026-03-14
 
 ## Branch and Head
 
 - Active branch: `main`
-- Current HEAD: `b572331 docs: reduce redundancy and centralize runtime documentation`
+- Current HEAD: `72513c5 docs: position Superpowers + Codex 5.3 + ASK Runtime stack`
 
 ## Active Objective
 
-Add a project-vs-maintainer governance mode switch so ASK pre-push works cleanly for downstream repos while preserving maintainer release-doc enforcement.
+Enable ASK maintainer dogfooding with fail-closed enforcement on all branches while preserving downstream-safe defaults.
 
 ## Completed In This Stream
 
-- Added `governanceMode` handling in pre-push runtime (`project` vs `maintainer`).
-- Set installer template default to `governanceMode: "project"` in `kit/docs/session/active-work-context.json`.
-- Set this repo to `governanceMode: "maintainer"` for maintainer strictness.
-- Added contract tests for project-mode pre-push behavior and updated docs/smoke expectations.
-- Reduced doc overlap while clarifying mode semantics in `how-it-works`, `adoption-guide`, and `maintainer-mode`.
+- Added configurable branch enforcement mode in ask-core runtime (`protected`/`all`/`advisory`) with optional env override `ASK_BRANCH_ENFORCEMENT_MODE`.
+- Updated pre-commit and pre-push checks to resolve enforcement mode from config/env instead of hardcoded branch list.
+- Set this repo to `branchEnforcementMode: "all"` and kept installer template default at `branchEnforcementMode: "protected"`.
+- Added RED/GREEN tests for all-branches fail-closed behavior on feature branches.
+- Updated maintainer/adoption/runtime docs and smoke assertions for the new policy wording.
 
 ## Next Tasks
 
-1. Commit and push governance mode implementation.
-2. Optionally add a short migration note for existing downstream installs without `governanceMode`.
-3. Decide if `ASK_GOVERNANCE_MODE` should be documented as a temporary CI/session override.
+1. Commit and push all-branches enforcement update.
+2. Enable hooks in this root repo so ASK runtime actively gates commit/push here.
+3. Optionally document branch-enforcement migration guidance for existing installs.
 
 Task board source of truth: `docs/session/tasks.md`.
 
 ## Blockers / Risks
 
-- Existing downstream repos that already installed older templates may still be in maintainer-like behavior until they add `governanceMode: "project"`.
+- Existing downstream installs without `branchEnforcementMode` rely on default protected-branch behavior; teams expecting all-branch fail-closed must opt in explicitly.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/prePushCheck.contract.test.mjs tests/releaseDocsBranchMode.test.mjs tests/sessionKitSmoke.test.mjs` (pass)
-- `cmd /c npm run test` (pass)
-- `cmd /c npm run test:release-docs` (pass)
-- `node --test <all ask-core test files>` via explicit file list (pass, 32/32)
+- `cmd /c node --test tests/sessionFreshnessBranchMode.test.mjs tests/releaseDocsBranchMode.test.mjs` (pass)
+- `cmd /c node --test ask-core/tests/preCommitCheck.contract.test.mjs ask-core/tests/prePushCheck.contract.test.mjs tests/sessionFreshnessBranchMode.test.mjs tests/releaseDocsBranchMode.test.mjs` (pass)
+- `cmd /c npm run test` (pass, 17/17)
 
-Latest status: `pass (2026-03-13)`.
+Latest status: `pass (2026-03-14)`.
 
 ## Resume Commands
 

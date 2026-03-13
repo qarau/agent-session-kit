@@ -5,7 +5,7 @@ import { SessionRuntime } from './SessionRuntime.js';
 import { WorkContextEngine } from './WorkContextEngine.js';
 import { PolicyEngine } from './PolicyEngine.js';
 import { EvidenceRecorder } from './EvidenceRecorder.js';
-import { resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js';
+import { normalizeBranchEnforcementMode, resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js';
 
 const REQUIRED_DOCS = ['docs/session/current-status.md', 'docs/session/change-log.md'];
 const TASKS_DOC = 'docs/session/tasks.md';
@@ -141,7 +141,19 @@ export class PreCommitCheckEngine {
     return config.strictTasksDoc === true;
   }
 
-  evaluateDocsFreshness(stagedFiles, config, branchName) {
+  resolveBranchEnforcementMode(config) {
+    const modeFromEnv = normalizeBranchEnforcementMode(process.env.ASK_BRANCH_ENFORCEMENT_MODE);
+    if (modeFromEnv) {
+      return modeFromEnv;
+    }
+    const modeFromConfig = normalizeBranchEnforcementMode(config.branchEnforcementMode);
+    if (modeFromConfig) {
+      return modeFromConfig;
+    }
+    return 'protected';
+  }
+
+  evaluateDocsFreshness(stagedFiles, config, branchName, branchEnforcementMode) {
     if (stagedFiles.some(file => file.startsWith('docs/ASK_Runtime/'))) {
       return false;
     }
@@ -159,7 +171,7 @@ export class PreCommitCheckEngine {
     const strictTasksDoc = this.isTasksStrict(config);
     const requiredDocs = strictTasksDoc ? [...REQUIRED_DOCS, TASKS_DOC] : [...REQUIRED_DOCS];
     const hasAllRequired = requiredDocs.every(required => stagedFiles.includes(required));
-    if (!hasAllRequired && resolveBranchEnforcementMode(branchName) === 'enforce') {
+    if (!hasAllRequired && resolveBranchEnforcementMode(branchName, branchEnforcementMode) === 'enforce') {
       return false;
     }
     return true;
@@ -204,6 +216,7 @@ export class PreCommitCheckEngine {
     const checks = ['work-context', 'docs-freshness', 'session-preflight', 'session-can-commit'];
     const missing = [];
     const config = this.resolveEffectiveContextConfig(this.readConfig());
+    const branchEnforcementMode = this.resolveBranchEnforcementMode(config);
     const branchName = this.runGit(['branch', '--show-current'], true);
     const stagedFiles = this.getStagedFiles();
     const policy = await this.policyEngine.load();
@@ -215,7 +228,7 @@ export class PreCommitCheckEngine {
       missing.push('work context mismatch for pre-commit');
     }
 
-    if (!this.evaluateDocsFreshness(stagedFiles, config, branchName)) {
+    if (!this.evaluateDocsFreshness(stagedFiles, config, branchName, branchEnforcementMode)) {
       missing.push('session docs freshness required');
     }
 

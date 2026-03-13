@@ -2,6 +2,7 @@
   "expectedBranch": "main",
   "expectedRepoPathSuffix": "",
   "enforceRepoPathSuffix": false,
+  "branchEnforcementMode": "all",
   "governanceMode": "maintainer",
   "strictTasksDoc": false,
   "bypassEnvVar": "SESSION_CONTEXT_BYPASS"

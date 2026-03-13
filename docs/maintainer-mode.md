@@ -4,8 +4,8 @@ This mode is for teams maintaining ASK itself.
 
 ## Branch Policy
 
-- `main/release*` uses fail-closed enforcement.
-- Feature branches use advisory enforcement.
+- Default policy is protected-branch fail-closed (`main/release*`) with feature branches advisory.
+- To enforce fail-closed on every branch, set `branchEnforcementMode: "all"` in `docs/session/active-work-context.json`.
 - Protected branch failures must be fixed before commit/push.
 
 ## Tracked vs Local Data

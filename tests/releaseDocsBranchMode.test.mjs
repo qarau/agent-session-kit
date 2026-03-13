@@ -45,21 +45,25 @@ function writeJson(filePath, payload) {
   fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
-function setupRepo(branchName, governanceMode = 'maintainer') {
+function setupRepo(branchName, governanceMode = 'maintainer', branchEnforcementMode = null) {
   const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-release-docs-branch-mode-'));
   runOrThrow('git', ['init'], { cwd: repoDir });
   runOrThrow('git', ['config', 'user.email', 'test@example.com'], { cwd: repoDir });
   runOrThrow('git', ['config', 'user.name', 'Test User'], { cwd: repoDir });
   runOrThrow('git', ['checkout', '-b', branchName], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
-  writeJson(path.join(repoDir, 'docs', 'session', 'active-work-context.json'), {
+  const activeContext = {
     expectedBranch: branchName,
     expectedRepoPathSuffix: '',
     enforceRepoPathSuffix: false,
     bypassEnvVar: 'SESSION_CONTEXT_BYPASS',
     governanceMode,
     strictTasksDoc: false,
-  });
+  };
+  if (branchEnforcementMode) {
+    activeContext.branchEnforcementMode = branchEnforcementMode;
+  }
+  writeJson(path.join(repoDir, 'docs', 'session', 'active-work-context.json'), activeContext);
   runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], { cwd: repoDir });
   writeJson(path.join(repoDir, '.ask', 'evidence', 'latest-checks.json'), {
@@ -96,4 +100,14 @@ test('main branch in project mode ignores release-doc checks', () => {
   assert.equal(result.status, 0, result.stdout + result.stderr);
   const payload = JSON.parse(result.stdout);
   assert.doesNotMatch(JSON.stringify(payload.checks), /release-docs/i);
+});
+
+test('feature branch in maintainer mode fails release-doc checks when branchEnforcementMode=all', () => {
+  const repoDir = setupRepo('feature/ask-release-flow', 'maintainer', 'all');
+  const result = run(process.execPath, [askBinPath, 'pre-push-check'], {
+    cwd: repoDir,
+  });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.match(JSON.stringify(payload.missing), /release docs consistency required/i);
 });
