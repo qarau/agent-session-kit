@@ -2,6 +2,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
+import { EventLedger } from '../runtime/EventLedger.js';
+import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -26,6 +28,8 @@ export class WorkContextEngine {
     this.cwd = cwd;
     this.paths = new AskPaths(cwd);
     this.store = new FileStore();
+    this.ledger = new EventLedger(cwd);
+    this.projectionEngine = new RuntimeProjectionEngine(cwd);
   }
 
   async verify() {
@@ -38,6 +42,20 @@ export class WorkContextEngine {
       verifiedAt: nowIso(),
     };
     await this.store.writeJson(this.paths.workContext(), context);
+    const activeSession = await this.store.readJson(this.paths.activeSession(), {
+      sessionId: '',
+      actorId: 'local',
+    });
+    await this.ledger.append({
+      type: 'WorktreeVerified',
+      sessionId: String(activeSession.sessionId || ''),
+      actor: String(activeSession.actorId || 'local'),
+      payload: context,
+      meta: {
+        source: 'work-context-engine',
+      },
+    });
+    await this.projectionEngine.replay();
     console.log(JSON.stringify(context, null, 2));
   }
 

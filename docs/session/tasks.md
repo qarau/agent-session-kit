@@ -4,16 +4,17 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Execute ASK 3.0 Task 3: session runtime bridge to event-first writes.
+- [ ] Execute ASK 3.0 Task 4: task runtime + task CLI.
 
 ## Next
 
-- [ ] Add `sessionEventBridge` contracts for session/handoff/context event-first writes.
-- [ ] Bridge `SessionRuntime`, `HandoffEngine`, and `WorkContextEngine` to append events then replay snapshots.
+- [ ] Add `taskRuntime` contracts for `task create/assign/start/status`.
+- [ ] Implement minimal `TaskRuntime` and task CLI commands with event append + replay.
 - [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
 
 ## Done
 
+- [x] 2026-03-14 - complete ASK 3.0 Task 3 session-event bridge (`SessionRuntime`/`HandoffEngine`/`WorkContextEngine` event-first writes + replay contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 2 replay runtime (projection engine, snapshot store, projectors, `ask replay`, contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 1 foundation (SequenceStore, EventLedger, scaffolder/paths/store updates + contracts)
 - [x] 2026-03-14 - add autonomy verification runner + phase npm scripts + autonomy-mode docs

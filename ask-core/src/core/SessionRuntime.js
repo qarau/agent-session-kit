@@ -1,5 +1,7 @@
 import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
+import { EventLedger } from '../runtime/EventLedger.js';
+import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
@@ -61,6 +63,8 @@ export class SessionRuntime {
     this.cwd = cwd;
     this.paths = new AskPaths(cwd);
     this.store = new FileStore();
+    this.ledger = new EventLedger(cwd);
+    this.projectionEngine = new RuntimeProjectionEngine(cwd);
   }
 
   async start() {
@@ -198,6 +202,51 @@ export class SessionRuntime {
     return next;
   }
 
+  resolveTransitionEventType(transition) {
+    if (transition.to === 'active') {
+      return 'SessionStarted';
+    }
+    if (transition.to === 'paused') {
+      return 'SessionPaused';
+    }
+    if (transition.to === 'resumed') {
+      return 'SessionResumed';
+    }
+    if (transition.to === 'blocked') {
+      return 'SessionBlocked';
+    }
+    if (transition.to === 'closed') {
+      return 'SessionClosed';
+    }
+    return '';
+  }
+
+  async emitTransitionEventAndReplay(transition) {
+    const type = this.resolveTransitionEventType(transition);
+    if (!type) {
+      return;
+    }
+
+    await this.ledger.append({
+      type,
+      sessionId: transition.sessionId,
+      actor: transition.actor || 'local',
+      payload: {
+        from: transition.from,
+        to: transition.to,
+        reason: transition.reason,
+        sourceCommand: transition.sourceCommand,
+        branch: transition.branch,
+        worktree: transition.worktree,
+        repoRoot: transition.repoRoot,
+      },
+      meta: {
+        source: 'session-runtime',
+      },
+    });
+    await this.projectionEngine.replay();
+  }
+
   async transition(to, options = {}) {
     const reason = options.reason ?? '';
     const sourceCommand = options.sourceCommand ?? `session ${to}`;
@@ -236,6 +285,7 @@ export class SessionRuntime {
     await this.store.appendNdjson(this.paths.historyLog(), transition);
     const nextSession = this.projectSession(session, transition);
     await this.store.writeJson(this.paths.activeSession(), nextSession);
+    await this.emitTransitionEventAndReplay(transition);
     await this.store.deleteFile(this.paths.pendingTransition());
 
     return {

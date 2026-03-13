@@ -2,6 +2,28 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 3 session runtime bridge to event-first writes (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/SessionRuntime.js`
+    - `ask-core/src/core/HandoffEngine.js`
+    - `ask-core/src/core/WorkContextEngine.js`
+    - `ask-core/tests/sessionEventBridge.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Session transitions now append session events and trigger replay projection refresh.
+    - Handoff creation now emits `SessionHandoffGenerated` and replays snapshots.
+    - Context verify now emits `WorktreeVerified` and replays snapshots.
+    - Backward compatibility preserved for `active-session.json` and `work-context.json` snapshot writes.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs` failed as expected (missing event records before bridge implementation).
+    - GREEN: `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs` passed (3/3).
+    - Regression: `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` passed (8/8).
+    - Phase gate: `cmd /c npm run ask:verify:phase1` passed (phase contracts 8/8 + repo tests 20/20).
+
 - ASK 3.0 Task 2 replay engine + core projectors (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`

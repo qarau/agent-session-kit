@@ -5,14 +5,23 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `c2aea27 feat: add phase-based autonomy verification workflow`
+- Current HEAD: `506ccc1 feat: add replay engine and core runtime projectors`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 2 (replay engine + core projectors) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 3 (session runtime bridge to event-first writes) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 3 RED/GREEN session-event bridge implemented:
+  - Added event-first bridge behavior in `SessionRuntime`, `HandoffEngine`, and `WorkContextEngine`.
+  - Added `ask-core/tests/sessionEventBridge.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs` failed initially (missing session/handoff/context event records).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs` passed (3/3).
+  - `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` passed (8/8).
+  - `cmd /c npm run ask:verify:phase1` passed (phase contracts 8/8 + repo tests 20/20).
 - Task 2 RED/GREEN replay runtime implemented:
   - Added `RuntimeSnapshotStore` and `RuntimeProjectionEngine`.
   - Added core projectors: `SessionProjector`, `TaskBoardProjector`, `VerificationProjector`.
@@ -58,8 +67,8 @@ Execute ASK 3.0 Task 2 (replay engine + core projectors) using TDD in isolated w
 
 ## Next Tasks
 
-1. Execute Task 3: session runtime bridge to event-first writes.
-2. Add `sessionEventBridge` contracts (RED), then implement event-first session/handoff/context bridge (GREEN).
+1. Execute Task 4: task runtime + task CLI.
+2. Add `taskRuntime` contracts (RED), then implement minimal event-driven task commands (GREEN).
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -71,10 +80,11 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/replayProjection.contract.test.mjs` (pass, 2/2)
-- `cmd /c npm run ask:verify:phase1` (pass, phase 5/5 + repo 20/20)
+- `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs` (pass, 3/3)
+- `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` (pass, 8/8)
+- `cmd /c npm run ask:verify:phase1` (pass, phase 8/8 + repo 20/20)
 
-Latest status: `Task 2 replay/projector pass (2026-03-14)`.
+Latest status: `Task 3 session-event bridge pass (2026-03-14)`.
 
 ## Resume Commands
 
