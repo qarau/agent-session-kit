@@ -4,16 +4,15 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Execute ASK 3.0 Task 6A: enterprise guardrails for superpowers integration.
+- [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
 
 ## Next
 
-- [ ] Add `superpowersEnterprise` contracts for version policy, allowlist, compatibility harness, and kill switch.
-- [ ] Implement enterprise provider policy runtime + workflow-provider CLI.
-- [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
+- [ ] Execute ASK 3.0 Task 7: dependency-aware freshness runtime.
 
 ## Done
 
+- [x] 2026-03-14 - complete ASK 3.0 Task 6A enterprise guardrails (`SuperpowersAdapter` policy enforcement, policy-driven registry/runtime wiring, `workflow-provider` CLI, `superpowersEnterprise` contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 6 workflow adapter integration (`WorkflowRuntime`, workflow adapters/registry, workflow projector, workflow CLI, contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 5 evidence/verify runtime (`VerificationRuntime`, evidence/verify CLI commands, evidence/verify contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 4 task runtime (`TaskRuntime`, task invariants, task CLI, task contracts)

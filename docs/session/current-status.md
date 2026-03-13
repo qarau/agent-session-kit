@@ -5,14 +5,24 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `460c4b7 feat: add event-driven evidence and verification commands`
+- Current HEAD: `6e497ba feat: add superpowers workflow adapter and workflow runtime`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 6 (workflow adapter integration) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 6A (enterprise guardrails for superpowers integration) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 6A RED/GREEN enterprise superpowers guardrails implemented:
+  - Added provider guardrail modules for version pinning, skill allowlist, and compatibility harness.
+  - Extended `SuperpowersAdapter` with provider policy enforcement, compatibility status reporting, and deterministic kill-switch fallback.
+  - Added policy-wired workflow registry/runtime loading and `ask workflow-provider status` CLI command.
+  - Added integration contracts in `ask-core/tests/superpowersEnterprise.contract.test.mjs` (adapter + policy/CLI wiring).
+- RED verification:
+  - `cmd /c node --test ask-core/tests/superpowersEnterprise.contract.test.mjs` failed initially (policy wiring and `workflow-provider` CLI missing).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/superpowersEnterprise.contract.test.mjs ask-core/tests/workflowAdapter.contract.test.mjs` passed (8/8).
+  - `cmd /c npm run ask:verify:phase3` passed (phase contracts 8/8 + repo tests 20/20).
 - Task 6 RED/GREEN workflow adapter runtime implemented:
   - Added adapter base/registry/superpowers adapter (`WorkflowAdapter`, `WorkflowRegistry`, `SuperpowersAdapter`).
   - Added workflow runtime + projector (`WorkflowRuntime`, `WorkflowProjector`).
@@ -98,8 +108,8 @@ Execute ASK 3.0 Task 6 (workflow adapter integration) using TDD in isolated work
 
 ## Next Tasks
 
-1. Execute Task 6A: enterprise guardrails for superpowers integration.
-2. Add `superpowersEnterprise` contracts (RED), then implement version/allowlist/compatibility/kill-switch policy layer (GREEN).
+1. Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
+2. Execute ASK 3.0 Task 7: dependency-aware freshness runtime.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -111,10 +121,10 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/workflowAdapter.contract.test.mjs` (pass, 2/2)
-- `cmd /c npm run ask:verify:phase3` (pass, phase 2/2 + repo 20/20)
+- `cmd /c node --test ask-core/tests/workflowAdapter.contract.test.mjs ask-core/tests/superpowersEnterprise.contract.test.mjs` (pass, 8/8)
+- `cmd /c npm run ask:verify:phase3` (pass, phase contracts 8/8 + repo tests 20/20)
 
-Latest status: `Task 6 workflow adapter runtime pass (2026-03-14)`.
+Latest status: `Task 6A enterprise superpowers guardrails pass (2026-03-14)`.
 
 ## Resume Commands
 

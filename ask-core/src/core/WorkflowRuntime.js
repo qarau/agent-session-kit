@@ -4,6 +4,7 @@ import { EventLedger } from '../runtime/EventLedger.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 import { WorkflowRegistry } from '../adapters/WorkflowRegistry.js';
 import { EvidenceRecorder } from './EvidenceRecorder.js';
+import { PolicyEngine } from './PolicyEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -29,7 +30,7 @@ export class WorkflowRuntime {
     this.store = new FileStore();
     this.ledger = new EventLedger(cwd);
     this.projectionEngine = new RuntimeProjectionEngine(cwd);
-    this.registry = new WorkflowRegistry();
+    this.policyEngine = new PolicyEngine(cwd);
     this.evidenceRecorder = new EvidenceRecorder(cwd);
   }
 
@@ -70,6 +71,11 @@ export class WorkflowRuntime {
     await this.projectionEngine.replay();
   }
 
+  async registry() {
+    const policy = await this.policyEngine.load();
+    return new WorkflowRegistry({ policy });
+  }
+
   async recommend(taskId, workflowName = 'superpowers') {
     const resolvedTaskId = normalize(taskId);
     const resolvedWorkflow = normalize(workflowName) || 'superpowers';
@@ -82,7 +88,8 @@ export class WorkflowRuntime {
       return fail('task-not-found', `task not found: ${resolvedTaskId}`, { taskId: resolvedTaskId });
     }
 
-    const adapter = this.registry.get(resolvedWorkflow);
+    const registry = await this.registry();
+    const adapter = registry.get(resolvedWorkflow);
     if (!adapter) {
       return fail('workflow-not-found', `workflow adapter not found: ${resolvedWorkflow}`, {
         workflow: resolvedWorkflow,
@@ -90,10 +97,21 @@ export class WorkflowRuntime {
     }
 
     const verification = await this.evidenceRecorder.readTaskVerification(resolvedTaskId);
-    const recommendation = adapter.recommend({
-      task,
-      verification,
-    });
+    let recommendation = null;
+    try {
+      recommendation = adapter.recommend({
+        task,
+        verification,
+      });
+    } catch (error) {
+      return fail(
+        String(error?.code ?? 'workflow-policy-rejected'),
+        String(error?.message ?? 'workflow recommendation rejected by policy'),
+        {
+          workflow: resolvedWorkflow,
+        }
+      );
+    }
 
     await this.appendWorkflowEvent(
       'WorkflowRecommended',
@@ -108,6 +126,19 @@ export class WorkflowRuntime {
       recommendation,
       workflow: snapshot.tasks?.[resolvedTaskId] ?? null,
     };
+  }
+
+  async providerStatus(workflowName = 'superpowers', version = '') {
+    const resolvedWorkflow = normalize(workflowName) || 'superpowers';
+    const resolvedVersion = normalize(version);
+    const registry = await this.registry();
+    const status = registry.providerStatus(resolvedWorkflow, resolvedVersion);
+    if (!status) {
+      return fail('workflow-not-found', `workflow adapter not found: ${resolvedWorkflow}`, {
+        workflow: resolvedWorkflow,
+      });
+    }
+    return status;
   }
 
   async start(taskId, workflowName, skill, runId = '') {

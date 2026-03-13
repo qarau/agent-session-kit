@@ -2,6 +2,34 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 6A enterprise superpowers guardrails (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/adapters/superpowers/SuperpowersVersionPolicy.js`
+    - `ask-core/src/adapters/superpowers/SuperpowersSkillAllowlist.js`
+    - `ask-core/src/adapters/superpowers/SuperpowersCompatibilityHarness.js`
+    - `ask-core/src/adapters/SuperpowersAdapter.js`
+    - `ask-core/src/adapters/WorkflowRegistry.js`
+    - `ask-core/src/core/WorkflowRuntime.js`
+    - `ask-core/src/core/PolicyEngine.js`
+    - `ask-core/src/policy/defaultPolicy.js`
+    - `ask-core/src/cli/commands/workflow-provider.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/superpowersEnterprise.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added enterprise provider guardrails for superpowers integration (version pinning, skill allowlist, compatibility harness, kill-switch fallback).
+    - Wired workflow registry/runtime to consume `workflow_provider` policy configuration.
+    - Added `ask workflow-provider status` command for deterministic provider compatibility checks.
+    - Added contract coverage for adapter policy failures plus policy-driven CLI/runtime behavior.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/superpowersEnterprise.contract.test.mjs` failed as expected before policy wiring.
+    - GREEN: `cmd /c node --test ask-core/tests/superpowersEnterprise.contract.test.mjs ask-core/tests/workflowAdapter.contract.test.mjs` passed (8/8).
+    - Phase gate: `cmd /c npm run ask:verify:phase3` passed (phase contracts 8/8 + repo tests 20/20).
+
 - ASK 3.0 Task 6 workflow adapter integration (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`
