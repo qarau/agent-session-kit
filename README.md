@@ -94,18 +94,22 @@ node ask-core/bin/ask.js session doctor
 
 - Developed and tested in Codex 5.3 CLI.
 - Works well with [Superpowers](https://github.com/obra/superpowers) for skill-driven agent workflows.
-- ASK is workflow-level and agent-agnostic; it can improve GUI-agent workflows (for example Codex and Claude) when those workflows use the same git/hooks/session-doc guardrails.
+- ASK Runtime is platform-agnostic at the workflow layer; it can improve CLI and GUI agent workflows (for example Codex and Claude) when those workflows use the same git/hooks/session-doc guardrails.
 
 ## Ideal Pairing: Superpowers + ASK Runtime
 
 This is the recommended operating model for AI-assisted development:
 
 - Superpowers: development workflow (how work gets designed and executed)
+- Codex 5.3: implementation worker (fast execution in the loop)
 - ASK Runtime: session discipline (how work stays governed and shippable)
+
+Together, Superpowers + Codex 5.3 + ASK Runtime provide a high-leverage workflow: plan with rigor, execute quickly, and stay policy-safe from first edit to push.
 
 Responsibility split:
 
 - Superpowers drives process quality through skills (for example: brainstorming, writing plans, executing plans, code review).
+- Codex 5.3 executes implementation tasks rapidly inside that process.
 - ASK Runtime enforces session and git discipline (context checks, freshness checks, lifecycle gates, pre-commit/pre-push policy).
 
 Why the pairing works:
