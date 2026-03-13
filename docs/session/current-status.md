@@ -5,14 +5,24 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `607ac51 feat: bridge session, handoff, and context flows to event-first replay`
+- Current HEAD: `9e722a2 feat: add event-driven task runtime and CLI`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 4 (task runtime + task CLI) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 5 (evidence + verify runtime commands) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 5 RED/GREEN evidence + verify runtime implemented:
+  - Added `VerificationRuntime`.
+  - Added CLI commands `ask evidence attach` and `ask verify pass|fail`.
+  - Extended `EvidenceRecorder` with replay-derived verification snapshot readers.
+  - Added `ask-core/tests/evidenceVerify.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/evidenceVerify.contract.test.mjs` failed initially (`ask evidence` / `ask verify` command surface missing).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/evidenceVerify.contract.test.mjs` passed (2/2).
+  - `cmd /c npm run ask:verify:phase2` passed (phase contracts 4/4 + repo tests 20/20).
 - Task 4 RED/GREEN task runtime implemented:
   - Added `TaskRuntime` core runtime.
   - Added task invariants at `runtime/invariants/taskInvariants.js`.
@@ -77,8 +87,8 @@ Execute ASK 3.0 Task 4 (task runtime + task CLI) using TDD in isolated worktree 
 
 ## Next Tasks
 
-1. Execute Task 5: evidence + verify runtime commands.
-2. Add `evidenceVerify` contracts (RED), then implement minimal evidence/verify event runtime (GREEN).
+1. Execute Task 6: workflow adapter integration.
+2. Add workflow adapter contracts (RED), then implement minimal adapter runtime (GREEN).
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -90,10 +100,10 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/taskRuntime.contract.test.mjs` (pass, 2/2)
-- `cmd /c npm run ask:verify:phase2` (pass, phase 2/2 + repo 20/20)
+- `cmd /c node --test ask-core/tests/evidenceVerify.contract.test.mjs` (pass, 2/2)
+- `cmd /c npm run ask:verify:phase2` (pass, phase 4/4 + repo 20/20)
 
-Latest status: `Task 4 task runtime pass (2026-03-14)`.
+Latest status: `Task 5 evidence/verify runtime pass (2026-03-14)`.
 
 ## Resume Commands
 

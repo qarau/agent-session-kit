@@ -4,16 +4,17 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Execute ASK 3.0 Task 5: evidence + verify runtime commands.
+- [ ] Execute ASK 3.0 Task 6: workflow adapter integration.
 
 ## Next
 
-- [ ] Add `evidenceVerify` contracts for evidence attach and verification pass/fail flows.
-- [ ] Implement minimal evidence/verify runtime commands with replay-derived projections.
+- [ ] Add workflow adapter contracts for recommend/start/artifact/complete/fail.
+- [ ] Implement minimal workflow runtime + adapter registry path.
 - [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
 
 ## Done
 
+- [x] 2026-03-14 - complete ASK 3.0 Task 5 evidence/verify runtime (`VerificationRuntime`, evidence/verify CLI commands, evidence/verify contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 4 task runtime (`TaskRuntime`, task invariants, task CLI, task contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 3 session-event bridge (`SessionRuntime`/`HandoffEngine`/`WorkContextEngine` event-first writes + replay contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 2 replay runtime (projection engine, snapshot store, projectors, `ask replay`, contracts)

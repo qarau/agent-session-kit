@@ -2,6 +2,29 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 5 evidence + verify runtime commands (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/VerificationRuntime.js`
+    - `ask-core/src/core/EvidenceRecorder.js`
+    - `ask-core/src/cli/commands/evidence.js`
+    - `ask-core/src/cli/commands/verify.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/evidenceVerify.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added runtime commands for evidence attachment and verification pass/fail outcomes.
+    - Added event-first append + replay for evidence and verification events.
+    - Added replay-derived verification snapshot reads in `EvidenceRecorder`.
+    - Extended CLI surface with `ask evidence` and `ask verify`.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/evidenceVerify.contract.test.mjs` failed as expected before implementation (`ask evidence`/`ask verify` unavailable).
+    - GREEN: `cmd /c node --test ask-core/tests/evidenceVerify.contract.test.mjs` passed (2/2).
+    - Phase gate: `cmd /c npm run ask:verify:phase2` passed (phase contracts 4/4 + repo tests 20/20).
+
 - ASK 3.0 Task 4 task runtime + task CLI (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`

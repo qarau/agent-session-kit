@@ -9,6 +9,8 @@ import { runHandoff } from './commands/handoff.js';
 import { runCodex } from './commands/codex.js';
 import { runReplay } from './commands/replay.js';
 import { runTask } from './commands/task.js';
+import { runEvidence } from './commands/evidence.js';
+import { runVerify } from './commands/verify.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -22,6 +24,8 @@ Usage:
   ask pre-commit-check
   ask pre-push-check
   ask task create|assign|start|status
+  ask evidence attach
+  ask verify pass|fail
   ask replay
   ask handoff create
   ask codex context status|ensure|compact
@@ -77,6 +81,16 @@ export async function runCli(args) {
 
   if (command === 'task') {
     await runTask(subcommand, rest);
+    return;
+  }
+
+  if (command === 'evidence') {
+    await runEvidence(subcommand, rest);
+    return;
+  }
+
+  if (command === 'verify') {
+    await runVerify(subcommand, rest);
     return;
   }
 
