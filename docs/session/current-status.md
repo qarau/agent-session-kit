@@ -5,14 +5,25 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `9e722a2 feat: add event-driven task runtime and CLI`
+- Current HEAD: `460c4b7 feat: add event-driven evidence and verification commands`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 5 (evidence + verify runtime commands) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 6 (workflow adapter integration) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 6 RED/GREEN workflow adapter runtime implemented:
+  - Added adapter base/registry/superpowers adapter (`WorkflowAdapter`, `WorkflowRegistry`, `SuperpowersAdapter`).
+  - Added workflow runtime + projector (`WorkflowRuntime`, `WorkflowProjector`).
+  - Added `ask workflow recommend|start|artifact|complete|fail` command.
+  - Added workflow snapshot wiring (`AskPaths`, `RuntimeSnapshotStore`, `RuntimeProjectionEngine`, `Scaffolder`).
+  - Added `ask-core/tests/workflowAdapter.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/workflowAdapter.contract.test.mjs` failed initially (`ask workflow` command and workflow snapshot missing).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/workflowAdapter.contract.test.mjs` passed (2/2).
+  - `cmd /c npm run ask:verify:phase3` passed (phase contracts 2/2 + repo tests 20/20).
 - Task 5 RED/GREEN evidence + verify runtime implemented:
   - Added `VerificationRuntime`.
   - Added CLI commands `ask evidence attach` and `ask verify pass|fail`.
@@ -87,8 +98,8 @@ Execute ASK 3.0 Task 5 (evidence + verify runtime commands) using TDD in isolate
 
 ## Next Tasks
 
-1. Execute Task 6: workflow adapter integration.
-2. Add workflow adapter contracts (RED), then implement minimal adapter runtime (GREEN).
+1. Execute Task 6A: enterprise guardrails for superpowers integration.
+2. Add `superpowersEnterprise` contracts (RED), then implement version/allowlist/compatibility/kill-switch policy layer (GREEN).
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -100,15 +111,15 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/evidenceVerify.contract.test.mjs` (pass, 2/2)
-- `cmd /c npm run ask:verify:phase2` (pass, phase 4/4 + repo 20/20)
+- `cmd /c node --test ask-core/tests/workflowAdapter.contract.test.mjs` (pass, 2/2)
+- `cmd /c npm run ask:verify:phase3` (pass, phase 2/2 + repo 20/20)
 
-Latest status: `Task 5 evidence/verify runtime pass (2026-03-14)`.
+Latest status: `Task 6 workflow adapter runtime pass (2026-03-14)`.
 
 ## Resume Commands
 
 ```powershell
 git checkout ask-3-phase1-event-ledger
 git log -5 --oneline
-cmd /c npm run ask:verify:phase1
+cmd /c npm run ask:verify:phase3
 ```

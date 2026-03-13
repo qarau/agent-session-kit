@@ -18,4 +18,8 @@ export class RuntimeSnapshotStore {
   async writeVerification(payload) {
     await this.store.writeJson(this.paths.verificationSnapshot(), payload);
   }
+
+  async writeWorkflow(payload) {
+    await this.store.writeJson(this.paths.workflowSnapshot(), payload);
+  }
 }

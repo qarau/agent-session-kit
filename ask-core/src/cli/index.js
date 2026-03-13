@@ -11,6 +11,7 @@ import { runReplay } from './commands/replay.js';
 import { runTask } from './commands/task.js';
 import { runEvidence } from './commands/evidence.js';
 import { runVerify } from './commands/verify.js';
+import { runWorkflow } from './commands/workflow.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -26,6 +27,7 @@ Usage:
   ask task create|assign|start|status
   ask evidence attach
   ask verify pass|fail
+  ask workflow recommend|start|artifact|complete|fail
   ask replay
   ask handoff create
   ask codex context status|ensure|compact
@@ -91,6 +93,11 @@ export async function runCli(args) {
 
   if (command === 'verify') {
     await runVerify(subcommand, rest);
+    return;
+  }
+
+  if (command === 'workflow') {
+    await runWorkflow(subcommand, rest);
     return;
   }
 

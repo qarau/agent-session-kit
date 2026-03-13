@@ -114,6 +114,10 @@ export class AskPaths {
     return path.join(this.runtimeSnapshotsDir(), 'verification.json');
   }
 
+  workflowSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'workflow.json');
+  }
+
   taskRegistry() {
     return path.join(this.tasksDir(), 'task-board.json');
   }

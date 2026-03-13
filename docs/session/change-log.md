@@ -2,6 +2,35 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 6 workflow adapter integration (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/adapters/WorkflowAdapter.js`
+    - `ask-core/src/adapters/WorkflowRegistry.js`
+    - `ask-core/src/adapters/SuperpowersAdapter.js`
+    - `ask-core/src/core/WorkflowRuntime.js`
+    - `ask-core/src/runtime/projectors/WorkflowProjector.js`
+    - `ask-core/src/cli/commands/workflow.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/workflowAdapter.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added workflow adapter contract layer with `superpowers` default adapter and registry.
+    - Added workflow runtime commands for recommend/start/artifact/complete/fail with event-first append + replay.
+    - Added workflow projector and snapshot persistence at `.ask/runtime/snapshots/workflow.json`.
+    - Added workflow CLI command family and help surface.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/workflowAdapter.contract.test.mjs` failed as expected before implementation (missing CLI surface and snapshot).
+    - GREEN: `cmd /c node --test ask-core/tests/workflowAdapter.contract.test.mjs` passed (2/2).
+    - Phase gate: `cmd /c npm run ask:verify:phase3` passed (phase contracts 2/2 + repo tests 20/20).
+
 - ASK 3.0 Task 5 evidence + verify runtime commands (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`

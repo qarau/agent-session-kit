@@ -62,6 +62,7 @@ export class Scaffolder {
     });
     await this.store.writeJson(this.paths.taskBoardSnapshot(), { tasks: {} });
     await this.store.writeJson(this.paths.verificationSnapshot(), { tasks: {} });
+    await this.store.writeJson(this.paths.workflowSnapshot(), { tasks: {} });
     await this.store.writeJson(this.paths.taskRegistry(), { tasks: {} });
   }
 }
