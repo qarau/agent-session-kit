@@ -5,14 +5,24 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `506ccc1 feat: add replay engine and core runtime projectors`
+- Current HEAD: `607ac51 feat: bridge session, handoff, and context flows to event-first replay`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 3 (session runtime bridge to event-first writes) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 4 (task runtime + task CLI) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 4 RED/GREEN task runtime implemented:
+  - Added `TaskRuntime` core runtime.
+  - Added task invariants at `runtime/invariants/taskInvariants.js`.
+  - Added `ask task create|assign|start|status` CLI command.
+  - Added `ask-core/tests/taskRuntime.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/taskRuntime.contract.test.mjs` failed initially (`ask task` command missing).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/taskRuntime.contract.test.mjs` passed (2/2).
+  - `cmd /c npm run ask:verify:phase2` passed (phase contracts 2/2 + repo tests 20/20).
 - Task 3 RED/GREEN session-event bridge implemented:
   - Added event-first bridge behavior in `SessionRuntime`, `HandoffEngine`, and `WorkContextEngine`.
   - Added `ask-core/tests/sessionEventBridge.contract.test.mjs`.
@@ -67,8 +77,8 @@ Execute ASK 3.0 Task 3 (session runtime bridge to event-first writes) using TDD 
 
 ## Next Tasks
 
-1. Execute Task 4: task runtime + task CLI.
-2. Add `taskRuntime` contracts (RED), then implement minimal event-driven task commands (GREEN).
+1. Execute Task 5: evidence + verify runtime commands.
+2. Add `evidenceVerify` contracts (RED), then implement minimal evidence/verify event runtime (GREEN).
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -80,11 +90,10 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs` (pass, 3/3)
-- `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` (pass, 8/8)
-- `cmd /c npm run ask:verify:phase1` (pass, phase 8/8 + repo 20/20)
+- `cmd /c node --test ask-core/tests/taskRuntime.contract.test.mjs` (pass, 2/2)
+- `cmd /c npm run ask:verify:phase2` (pass, phase 2/2 + repo 20/20)
 
-Latest status: `Task 3 session-event bridge pass (2026-03-14)`.
+Latest status: `Task 4 task runtime pass (2026-03-14)`.
 
 ## Resume Commands
 

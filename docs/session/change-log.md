@@ -2,6 +2,28 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 4 task runtime + task CLI (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/TaskRuntime.js`
+    - `ask-core/src/runtime/invariants/taskInvariants.js`
+    - `ask-core/src/cli/commands/task.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/taskRuntime.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added event-driven task runtime for `create`, `assign`, `start`, and `status`.
+    - Added task transition invariants with deterministic error payloads.
+    - Added task CLI command family and help surface.
+    - Added contract checks for task lifecycle CLI behavior and transition rejection before event append.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/taskRuntime.contract.test.mjs` failed as expected before implementation (`ask task` command unavailable).
+    - GREEN: `cmd /c node --test ask-core/tests/taskRuntime.contract.test.mjs` passed (2/2).
+    - Phase gate: `cmd /c npm run ask:verify:phase2` passed (phase contracts 2/2 + repo tests 20/20).
+
 - ASK 3.0 Task 3 session runtime bridge to event-first writes (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`
