@@ -268,6 +268,7 @@ Use the focused docs below instead of repeating operational policy in this READM
 - [docs/repo-boundary-guards.md](docs/repo-boundary-guards.md) - CI architecture boundary guard patterns
 - [docs/session/guardrails.md](docs/session/guardrails.md) - maintainer guardrails and session documentation discipline
 - [docs/maintainer-mode.md](docs/maintainer-mode.md) - maintainer-only governance and protected-branch verification flow
+- [docs/autonomy-mode.md](docs/autonomy-mode.md) - phase-based autonomous verification workflow for Codex execution
 
 ## Local Development
 

@@ -4,16 +4,17 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Begin ASK 3.0 execution from the approved implementation plan (Task 1: event ledger foundation).
+- [ ] Start ASK 3.0 Task 1 in a dedicated worktree and run RED baseline for event-ledger foundation tests.
 
 ## Next
 
-- [ ] Choose execution mode for plan (`subagent-driven` vs `parallel session`).
-- [ ] Create dedicated execution worktree for ASK 3.0 implementation.
+- [ ] Execute Task 1 implementation after RED (SequenceStore/EventLedger/scaffolder paths).
+- [ ] Run phase verification via `npm run ask:verify:phase1`.
 - [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
 
 ## Done
 
+- [x] 2026-03-14 - add autonomy verification runner + phase npm scripts + autonomy-mode docs
 - [x] 2026-03-14 - publish ASK 3.0 runtime evolution implementation plan with enterprise Superpowers guardrails
 - [x] 2026-03-14 - add configurable branch enforcement mode and all-branch maintainer policy wiring
 - [x] 2026-03-12 - add codex context budget command contracts (`50e1b4a`)

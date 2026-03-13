@@ -13,6 +13,14 @@ Define an executable ASK 3.0 evolution path from current ASK 2.0 runtime to Sess
 
 ## Completed In This Stream
 
+- Added phase-based autonomy verification runner:
+  - `scripts/autonomy/runPhaseVerification.mjs`
+  - `npm` scripts: `ask:verify:baseline`, `ask:verify:phase1..phase6`
+- Added operator guidance for autonomous execution:
+  - `docs/autonomy-mode.md`
+  - linked from `README.md`
+- Validated autonomy runner execution path:
+  - `cmd /c npm run ask:verify:baseline` passed.
 - Produced ASK 3.0 implementation roadmap at:
   - `docs/plans/2026-03-14-ask-3-runtime-evolution-implementation.md`
 - Mapped current ASK 2.0 capabilities to ASK 3.0 target layers:
@@ -29,8 +37,8 @@ Define an executable ASK 3.0 evolution path from current ASK 2.0 runtime to Sess
 
 ## Next Tasks
 
-1. Choose execution mode for the new ASK 3.0 plan (`subagent-driven` vs `parallel session`).
-2. Start Task 1 (event ledger foundation) in a dedicated execution worktree.
+1. Start ASK 3.0 Task 1 (event ledger foundation) in a dedicated execution worktree.
+2. Apply TDD RED/GREEN cycle for Task 1 tests + implementation.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
