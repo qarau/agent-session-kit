@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test tests/sessionKitSmoke.test.mjs tests/releaseDocsConsistency.test.mjs tests/resolveBranchEnforcementMode.test.mjs tests/sessionFreshnessBranchMode.test.mjs tests/releaseDocsBranchMode.test.mjs",
+    "test": "node --test tests/sessionKitSmoke.test.mjs tests/releaseDocsConsistency.test.mjs tests/resolveBranchEnforcementMode.test.mjs tests/sessionFreshnessBranchMode.test.mjs tests/releaseDocsBranchMode.test.mjs tests/autonomousShip.contract.test.mjs",
     "test:release-docs": "node scripts/verifyReleaseDocsConsistency.mjs",
     "ask:verify:baseline": "node scripts/autonomy/runPhaseVerification.mjs --phase baseline",
     "ask:verify:phase1": "node scripts/autonomy/runPhaseVerification.mjs --phase phase1",
@@ -17,6 +17,13 @@
     "ask:verify:phase4": "node scripts/autonomy/runPhaseVerification.mjs --phase phase4",
     "ask:verify:phase5": "node scripts/autonomy/runPhaseVerification.mjs --phase phase5",
     "ask:verify:phase6": "node scripts/autonomy/runPhaseVerification.mjs --phase phase6",
+    "ask:ship:baseline": "node scripts/autonomy/runAutonomousShip.mjs --phase baseline",
+    "ask:ship:phase1": "node scripts/autonomy/runAutonomousShip.mjs --phase phase1",
+    "ask:ship:phase2": "node scripts/autonomy/runAutonomousShip.mjs --phase phase2",
+    "ask:ship:phase3": "node scripts/autonomy/runAutonomousShip.mjs --phase phase3",
+    "ask:ship:phase4": "node scripts/autonomy/runAutonomousShip.mjs --phase phase4",
+    "ask:ship:phase5": "node scripts/autonomy/runAutonomousShip.mjs --phase phase5",
+    "ask:ship:phase6": "node scripts/autonomy/runAutonomousShip.mjs --phase phase6",
     "bootstrap:ask-core": "node scripts/bootstrapAskCore.cjs",
     "test:ask-core": "node --test ask-core/tests"
   }

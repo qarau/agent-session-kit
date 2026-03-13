@@ -21,10 +21,37 @@ Avoid repetitive in-sandbox failure then out-of-sandbox retry loops during verif
    - scope changes
    - destructive or out-of-scope actions
 
+## Autonomous Ship Gate
+
+When verification is green, commit and push can run in the same autonomous flow.
+
+Use ship commands:
+
+- `npm run ask:ship:baseline -- --message "chore: ..."`
+- `npm run ask:ship:phase1 -- --message "feat: ..."`
+- `npm run ask:ship:phase2 -- --message "feat: ..."`
+- `npm run ask:ship:phase3 -- --message "feat: ..."`
+- `npm run ask:ship:phase4 -- --message "feat: ..."`
+- `npm run ask:ship:phase5 -- --message "feat: ..."`
+- `npm run ask:ship:phase6 -- --message "feat: ..."`
+
+Or set default message via env:
+
+```bash
+ASK_AUTONOMY_COMMIT_MESSAGE="feat: runtime update" npm run ask:ship:phase2
+```
+
+Ship behavior:
+- run phase verification first
+- abort immediately if verification fails
+- stage all changes, commit, then push
+- use `git push -u <remote> <branch>` if no upstream exists
+
 ## Runner
 
 Phase runner script:
 - `scripts/autonomy/runPhaseVerification.mjs`
+- `scripts/autonomy/runAutonomousShip.mjs`
 
 Behavior:
 - runs phase-specific test sets in sequence

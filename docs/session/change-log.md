@@ -2,6 +2,26 @@
 
 ## 2026-03-14
 
+- Autonomous commit/push gate after green verification:
+  - Files:
+    - `scripts/autonomy/runAutonomousShip.mjs`
+    - `scripts/autonomy/runPhaseVerification.mjs`
+    - `tests/autonomousShip.contract.test.mjs`
+    - `package.json`
+    - `docs/autonomy-mode.md`
+    - `README.md`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added `ask:ship:*` commands to run phase verification, then stage, commit, and push automatically on green.
+    - Added commit-message policy (`--message` or `ASK_AUTONOMY_COMMIT_MESSAGE`) for non-dry-run ship execution.
+    - Added shared phase-runner export path so verification and ship mode use the same gate logic.
+  - Verification:
+    - `cmd /c npm run test` passed (28/28).
+    - `cmd /c npm run ask:verify:baseline` passed.
+    - `cmd /c npm run ask:ship:baseline -- --dry-run` passed.
+
 - ASK autonomy workflow acceleration:
   - Files:
     - `scripts/autonomy/runPhaseVerification.mjs`

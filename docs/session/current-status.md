@@ -9,10 +9,20 @@ Last updated: 2026-03-14
 
 ## Active Objective
 
-Define an executable ASK 3.0 evolution path from current ASK 2.0 runtime to Session OS architecture with enterprise-safe Superpowers integration.
+Harden autonomy mode so a fully green phase verification can trigger commit and push in one deterministic command.
 
 ## Completed In This Stream
 
+- Added autonomous ship runner:
+  - `scripts/autonomy/runAutonomousShip.mjs`
+  - `npm` scripts: `ask:ship:baseline`, `ask:ship:phase1..phase6`
+- Refactored phase verification runner for shared runtime usage:
+  - `scripts/autonomy/runPhaseVerification.mjs`
+- Added contract coverage for ship argument/gate behavior:
+  - `tests/autonomousShip.contract.test.mjs`
+- Updated autonomy docs and README for verify->commit->push usage:
+  - `docs/autonomy-mode.md`
+  - `README.md`
 - Added phase-based autonomy verification runner:
   - `scripts/autonomy/runPhaseVerification.mjs`
   - `npm` scripts: `ask:verify:baseline`, `ask:verify:phase1..phase6`
@@ -37,8 +47,8 @@ Define an executable ASK 3.0 evolution path from current ASK 2.0 runtime to Sess
 
 ## Next Tasks
 
-1. Start ASK 3.0 Task 1 (event ledger foundation) in a dedicated execution worktree.
-2. Apply TDD RED/GREEN cycle for Task 1 tests + implementation.
+1. Resume ASK 3.0 phase execution from the worktree stream after this autonomy hardening patch.
+2. Use `ask:ship:phase*` for phase-level verify->commit->push flow.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -50,11 +60,11 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- Planning/documentation update only in this stream.
-- Existing runtime baseline remains:
-  - `cmd /c npm run test` (pass, 20/20 on latest recorded run)
+- `cmd /c npm run test` (pass, 28/28)
+- `cmd /c npm run ask:verify:baseline` (pass)
+- `cmd /c npm run ask:ship:baseline -- --dry-run` (pass)
 
-Latest status: `pass baseline retained (2026-03-14)`.
+Latest status: `pass autonomy ship gate verified (2026-03-14)`.
 
 ## Resume Commands
 

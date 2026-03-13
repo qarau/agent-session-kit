@@ -4,16 +4,17 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Start ASK 3.0 Task 1 in a dedicated worktree and run RED baseline for event-ledger foundation tests.
+- [ ] Resume ASK 3.0 task execution stream from the active worktree after autonomy ship hardening.
 
 ## Next
 
-- [ ] Execute Task 1 implementation after RED (SequenceStore/EventLedger/scaffolder paths).
-- [ ] Run phase verification via `npm run ask:verify:phase1`.
+- [ ] Use `npm run ask:ship:phase1 -- --message "<commit>"` for one-command verify->commit->push.
+- [ ] Execute Task 2 implementation after RED (replay/projector runtime).
 - [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
 
 ## Done
 
+- [x] 2026-03-14 - add autonomous ship runner (`verify -> commit -> push`) with phase npm scripts and contract tests
 - [x] 2026-03-14 - add autonomy verification runner + phase npm scripts + autonomy-mode docs
 - [x] 2026-03-14 - publish ASK 3.0 runtime evolution implementation plan with enterprise Superpowers guardrails
 - [x] 2026-03-14 - add configurable branch enforcement mode and all-branch maintainer policy wiring

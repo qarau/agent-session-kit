@@ -2,8 +2,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
-const PHASES = {
+export const PHASES = {
   baseline: {
     description: 'Current stable verification baseline',
     commands: [
@@ -94,7 +95,7 @@ const PHASES = {
   },
 };
 
-function parseArgs(argv) {
+export function parsePhaseArgs(argv) {
   let phase = 'baseline';
   let dryRun = false;
   for (let i = 0; i < argv.length; i += 1) {
@@ -111,7 +112,7 @@ function parseArgs(argv) {
   return { phase, dryRun };
 }
 
-function runShell(command, label, dryRun) {
+export function runShell(command, label, dryRun) {
   console.log(`\n[autonomy] ${label}`);
   console.log(`[autonomy] run: ${command}`);
   if (dryRun) {
@@ -128,7 +129,7 @@ function runShell(command, label, dryRun) {
   }
 }
 
-function runNodeTests(files, label, dryRun) {
+export function runNodeTests(files, label, dryRun) {
   const existing = files.filter(file => fs.existsSync(path.resolve(process.cwd(), file)));
   if (existing.length === 0) {
     console.log(`\n[autonomy] ${label}`);
@@ -147,13 +148,11 @@ Available phases: ${names}
 `);
 }
 
-function main() {
-  const { phase, dryRun } = parseArgs(process.argv.slice(2));
+export function runPhaseVerification(phase, options = {}) {
+  const dryRun = options.dryRun === true;
   const profile = PHASES[phase];
   if (!profile) {
-    console.error(`[autonomy] unknown phase: ${phase}`);
-    printHelp();
-    process.exit(1);
+    throw new Error(`unknown phase: ${phase}`);
   }
 
   console.log(`[autonomy] phase=${phase}`);
@@ -170,4 +169,17 @@ function main() {
   console.log('\n[autonomy] phase verification complete');
 }
 
-main();
+function main() {
+  const { phase, dryRun } = parsePhaseArgs(process.argv.slice(2));
+  try {
+    runPhaseVerification(phase, { dryRun });
+  } catch (error) {
+    console.error(`[autonomy] ${error.message}`);
+    printHelp();
+    process.exit(1);
+  }
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}
