@@ -2,6 +2,19 @@
 
 ## 2026-03-14
 
+- ASK 3.0 roadmap planning and enterprise Superpowers integration strategy:
+  - Files:
+    - `docs/plans/2026-03-14-ask-3-runtime-evolution-implementation.md`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added full phased implementation plan from ASK 2.0 to ASK 3.0 Session OS architecture.
+    - Added explicit external-provider boundary for `obra/superpowers`.
+    - Added enterprise integration controls to plan (`Task 6A`): version pinning, skill allowlist, compatibility harness, and kill-switch fallback.
+  - Verification:
+    - Planning/doc update only; no runtime code changes in this entry.
+
 - Branch enforcement mode expansion (`protected` / `all` / `advisory`) and maintainer all-branch policy:
   - Files:
     - `ask-core/src/core/resolveBranchEnforcementMode.js`

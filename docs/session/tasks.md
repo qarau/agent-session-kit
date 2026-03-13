@@ -4,16 +4,17 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Commit and push all-branches branch-enforcement update (`branchEnforcementMode`).
+- [ ] Begin ASK 3.0 execution from the approved implementation plan (Task 1: event ledger foundation).
 
 ## Next
 
+- [ ] Choose execution mode for plan (`subagent-driven` vs `parallel session`).
+- [ ] Create dedicated execution worktree for ASK 3.0 implementation.
 - [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
-- [ ] Define maintainer policy for unmatched `pending-transition.json` markers.
-- [ ] Define governance policy for lifecycle-state override keys.
 
 ## Done
 
+- [x] 2026-03-14 - publish ASK 3.0 runtime evolution implementation plan with enterprise Superpowers guardrails
 - [x] 2026-03-14 - add configurable branch enforcement mode and all-branch maintainer policy wiring
 - [x] 2026-03-12 - add codex context budget command contracts (`50e1b4a`)
 - [x] 2026-03-12 - add codex context budget manager + CLI commands (`65867e0`)
