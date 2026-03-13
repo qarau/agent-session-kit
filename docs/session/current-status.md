@@ -4,15 +4,26 @@ Last updated: 2026-03-14
 
 ## Branch and Head
 
-- Active branch: `main`
-- Current HEAD: `72513c5 docs: position Superpowers + Codex 5.3 + ASK Runtime stack`
+- Active branch: `ask-3-phase1-event-ledger`
+- Current HEAD: `c2aea27 feat: add phase-based autonomy verification workflow`
 
 ## Active Objective
 
-Define an executable ASK 3.0 evolution path from current ASK 2.0 runtime to Session OS architecture with enterprise-safe Superpowers integration.
+Execute ASK 3.0 Task 1 (event ledger foundation) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 1 RED/GREEN foundation implemented:
+  - Added `SequenceStore` and `EventLedger` runtime modules.
+  - Extended `AskPaths` with runtime event/snapshot/task path helpers.
+  - Extended `FileStore` with `appendLine`, `readLines`, `exists`.
+  - Extended `Scaffolder` to initialize event ledger files (`events.ndjson`, `sequence.json`) and runtime snapshots.
+  - Added `ask-core/tests/eventLedger.foundation.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs` failed initially (`ERR_MODULE_NOT_FOUND` for `SequenceStore`).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs` passed (3/3).
+  - `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs` passed (5/5).
 - Added phase-based autonomy verification runner:
   - `scripts/autonomy/runPhaseVerification.mjs`
   - `npm` scripts: `ask:verify:baseline`, `ask:verify:phase1..phase6`
@@ -37,8 +48,8 @@ Define an executable ASK 3.0 evolution path from current ASK 2.0 runtime to Sess
 
 ## Next Tasks
 
-1. Start ASK 3.0 Task 1 (event ledger foundation) in a dedicated execution worktree.
-2. Apply TDD RED/GREEN cycle for Task 1 tests + implementation.
+1. Execute Task 2: replay engine + core projectors.
+2. Add `ask replay` command contract tests (RED), then implement minimal replay pipeline (GREEN).
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -50,16 +61,16 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- Planning/documentation update only in this stream.
-- Existing runtime baseline remains:
-  - `cmd /c npm run test` (pass, 20/20 on latest recorded run)
+- `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs` (pass, 3/3)
+- `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs` (pass, 5/5)
+- `cmd /c npm run ask:verify:baseline` (pass, 20/20)
 
-Latest status: `pass baseline retained (2026-03-14)`.
+Latest status: `Task 1 foundation pass (2026-03-14)`.
 
 ## Resume Commands
 
 ```powershell
-git checkout main
+git checkout ask-3-phase1-event-ledger
 git log -5 --oneline
-cmd /c npm run test
+cmd /c npm run ask:verify:phase1
 ```

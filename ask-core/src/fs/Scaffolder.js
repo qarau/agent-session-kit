@@ -16,9 +16,14 @@ export class Scaffolder {
     await this.store.ensureDir(this.paths.handoffsDir());
     await this.store.ensureDir(this.paths.stateDir());
     await this.store.ensureDir(this.paths.runtimeDir());
+    await this.store.ensureDir(this.paths.runtimeSnapshotsDir());
+    await this.store.ensureDir(this.paths.tasksDir());
+    await this.store.ensureDir(this.paths.worktreesDir());
 
     await this.store.ensureText(this.paths.runtimePolicy(), defaultPolicyYaml);
     await this.store.ensureText(this.paths.historyLog(), '');
+    await this.store.ensureText(this.paths.runtimeEvents(), '');
+    await this.store.writeJson(this.paths.sequenceState(), { nextSeq: 1 });
     await this.store.writeJson(this.paths.activeSession(), {
       sessionId: '',
       status: 'idle',
@@ -45,5 +50,18 @@ export class Scaffolder {
       worktree: '',
       verifiedAt: '',
     });
+    await this.store.writeJson(this.paths.sessionSnapshot(), {
+      sessionId: '',
+      status: 'idle',
+      goal: '',
+      branch: '',
+      worktree: '',
+      startedAt: '',
+      lastActiveAt: '',
+      lastHandoffAt: '',
+    });
+    await this.store.writeJson(this.paths.taskBoardSnapshot(), { tasks: {} });
+    await this.store.writeJson(this.paths.verificationSnapshot(), { tasks: {} });
+    await this.store.writeJson(this.paths.taskRegistry(), { tasks: {} });
   }
 }

@@ -38,6 +38,11 @@ export class FileStore {
     await fs.appendFile(filePath, `${JSON.stringify(record)}\n`, 'utf8');
   }
 
+  async appendLine(filePath, line) {
+    await this.ensureDir(path.dirname(filePath));
+    await fs.appendFile(filePath, `${line}\n`, 'utf8');
+  }
+
   async readNdjson(filePath, fallback = []) {
     const raw = await this.readText(filePath, '');
     if (!raw.trim()) {
@@ -48,6 +53,26 @@ export class FileStore {
       .map(line => line.trim())
       .filter(Boolean)
       .map(line => JSON.parse(line));
+  }
+
+  async readLines(filePath, fallback = []) {
+    const raw = await this.readText(filePath, '');
+    if (!raw.trim()) {
+      return fallback;
+    }
+    return raw
+      .split(/\r?\n/u)
+      .map(line => line.trim())
+      .filter(Boolean);
+  }
+
+  async exists(filePath) {
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async ensureText(filePath, content) {

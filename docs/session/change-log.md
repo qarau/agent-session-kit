@@ -2,6 +2,30 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 1 event-ledger foundation (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/runtime/SequenceStore.js`
+    - `ask-core/src/runtime/EventLedger.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/FileStore.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/tests/eventLedger.foundation.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added sequence counter store and append-only event ledger writer/reader.
+    - Added runtime event/snapshot/task path methods in AskPaths.
+    - Added line-based file store primitives for NDJSON event logging.
+    - Scaffolder now seeds runtime event files and sequence state.
+    - Added RED/GREEN contracts for event file scaffolding, deterministic sequence increments, and event envelope/order.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs` failed as expected (`ERR_MODULE_NOT_FOUND` before implementation).
+    - GREEN: `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs` passed (3/3).
+    - Regression check: `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs` passed (5/5).
+
 - ASK autonomy workflow acceleration:
   - Files:
     - `scripts/autonomy/runPhaseVerification.mjs`

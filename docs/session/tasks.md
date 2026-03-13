@@ -4,16 +4,17 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Start ASK 3.0 Task 1 in a dedicated worktree and run RED baseline for event-ledger foundation tests.
+- [ ] Execute ASK 3.0 Task 2: replay engine + core projectors.
 
 ## Next
 
-- [ ] Execute Task 1 implementation after RED (SequenceStore/EventLedger/scaffolder paths).
-- [ ] Run phase verification via `npm run ask:verify:phase1`.
+- [ ] Add replay command and projectors (`Session`, `TaskBoard`, `Verification`) with RED/GREEN contracts.
+- [ ] Wire runtime snapshots + paths for replay-derived reads.
 - [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
 
 ## Done
 
+- [x] 2026-03-14 - complete ASK 3.0 Task 1 foundation (SequenceStore, EventLedger, scaffolder/paths/store updates + contracts)
 - [x] 2026-03-14 - add autonomy verification runner + phase npm scripts + autonomy-mode docs
 - [x] 2026-03-14 - publish ASK 3.0 runtime evolution implementation plan with enterprise Superpowers guardrails
 - [x] 2026-03-14 - add configurable branch enforcement mode and all-branch maintainer policy wiring

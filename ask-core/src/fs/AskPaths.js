@@ -34,6 +34,18 @@ export class AskPaths {
     return path.join(this.root, 'runtime');
   }
 
+  runtimeSnapshotsDir() {
+    return path.join(this.runtimeDir(), 'snapshots');
+  }
+
+  tasksDir() {
+    return path.join(this.root, 'tasks');
+  }
+
+  worktreesDir() {
+    return path.join(this.root, 'worktrees');
+  }
+
   runtimePolicy() {
     return path.join(this.policyDir(), 'runtime-policy.yaml');
   }
@@ -80,5 +92,29 @@ export class AskPaths {
 
   contextSession() {
     return path.join(this.runtimeDir(), 'context-session.json');
+  }
+
+  runtimeEvents() {
+    return path.join(this.runtimeDir(), 'events.ndjson');
+  }
+
+  sequenceState() {
+    return path.join(this.runtimeDir(), 'sequence.json');
+  }
+
+  sessionSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'session.json');
+  }
+
+  taskBoardSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'tasks.json');
+  }
+
+  verificationSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'verification.json');
+  }
+
+  taskRegistry() {
+    return path.join(this.tasksDir(), 'task-board.json');
   }
 }
