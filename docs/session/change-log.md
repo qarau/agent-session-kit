@@ -2,6 +2,31 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 2 replay engine + core projectors (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/projectors/SessionProjector.js`
+    - `ask-core/src/runtime/projectors/TaskBoardProjector.js`
+    - `ask-core/src/runtime/projectors/VerificationProjector.js`
+    - `ask-core/src/cli/commands/replay.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/replayProjection.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added replay projection engine that consumes ledger events by `seq` and writes session/task/verification snapshots.
+    - Added minimal core projectors for session, task-board, and verification views.
+    - Added `ask replay` CLI command with concise replay summary output.
+    - Added replay contracts for sorted event replay, snapshot writes, and CLI success behavior.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/replayProjection.contract.test.mjs` failed as expected (`ERR_MODULE_NOT_FOUND` before implementation).
+    - GREEN: `cmd /c node --test ask-core/tests/replayProjection.contract.test.mjs` passed (2/2).
+    - Phase gate: `cmd /c npm run ask:verify:phase1` passed (phase contracts 5/5 + repo tests 20/20).
+
 - ASK 3.0 Task 1 event-ledger foundation (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`

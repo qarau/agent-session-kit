@@ -9,10 +9,20 @@ Last updated: 2026-03-14
 
 ## Active Objective
 
-Execute ASK 3.0 Task 1 (event ledger foundation) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 2 (replay engine + core projectors) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 2 RED/GREEN replay runtime implemented:
+  - Added `RuntimeSnapshotStore` and `RuntimeProjectionEngine`.
+  - Added core projectors: `SessionProjector`, `TaskBoardProjector`, `VerificationProjector`.
+  - Added `ask replay` command.
+  - Added `ask-core/tests/replayProjection.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/replayProjection.contract.test.mjs` failed initially (`ERR_MODULE_NOT_FOUND` for `RuntimeProjectionEngine`).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/replayProjection.contract.test.mjs` passed (2/2).
+  - `cmd /c npm run ask:verify:phase1` passed (phase contracts 5/5 + repo tests 20/20).
 - Task 1 RED/GREEN foundation implemented:
   - Added `SequenceStore` and `EventLedger` runtime modules.
   - Extended `AskPaths` with runtime event/snapshot/task path helpers.
@@ -48,8 +58,8 @@ Execute ASK 3.0 Task 1 (event ledger foundation) using TDD in isolated worktree 
 
 ## Next Tasks
 
-1. Execute Task 2: replay engine + core projectors.
-2. Add `ask replay` command contract tests (RED), then implement minimal replay pipeline (GREEN).
+1. Execute Task 3: session runtime bridge to event-first writes.
+2. Add `sessionEventBridge` contracts (RED), then implement event-first session/handoff/context bridge (GREEN).
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -61,11 +71,10 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs` (pass, 3/3)
-- `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs` (pass, 5/5)
-- `cmd /c npm run ask:verify:baseline` (pass, 20/20)
+- `cmd /c node --test ask-core/tests/replayProjection.contract.test.mjs` (pass, 2/2)
+- `cmd /c npm run ask:verify:phase1` (pass, phase 5/5 + repo 20/20)
 
-Latest status: `Task 1 foundation pass (2026-03-14)`.
+Latest status: `Task 2 replay/projector pass (2026-03-14)`.
 
 ## Resume Commands
 

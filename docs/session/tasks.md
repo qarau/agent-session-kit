@@ -4,16 +4,17 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Execute ASK 3.0 Task 2: replay engine + core projectors.
+- [ ] Execute ASK 3.0 Task 3: session runtime bridge to event-first writes.
 
 ## Next
 
-- [ ] Add replay command and projectors (`Session`, `TaskBoard`, `Verification`) with RED/GREEN contracts.
-- [ ] Wire runtime snapshots + paths for replay-derived reads.
+- [ ] Add `sessionEventBridge` contracts for session/handoff/context event-first writes.
+- [ ] Bridge `SessionRuntime`, `HandoffEngine`, and `WorkContextEngine` to append events then replay snapshots.
 - [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
 
 ## Done
 
+- [x] 2026-03-14 - complete ASK 3.0 Task 2 replay runtime (projection engine, snapshot store, projectors, `ask replay`, contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 1 foundation (SequenceStore, EventLedger, scaffolder/paths/store updates + contracts)
 - [x] 2026-03-14 - add autonomy verification runner + phase npm scripts + autonomy-mode docs
 - [x] 2026-03-14 - publish ASK 3.0 runtime evolution implementation plan with enterprise Superpowers guardrails

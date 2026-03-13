@@ -7,6 +7,7 @@ import { runPreCommitCheck } from './commands/preCommitCheck.js';
 import { runPrePushCheck } from './commands/prePushCheck.js';
 import { runHandoff } from './commands/handoff.js';
 import { runCodex } from './commands/codex.js';
+import { runReplay } from './commands/replay.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -19,6 +20,7 @@ Usage:
   ask can-commit
   ask pre-commit-check
   ask pre-push-check
+  ask replay
   ask handoff create
   ask codex context status|ensure|compact
 `);
@@ -63,6 +65,11 @@ export async function runCli(args) {
 
   if (command === 'pre-push-check') {
     await runPrePushCheck();
+    return;
+  }
+
+  if (command === 'replay') {
+    await runReplay();
     return;
   }
 
