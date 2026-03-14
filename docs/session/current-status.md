@@ -5,14 +5,31 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `7e9d78d chore: record ask 3.0 verification evidence and cutover decision`
+- Current HEAD: `c04d30f fix: stabilize guarded runner timeout classification under load`
 
 ## Active Objective
 
-Finalize ASK 3.0 cutover readiness evidence now that guarded-runner reliability blockers are resolved.
+Prepare mainline merge readiness summary and final release-flow evidence for ASK 3.0 runtime branch.
 
 ## Completed In This Stream
 
+- Completed downstream migration note for repos missing mode keys:
+  - Added explicit migration guidance for `branchEnforcementMode` / `governanceMode` in:
+    - `docs/adoption-guide.md`
+    - `docs/how-it-works.md`
+  - Documented runtime fallback behavior (`protected` / `project`) and explicit baseline recommendation.
+- Completed clean-room smoke from fresh clone:
+  - Cloned repository into clean temp path and installed ASK into a brand-new target repo.
+  - Verified installer/bootstrap artifacts:
+    - `.ask/runtime/snapshots/features.json` present
+    - `.ask/runtime/snapshots/release-trains.json` present
+    - `.ask/runtime/snapshots/promotion-gates.json` present
+    - `.ask/runtime/snapshots/rollout.json` present
+  - Verified runtime command flow in clean target:
+    - session/task/feature/release/promotion/rollout/rollback commands succeeded
+    - `ask workflow-provider status --workflow superpowers --version 0.3.0` returned `compatible`
+    - `ask replay` returned `ok: true`
+    - `ask session doctor` returned `status: succeeded`
 - Guarded-runner reliability stabilization completed:
   - Hardened timeout classification in `GuardedCommandRunner` to avoid stale timer misclassification after real process exit.
   - Increased guarded-runner and session-doctor contract timeout budgets for deterministic full-matrix execution under parallel load.
@@ -198,8 +215,8 @@ Finalize ASK 3.0 cutover readiness evidence now that guarded-runner reliability 
 
 ## Next Tasks
 
-1. Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
-2. Prepare mainline merge readiness summary for ASK 3.0 runtime branch.
+1. Prepare mainline merge readiness summary for ASK 3.0 runtime branch.
+2. Execute protected-branch release integration flow decision from `docs/session/open-loops.md` item 2.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -215,8 +232,9 @@ Task board source of truth: `docs/session/tasks.md`.
 - `node --test <explicit ask-core test file list>` (pass, 68/68)
 - `cmd /c node ask-core/bin/ask.js replay` (pass)
 - `cmd /c node ask-core/bin/ask.js session doctor` (pass)
+- clean-room smoke from fresh clone + fresh target repo install (pass)
 
-Latest status: `Guarded-runner blocker resolved; full ASK runtime matrices green (2026-03-14)`.
+Latest status: `Migration note complete and clean-room install smoke passed (2026-03-14)`.
 
 ## Resume Commands
 

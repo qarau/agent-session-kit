@@ -38,6 +38,17 @@ Agent Session Kit follows this model.
 - For most downstream repos, keep `governanceMode: "project"` in `docs/session/active-work-context.json` so release-doc checks are not required.
 - Use `governanceMode: "maintainer"` only for repos that publish and enforce ASK release docs.
 
+Migration note for pre-mode repos:
+
+- If your existing `docs/session/active-work-context.json` predates mode keys, add:
+  - `branchEnforcementMode: "protected"`
+  - `governanceMode: "project"`
+- Runtime fallback is already safe when missing:
+  - missing `branchEnforcementMode` resolves to `"protected"`
+  - missing `governanceMode` resolves to `"project"`
+- Recommended path:
+  - add both keys explicitly and commit as a one-time policy-baseline change.
+
 ## Team Conventions
 
 - Update `docs/session/current-status.md` every meaningful cycle.

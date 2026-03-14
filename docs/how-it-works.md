@@ -23,6 +23,9 @@ Branch enforcement is configurable via `docs/session/active-work-context.json`:
 - `branchEnforcementMode: "protected"` (default) enforces on `main` and `release/*`.
 - `branchEnforcementMode: "all"` enforces on every branch.
 - `branchEnforcementMode: "advisory"` keeps checks warning-level on every branch.
+- Migration compatibility:
+  - when `branchEnforcementMode` is missing, runtime defaults to `"protected"`.
+  - when `governanceMode` is missing, runtime defaults to `"project"`.
 
 Pre-push release-doc checks are governance-mode aware:
 - `governanceMode: "project"` (default) skips release-doc consistency checks.

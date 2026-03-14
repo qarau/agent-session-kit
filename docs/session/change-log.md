@@ -2,6 +2,40 @@
 
 ## 2026-03-14
 
+- ASK 3.0 follow-up: migration note + clean-room install smoke:
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `docs/adoption-guide.md`
+    - `docs/how-it-works.md`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added explicit migration guidance for repos missing:
+      - `branchEnforcementMode`
+      - `governanceMode`
+    - Documented fallback behavior when absent (`protected` / `project`) and recommended explicit baseline commit.
+  - Clean-room verification:
+    - Fresh clone source:
+      - `C:\\Users\\Gumatua\\AppData\\Local\\Temp\\ask-cleanroom-94da7486\\agent-session-kit-clone`
+    - Fresh target repo:
+      - `C:\\Users\\Gumatua\\AppData\\Local\\Temp\\ask-cleanroom-94da7486\\target-repo`
+    - Commands run (high level):
+      - install kit into target repo
+      - run hook adapter wrappers
+      - execute session/task/feature/release/promotion/rollout/rollback flow
+      - execute `ask workflow-provider status --workflow superpowers --version 0.3.0`
+      - execute `ask replay` and `ask session doctor`
+    - Outcomes:
+      - installer bootstrap snapshots present (`features`, `release-trains`, `promotion-gates`, `rollout`)
+      - rollback output returned `ok: true` with `status: rolled-back`
+      - workflow provider status returned `compatible` at `0.3.0`
+      - replay returned `ok: true`
+      - session doctor returned `status: succeeded`
+  - Regression:
+    - `cmd /c npm run test` passed (22/22).
+
 - ASK 3.0 post-Task 13 blocker resolution: guarded-runner reliability stabilization:
   - Branch:
     - `ask-3-phase1-event-ledger`

@@ -4,14 +4,16 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
+- [ ] Prepare mainline merge readiness summary for ASK 3.0 runtime branch.
 
 ## Next
 
-- [ ] Prepare mainline merge readiness summary for ASK 3.0 runtime branch.
+- [ ] Execute protected-branch release integration flow decision from `docs/session/open-loops.md` item 2.
 
 ## Done
 
+- [x] 2026-03-14 - add migration note for repos missing `branchEnforcementMode`/`governanceMode` (adoption + how-it-works fallback guidance)
+- [x] 2026-03-14 - run clean-room smoke from fresh clone and fresh target install (installer bootstrap, delivery-governance flow, replay/doctor/provider checks)
 - [x] 2026-03-14 - stabilize guarded-runner reliability blockers (`GuardedCommandRunner` timeout classification hardening + deterministic test timeout budgets; ask-core matrix 68/68)
 - [x] 2026-03-14 - execute ASK 3.0 Task 13 verification matrix and record bridge-mode cutover decision (root tests pass, ask-core suite 64/68 with guarded-runner blockers, replay/doctor pass, runtime smoke flow pass)
 - [x] 2026-03-14 - complete ASK 3.0 Task 12 docs + installer surface (`README`, architecture/how-it-works/adoption/maintainer docs, installer runtime bootstrap, ask3 docs contract, smoke updates)
