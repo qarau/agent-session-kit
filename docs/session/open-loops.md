@@ -40,10 +40,10 @@
 - Current state: Defaults are explicit (`active,paused` allowed; `blocked,closed,created` rejected), but override governance is undocumented.
 - Default if no response: Require documented maintainer approval for non-default lifecycle-state overrides.
 
-## 5) ASK 3.0 Cutover Blocker: Guarded Runner Contract Reliability
+## 5) ASK 3.0 Cutover Blocker: Guarded Runner Contract Reliability (Closed 2026-03-14)
 
-- Issue: Full ask-core verification is not green; guarded-runner contract paths are timing out unexpectedly (4 failing tests including session-doctor success-path dependency).
+- Issue: Full ask-core verification was not green; guarded-runner contract paths timed out unexpectedly.
 - Owner: ASK maintainers.
-- Decision needed: Keep bridge mode vs force hard cutover with known guarded-runner instability.
-- Current state: Bridge mode retained after Task 13 evidence run (`npm test` pass, ask-core 64/68 with guarded-runner-linked failures).
-- Default if no response: Keep bridge mode, prioritize guarded-runner/session-doctor reliability fixes before cutover.
+- Resolution: Stabilized timeout classification in `GuardedCommandRunner` and raised contract timeout budgets for deterministic full-matrix runs.
+- Current state: Blocker cleared (`ask-core` contracts pass 68/68; root tests pass 22/22).
+- Follow-up: none.

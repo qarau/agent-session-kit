@@ -2,6 +2,25 @@
 
 ## 2026-03-14
 
+- ASK 3.0 post-Task 13 blocker resolution: guarded-runner reliability stabilization:
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/GuardedCommandRunner.js`
+    - `ask-core/tests/guardedCommandRunner.contract.test.mjs`
+    - `ask-core/tests/sessionDoctor.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+    - `docs/session/open-loops.md`
+  - Behavior:
+    - Timeout callbacks now ignore already-exited child processes and avoid stale `killReason` propagation when a process exits with a real exit code.
+    - Contract timeout budgets for guarded-runner/session-doctor tests increased to reduce parallel-load flake.
+  - Verification:
+    - `cmd /c node --test ask-core/tests/guardedCommandRunner.contract.test.mjs ask-core/tests/sessionDoctor.contract.test.mjs` passed (8/8).
+    - `node --test <explicit ask-core test file list>` passed (68/68).
+    - `cmd /c npm run test` passed (22/22).
+
 - ASK 3.0 Task 13 full verification + cutover decision evidence:
   - Branch:
     - `ask-3-phase1-event-ledger`

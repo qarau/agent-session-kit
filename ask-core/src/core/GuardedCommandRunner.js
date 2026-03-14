@@ -53,9 +53,10 @@ function runSingleAttempt(command, args, options = {}, onStarted) {
     let settled = false;
     let killReason = null;
     let hasOutput = false;
-    let lastOutputAt = nowIso();
+    let lastOutputAt = '';
     let noOutputTimer = null;
     let wallTimer = null;
+    let timersArmed = false;
 
     const settle = (payload) => {
       if (settled) {
@@ -78,33 +79,52 @@ function runSingleAttempt(command, args, options = {}, onStarted) {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    onStarted(child.pid || null);
-
     const resetNoOutputTimer = () => {
-      lastOutputAt = nowIso();
+      if (!timersArmed) {
+        return;
+      }
       clearTimeout(noOutputTimer);
       noOutputTimer = setTimeout(() => {
+        if (settled || child.exitCode !== null || child.signalCode !== null) {
+          return;
+        }
         killReason = 'no-output-timeout';
         child.kill();
       }, noOutputTimeoutMs);
     };
 
-    resetNoOutputTimer();
+    const armTimers = () => {
+      if (timersArmed || settled) {
+        return;
+      }
+      timersArmed = true;
+      lastOutputAt = nowIso();
+      resetNoOutputTimer();
+      wallTimer = setTimeout(() => {
+        if (settled || child.exitCode !== null || child.signalCode !== null) {
+          return;
+        }
+        killReason = !hasOutput && noOutputTimeoutMs <= wallTimeoutMs ? 'no-output-timeout' : 'wall-timeout';
+        child.kill();
+      }, wallTimeoutMs);
+    };
 
-    wallTimer = setTimeout(() => {
-      killReason = !hasOutput && noOutputTimeoutMs <= wallTimeoutMs ? 'no-output-timeout' : 'wall-timeout';
-      child.kill();
-    }, wallTimeoutMs);
+    child.on('spawn', () => {
+      onStarted(child.pid || null);
+      armTimers();
+    });
 
     child.stdout.on('data', chunk => {
       stdout += toText(chunk);
       hasOutput = true;
+      lastOutputAt = nowIso();
       resetNoOutputTimer();
     });
 
     child.stderr.on('data', chunk => {
       stderr += toText(chunk);
       hasOutput = true;
+      lastOutputAt = nowIso();
       resetNoOutputTimer();
     });
 
@@ -121,7 +141,7 @@ function runSingleAttempt(command, args, options = {}, onStarted) {
       settle({
         exitCode: code,
         signal,
-        failureReason: killReason,
+        failureReason: code === null ? killReason : null,
       });
     });
   });
