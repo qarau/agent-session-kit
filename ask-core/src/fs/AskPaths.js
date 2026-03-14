@@ -118,6 +118,10 @@ export class AskPaths {
     return path.join(this.runtimeSnapshotsDir(), 'workflow.json');
   }
 
+  freshnessSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'freshness.json');
+  }
+
   taskRegistry() {
     return path.join(this.tasksDir(), 'task-board.json');
   }

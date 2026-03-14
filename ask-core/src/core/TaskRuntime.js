@@ -2,7 +2,12 @@ import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
 import { EventLedger } from '../runtime/EventLedger.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
-import { validateTaskAssign, validateTaskCreate, validateTaskStart } from '../runtime/invariants/taskInvariants.js';
+import {
+  validateTaskAssign,
+  validateTaskCreate,
+  validateTaskDepends,
+  validateTaskStart,
+} from '../runtime/invariants/taskInvariants.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -19,6 +24,10 @@ export class TaskRuntime {
 
   async readTaskBoard() {
     return this.store.readJson(this.paths.taskBoardSnapshot(), { tasks: {} });
+  }
+
+  async readFreshness() {
+    return this.store.readJson(this.paths.freshnessSnapshot(), { tasks: {} });
   }
 
   async getTask(taskId) {
@@ -120,13 +129,55 @@ export class TaskRuntime {
     return { ok: true, task: updated };
   }
 
+  async depends(taskId, dependencyTaskId) {
+    const resolvedTaskId = normalize(taskId);
+    const resolvedDependencyTaskId = normalize(dependencyTaskId);
+    const task = await this.getTask(resolvedTaskId);
+    const dependencyTask = await this.getTask(resolvedDependencyTaskId);
+    const decision = validateTaskDepends({
+      taskId: resolvedTaskId,
+      dependencyTaskId: resolvedDependencyTaskId,
+      task,
+      dependencyTask,
+    });
+    if (!decision.ok) {
+      return decision;
+    }
+
+    const updated = await this.appendTaskEvent(
+      'TaskDependencyAdded',
+      resolvedTaskId,
+      {
+        dependencyTaskId: resolvedDependencyTaskId,
+      },
+      { source: 'task-runtime' }
+    );
+    return { ok: true, task: updated };
+  }
+
   async status(taskId = '') {
     const resolvedTaskId = normalize(taskId);
     const board = await this.readTaskBoard();
+    const freshness = await this.readFreshness();
     const tasks = board.tasks ?? {};
+    const freshnessTasks = freshness.tasks ?? {};
 
     if (!resolvedTaskId) {
-      return { ok: true, tasks };
+      const enriched = {};
+      for (const [id, task] of Object.entries(tasks)) {
+        const taskFreshness = freshnessTasks[id] ?? {};
+        enriched[id] = {
+          ...task,
+          freshness: {
+            status: normalize(taskFreshness.status) || 'unverified',
+            reasonCode: normalize(taskFreshness.reasonCode) || 'verification-not-passed',
+            blockingDependencies: Array.isArray(taskFreshness.blockingDependencies)
+              ? [...taskFreshness.blockingDependencies]
+              : [],
+          },
+        };
+      }
+      return { ok: true, tasks: enriched };
     }
 
     const task = tasks[resolvedTaskId];
@@ -138,6 +189,19 @@ export class TaskRuntime {
         taskId: resolvedTaskId,
       };
     }
-    return { ok: true, task };
+    const taskFreshness = freshnessTasks[resolvedTaskId] ?? {};
+    return {
+      ok: true,
+      task: {
+        ...task,
+        freshness: {
+          status: normalize(taskFreshness.status) || 'unverified',
+          reasonCode: normalize(taskFreshness.reasonCode) || 'verification-not-passed',
+          blockingDependencies: Array.isArray(taskFreshness.blockingDependencies)
+            ? [...taskFreshness.blockingDependencies]
+            : [],
+        },
+      },
+    };
   }
 }

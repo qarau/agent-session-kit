@@ -2,6 +2,41 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 7 dependency-aware freshness runtime (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/runtime/DependencyGraph.js`
+    - `ask-core/src/runtime/projectors/FreshnessProjector.js`
+    - `ask-core/src/core/FreshnessRuntime.js`
+    - `ask-core/src/cli/commands/freshness.js`
+    - `ask-core/src/cli/commands/task.js`
+    - `ask-core/src/core/TaskRuntime.js`
+    - `ask-core/src/runtime/invariants/taskInvariants.js`
+    - `ask-core/src/runtime/projectors/TaskBoardProjector.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/src/adapters/SuperpowersAdapter.js`
+    - `ask-core/src/core/WorkflowRuntime.js`
+    - `ask-core/src/policy/defaultPolicy.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/freshness.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added task dependency tracking with `TaskDependencyAdded` event via `ask task depends <taskId> <dependencyTaskId>`.
+    - Added freshness projection/runtime with deterministic stale/fresh/unverified states and explanation payloads.
+    - Added `ask freshness status|explain` command family.
+    - Extended runtime snapshot replay to materialize `.ask/runtime/snapshots/freshness.json`.
+    - Passed freshness signal into workflow recommendation input for stale-task routing.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/freshness.contract.test.mjs` failed as expected before implementation (`task depends` and `freshness` command surface missing).
+    - GREEN: `cmd /c node --test ask-core/tests/freshness.contract.test.mjs ask-core/tests/taskRuntime.contract.test.mjs ask-core/tests/workflowAdapter.contract.test.mjs ask-core/tests/superpowersEnterprise.contract.test.mjs` passed (13/13).
+    - Phase gate: `cmd /c npm run ask:verify:phase4` passed (freshness contracts 3/3 + repo tests 20/20).
+
 - ASK 3.0 Task 6A enterprise superpowers guardrails (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`

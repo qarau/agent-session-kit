@@ -5,14 +5,27 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `6e497ba feat: add superpowers workflow adapter and workflow runtime`
+- Current HEAD: `d75a677 feat: add enterprise guardrails for superpowers provider integration`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 6A (enterprise guardrails for superpowers integration) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 7 (dependency-aware freshness runtime) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 7 RED/GREEN dependency-aware freshness implemented:
+  - Added dependency graph runtime utility (`DependencyGraph`).
+  - Added freshness projection/runtime layer (`FreshnessProjector`, `FreshnessRuntime`) with stale/fresh/unverified status computation.
+  - Added task dependency runtime command (`ask task depends`) via `TaskDependencyAdded` event.
+  - Added freshness CLI command family (`ask freshness status|explain`).
+  - Extended projection/snapshot wiring to persist freshness snapshot (`freshness.json`).
+  - Extended workflow adapter/runtime integration to consume freshness signal for stale-task routing.
+  - Added integration contracts in `ask-core/tests/freshness.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/freshness.contract.test.mjs` failed initially (`task depends` / `freshness` commands unavailable).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/freshness.contract.test.mjs ask-core/tests/taskRuntime.contract.test.mjs ask-core/tests/workflowAdapter.contract.test.mjs ask-core/tests/superpowersEnterprise.contract.test.mjs` passed (13/13).
+  - `cmd /c npm run ask:verify:phase4` passed (freshness contracts 3/3 + repo tests 20/20).
 - Task 6A RED/GREEN enterprise superpowers guardrails implemented:
   - Added provider guardrail modules for version pinning, skill allowlist, and compatibility harness.
   - Extended `SuperpowersAdapter` with provider policy enforcement, compatibility status reporting, and deterministic kill-switch fallback.
@@ -109,7 +122,7 @@ Execute ASK 3.0 Task 6A (enterprise guardrails for superpowers integration) usin
 ## Next Tasks
 
 1. Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
-2. Execute ASK 3.0 Task 7: dependency-aware freshness runtime.
+2. Execute ASK 3.0 Task 8: integration workspace + auto integration + merge readiness.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -121,10 +134,10 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/workflowAdapter.contract.test.mjs ask-core/tests/superpowersEnterprise.contract.test.mjs` (pass, 8/8)
-- `cmd /c npm run ask:verify:phase3` (pass, phase contracts 8/8 + repo tests 20/20)
+- `cmd /c node --test ask-core/tests/freshness.contract.test.mjs` (pass, 3/3)
+- `cmd /c npm run ask:verify:phase4` (pass, freshness contracts 3/3 + repo tests 20/20)
 
-Latest status: `Task 6A enterprise superpowers guardrails pass (2026-03-14)`.
+Latest status: `Task 7 dependency-aware freshness pass (2026-03-14)`.
 
 ## Resume Commands
 
@@ -132,4 +145,5 @@ Latest status: `Task 6A enterprise superpowers guardrails pass (2026-03-14)`.
 git checkout ask-3-phase1-event-ledger
 git log -5 --oneline
 cmd /c npm run ask:verify:phase3
+cmd /c npm run ask:verify:phase4
 ```

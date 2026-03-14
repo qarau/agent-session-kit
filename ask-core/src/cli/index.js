@@ -13,6 +13,7 @@ import { runEvidence } from './commands/evidence.js';
 import { runVerify } from './commands/verify.js';
 import { runWorkflow } from './commands/workflow.js';
 import { runWorkflowProvider } from './commands/workflow-provider.js';
+import { runFreshness } from './commands/freshness.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -25,11 +26,12 @@ Usage:
   ask can-commit
   ask pre-commit-check
   ask pre-push-check
-  ask task create|assign|start|status
+  ask task create|assign|start|depends|status
   ask evidence attach
   ask verify pass|fail
   ask workflow recommend|start|artifact|complete|fail
   ask workflow-provider status [--workflow superpowers] [--version <version>]
+  ask freshness status|explain [task-id]
   ask replay
   ask handoff create
   ask codex context status|ensure|compact
@@ -105,6 +107,11 @@ export async function runCli(args) {
 
   if (command === 'workflow-provider') {
     await runWorkflowProvider(subcommand, rest);
+    return;
+  }
+
+  if (command === 'freshness') {
+    await runFreshness(subcommand, rest);
     return;
   }
 

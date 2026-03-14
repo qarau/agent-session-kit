@@ -14,7 +14,7 @@ function getArgValue(args, name) {
 }
 
 function printUsage() {
-  console.log('Usage: ask task create|assign|start|status');
+  console.log('Usage: ask task create|assign|start|depends|status');
 }
 
 function printResult(result) {
@@ -54,6 +54,14 @@ export async function runTask(subcommand, args = []) {
   if (subcommand === 'status') {
     const taskId = args[0] ?? '';
     const result = await runtime.status(taskId);
+    printResult(result);
+    return;
+  }
+
+  if (subcommand === 'depends') {
+    const taskId = args[0] ?? '';
+    const dependencyTaskId = args[1] ?? '';
+    const result = await runtime.depends(taskId, dependencyTaskId);
     printResult(result);
     return;
   }

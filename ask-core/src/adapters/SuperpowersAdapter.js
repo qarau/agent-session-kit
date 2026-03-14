@@ -5,6 +5,7 @@ import { SuperpowersCompatibilityHarness } from './superpowers/SuperpowersCompat
 
 const SKILLS = {
   PLAN: 'writing-plans',
+  DEBUG: 'systematic-debugging',
   EXECUTE: 'executing-plans',
   VERIFY: 'verification-before-completion',
 };
@@ -27,7 +28,7 @@ function policyError(payload) {
 
 export class SuperpowersAdapter extends WorkflowAdapter {
   constructor(options = {}) {
-    super('superpowers', [SKILLS.PLAN, SKILLS.EXECUTE, SKILLS.VERIFY]);
+    super('superpowers', [SKILLS.PLAN, SKILLS.DEBUG, SKILLS.EXECUTE, SKILLS.VERIFY]);
 
     const hasProviderVersion = Object.prototype.hasOwnProperty.call(options, 'providerVersion');
     const hasDefaultVersion = Object.prototype.hasOwnProperty.call(options, 'defaultVersion');
@@ -55,9 +56,10 @@ export class SuperpowersAdapter extends WorkflowAdapter {
     const provider = this.validateProviderVersion(this.providerVersion);
     const task = input?.task ?? {};
     const verification = input?.verification ?? null;
+    const freshness = input?.freshness ?? null;
     const status = String(task.status ?? '').trim().toLowerCase();
 
-    const recommendation = this.recommendByState(status, verification);
+    const recommendation = this.recommendByState(status, verification, freshness);
     const allowResult = this.skillAllowlist.assertAllowed(recommendation.skill);
     if (!allowResult.ok) {
       throw policyError(allowResult);
@@ -123,7 +125,15 @@ export class SuperpowersAdapter extends WorkflowAdapter {
     return resolved;
   }
 
-  recommendByState(status, verification) {
+  recommendByState(status, verification, freshness) {
+    if (freshness?.status === 'stale') {
+      return {
+        workflow: this.workflowName,
+        skill: SKILLS.DEBUG,
+        reason: 'Task freshness is stale after dependency updates; debug and refresh verification.',
+      };
+    }
+
     if (status === 'created') {
       return {
         workflow: this.workflowName,

@@ -42,9 +42,18 @@ export class WorkflowRuntime {
     return this.store.readJson(this.paths.workflowSnapshot(), { tasks: {} });
   }
 
+  async readFreshnessSnapshot() {
+    return this.store.readJson(this.paths.freshnessSnapshot(), { tasks: {} });
+  }
+
   async getTask(taskId) {
     const board = await this.readTaskBoard();
     return board.tasks?.[normalize(taskId)] ?? null;
+  }
+
+  async getTaskFreshness(taskId) {
+    const freshness = await this.readFreshnessSnapshot();
+    return freshness.tasks?.[normalize(taskId)] ?? null;
   }
 
   async getSessionContext() {
@@ -97,11 +106,13 @@ export class WorkflowRuntime {
     }
 
     const verification = await this.evidenceRecorder.readTaskVerification(resolvedTaskId);
+    const freshness = await this.getTaskFreshness(resolvedTaskId);
     let recommendation = null;
     try {
       recommendation = adapter.recommend({
         task,
         verification,
+        freshness,
       });
     } catch (error) {
       return fail(

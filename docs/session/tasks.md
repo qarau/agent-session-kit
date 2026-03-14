@@ -8,10 +8,11 @@ Last updated: 2026-03-14
 
 ## Next
 
-- [ ] Execute ASK 3.0 Task 7: dependency-aware freshness runtime.
+- [ ] Execute ASK 3.0 Task 8: integration workspace + auto integration + merge readiness.
 
 ## Done
 
+- [x] 2026-03-14 - complete ASK 3.0 Task 7 dependency-aware freshness (`DependencyGraph`, `FreshnessProjector`, `FreshnessRuntime`, `ask freshness`, `task depends`, freshness contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 6A enterprise guardrails (`SuperpowersAdapter` policy enforcement, policy-driven registry/runtime wiring, `workflow-provider` CLI, `superpowersEnterprise` contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 6 workflow adapter integration (`WorkflowRuntime`, workflow adapters/registry, workflow projector, workflow CLI, contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 5 evidence/verify runtime (`VerificationRuntime`, evidence/verify CLI commands, evidence/verify contracts)

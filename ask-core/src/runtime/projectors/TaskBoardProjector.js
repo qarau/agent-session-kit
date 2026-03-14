@@ -10,6 +10,7 @@ function createTaskBase(taskId, event, previous) {
     title: String(previous?.title ?? ''),
     description: String(previous?.description ?? ''),
     owner: String(previous?.owner ?? ''),
+    dependencies: Array.isArray(previous?.dependencies) ? [...previous.dependencies] : [],
     createdAt: previous?.createdAt || String(event.ts ?? ''),
     updatedAt: String(event.ts ?? ''),
     lastEventSeq: Number(event.seq ?? 0),
@@ -76,6 +77,18 @@ export class TaskBoardProjector {
       return withTask(state, taskId, {
         ...base,
         status: 'blocked',
+      });
+    }
+
+    if (type === 'TaskDependencyAdded') {
+      const dependencyTaskId = String(event.payload?.dependencyTaskId ?? '').trim();
+      const dependencies = new Set(base.dependencies);
+      if (dependencyTaskId) {
+        dependencies.add(dependencyTaskId);
+      }
+      return withTask(state, taskId, {
+        ...base,
+        dependencies: Array.from(dependencies).sort(),
       });
     }
 

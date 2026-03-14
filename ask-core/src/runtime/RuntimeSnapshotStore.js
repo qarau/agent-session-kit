@@ -22,4 +22,8 @@ export class RuntimeSnapshotStore {
   async writeWorkflow(payload) {
     await this.store.writeJson(this.paths.workflowSnapshot(), payload);
   }
+
+  async writeFreshness(payload) {
+    await this.store.writeJson(this.paths.freshnessSnapshot(), payload);
+  }
 }
