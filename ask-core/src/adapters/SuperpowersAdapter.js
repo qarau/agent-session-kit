@@ -8,6 +8,7 @@ const SKILLS = {
   DEBUG: 'systematic-debugging',
   EXECUTE: 'executing-plans',
   VERIFY: 'verification-before-completion',
+  FINISH: 'finishing-a-development-branch',
 };
 
 function normalize(value) {
@@ -28,7 +29,7 @@ function policyError(payload) {
 
 export class SuperpowersAdapter extends WorkflowAdapter {
   constructor(options = {}) {
-    super('superpowers', [SKILLS.PLAN, SKILLS.DEBUG, SKILLS.EXECUTE, SKILLS.VERIFY]);
+    super('superpowers', [SKILLS.PLAN, SKILLS.DEBUG, SKILLS.EXECUTE, SKILLS.VERIFY, SKILLS.FINISH]);
 
     const hasProviderVersion = Object.prototype.hasOwnProperty.call(options, 'providerVersion');
     const hasDefaultVersion = Object.prototype.hasOwnProperty.call(options, 'defaultVersion');
@@ -57,9 +58,10 @@ export class SuperpowersAdapter extends WorkflowAdapter {
     const task = input?.task ?? {};
     const verification = input?.verification ?? null;
     const freshness = input?.freshness ?? null;
+    const queueClass = normalize(input?.queueClass).toLowerCase();
     const status = String(task.status ?? '').trim().toLowerCase();
 
-    const recommendation = this.recommendByState(status, verification, freshness);
+    const recommendation = this.recommendByState(status, verification, freshness, queueClass);
     const allowResult = this.skillAllowlist.assertAllowed(recommendation.skill);
     if (!allowResult.ok) {
       throw policyError(allowResult);
@@ -125,7 +127,18 @@ export class SuperpowersAdapter extends WorkflowAdapter {
     return resolved;
   }
 
-  recommendByState(status, verification, freshness) {
+  recommendByState(status, verification, freshness, queueClass) {
+    if (queueClass) {
+      const mapped = this.skillForQueueClass(queueClass);
+      if (mapped) {
+        return {
+          workflow: this.workflowName,
+          skill: mapped,
+          reason: `Queue class ${queueClass} mapped to workflow skill.`,
+        };
+      }
+    }
+
     if (freshness?.status === 'stale') {
       return {
         workflow: this.workflowName,
@@ -155,6 +168,26 @@ export class SuperpowersAdapter extends WorkflowAdapter {
       skill: SKILLS.EXECUTE,
       reason: 'Task is active; continue implementation execution.',
     };
+  }
+
+  skillForQueueClass(queueClass) {
+    const resolved = normalize(queueClass).toLowerCase();
+    if (resolved === 'planner') {
+      return SKILLS.PLAN;
+    }
+    if (resolved === 'implementer') {
+      return SKILLS.EXECUTE;
+    }
+    if (resolved === 'verifier') {
+      return SKILLS.VERIFY;
+    }
+    if (resolved === 'debugger') {
+      return SKILLS.DEBUG;
+    }
+    if (resolved === 'integrator' || resolved === 'reviewer') {
+      return SKILLS.FINISH;
+    }
+    return '';
   }
 
   resolveFallbackSkill() {

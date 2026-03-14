@@ -2,6 +2,40 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 10 queue classes + policy packs (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/policy/QueueClassRegistry.js`
+    - `ask-core/src/policy/ExecutionPolicyPackRegistry.js`
+    - `ask-core/src/core/TaskClassifier.js`
+    - `ask-core/src/core/ExecutionPolicyRuntime.js`
+    - `ask-core/src/runtime/projectors/QueueClassProjector.js`
+    - `ask-core/src/runtime/projectors/PolicyPackProjector.js`
+    - `ask-core/src/cli/commands/policy.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/src/adapters/SuperpowersAdapter.js`
+    - `ask-core/src/core/WorkflowRuntime.js`
+    - `ask-core/src/policy/defaultPolicy.js`
+    - `ask-core/tests/policyPacks.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added deterministic task queue classification (`planner|implementer|verifier|debugger|integrator|reviewer`).
+    - Added execution policy decisions with dispatch/hold actions and skill routing via policy packs.
+    - Added queue and policy snapshots for replay-driven runtime visibility.
+    - Added `ask policy classify|apply|status` contract surface.
+    - Wired workflow adapter bridge to leverage queue-class context for skill recommendation alignment.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/policyPacks.contract.test.mjs` failed as expected before implementation.
+    - GREEN: `cmd /c node --test ask-core/tests/policyPacks.contract.test.mjs ask-core/tests/agentCoordination.contract.test.mjs` passed (6/6).
+    - Phase gate: `cmd /c npm run ask:verify:phase5` passed (agent + policy contracts 6/6 + repo tests 20/20).
+
 - ASK 3.0 Task 9 agent routing + claims + child sessions (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`

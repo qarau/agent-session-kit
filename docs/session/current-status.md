@@ -5,14 +5,26 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `7282681 feat: add integration orchestration and merge-readiness projections`
+- Current HEAD: `c64519d feat: add agent routing, claims, and child session runtime`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 9 (agent routing + claims + child task sessions) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 10 (queue classes + policy packs) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 10 RED/GREEN queue classes and policy packs implemented:
+  - Added queue class and policy registries (`QueueClassRegistry`, `ExecutionPolicyPackRegistry`).
+  - Added task classification and policy execution runtime (`TaskClassifier`, `ExecutionPolicyRuntime`).
+  - Added queue class / policy pack projectors and snapshots (`QueueClassProjector`, `PolicyPackProjector`).
+  - Added `ask policy classify|apply|status` command family.
+  - Extended workflow recommendation bridge to consume queue class signals.
+  - Added contracts in `ask-core/tests/policyPacks.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/policyPacks.contract.test.mjs` failed initially (missing policy runtime/CLI and snapshot wiring).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/policyPacks.contract.test.mjs` passed (3/3).
+  - `cmd /c npm run ask:verify:phase5` passed (agent + policy contracts 6/6 + repo tests 20/20).
 - Task 9 RED/GREEN agent coordination implemented:
   - Added runtime modules for routing, claims, child sessions, and agents (`RoutingRuntime`, `ClaimRuntime`, `ChildSessionRuntime`, `AgentRuntime`).
   - Added policy helpers for capability matching and routing decisions (`AgentCapabilityRegistry`, `RoutingPolicyEngine`).
@@ -144,7 +156,7 @@ Execute ASK 3.0 Task 9 (agent routing + claims + child task sessions) using TDD 
 ## Next Tasks
 
 1. Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
-2. Execute ASK 3.0 Task 10: queue classes + policy packs.
+2. Execute ASK 3.0 Task 11: release trains + promotion gates + rollout policies.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -156,10 +168,10 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/agentCoordination.contract.test.mjs` (pass, 3/3)
-- `cmd /c npm run ask:verify:phase5` (pass, agent coordination contracts 3/3 + repo tests 20/20)
+- `cmd /c node --test ask-core/tests/agentCoordination.contract.test.mjs ask-core/tests/policyPacks.contract.test.mjs` (pass, 6/6)
+- `cmd /c npm run ask:verify:phase5` (pass, agent + policy contracts 6/6 + repo tests 20/20)
 
-Latest status: `Task 9 agent coordination pass (2026-03-14)`.
+Latest status: `Task 10 queue classes and policy packs pass (2026-03-14)`.
 
 ## Resume Commands
 

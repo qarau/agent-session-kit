@@ -146,6 +146,14 @@ export class AskPaths {
     return path.join(this.runtimeSnapshotsDir(), 'agents.json');
   }
 
+  queueClassesSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'queue-classes.json');
+  }
+
+  policyPacksSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'policy-packs.json');
+  }
+
   taskRegistry() {
     return path.join(this.tasksDir(), 'task-board.json');
   }

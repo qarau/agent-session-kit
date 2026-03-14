@@ -50,4 +50,12 @@ export class RuntimeSnapshotStore {
   async writeAgents(payload) {
     await this.store.writeJson(this.paths.agentsSnapshot(), payload);
   }
+
+  async writeQueueClasses(payload) {
+    await this.store.writeJson(this.paths.queueClassesSnapshot(), payload);
+  }
+
+  async writePolicyPacks(payload) {
+    await this.store.writeJson(this.paths.policyPacksSnapshot(), payload);
+  }
 }

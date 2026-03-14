@@ -46,6 +46,10 @@ export class WorkflowRuntime {
     return this.store.readJson(this.paths.freshnessSnapshot(), { tasks: {} });
   }
 
+  async readQueueClassesSnapshot() {
+    return this.store.readJson(this.paths.queueClassesSnapshot(), { tasks: {} });
+  }
+
   async getTask(taskId) {
     const board = await this.readTaskBoard();
     return board.tasks?.[normalize(taskId)] ?? null;
@@ -54,6 +58,11 @@ export class WorkflowRuntime {
   async getTaskFreshness(taskId) {
     const freshness = await this.readFreshnessSnapshot();
     return freshness.tasks?.[normalize(taskId)] ?? null;
+  }
+
+  async getTaskQueueClass(taskId) {
+    const queueClasses = await this.readQueueClassesSnapshot();
+    return String(queueClasses.tasks?.[normalize(taskId)]?.latestClass ?? '').trim().toLowerCase();
   }
 
   async getSessionContext() {
@@ -107,12 +116,14 @@ export class WorkflowRuntime {
 
     const verification = await this.evidenceRecorder.readTaskVerification(resolvedTaskId);
     const freshness = await this.getTaskFreshness(resolvedTaskId);
+    const queueClass = await this.getTaskQueueClass(resolvedTaskId);
     let recommendation = null;
     try {
       recommendation = adapter.recommend({
         task,
         verification,
         freshness,
+        queueClass,
       });
     } catch (error) {
       return fail(

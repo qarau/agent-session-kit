@@ -11,6 +11,8 @@ import { ClaimProjector } from './projectors/ClaimProjector.js';
 import { RoutingProjector } from './projectors/RoutingProjector.js';
 import { ChildSessionProjector } from './projectors/ChildSessionProjector.js';
 import { AgentProjector } from './projectors/AgentProjector.js';
+import { QueueClassProjector } from './projectors/QueueClassProjector.js';
+import { PolicyPackProjector } from './projectors/PolicyPackProjector.js';
 
 export class RuntimeProjectionEngine {
   constructor(cwd, overrides = {}) {
@@ -27,6 +29,8 @@ export class RuntimeProjectionEngine {
     this.routingProjector = overrides.routingProjector ?? new RoutingProjector();
     this.childSessionProjector = overrides.childSessionProjector ?? new ChildSessionProjector();
     this.agentProjector = overrides.agentProjector ?? new AgentProjector();
+    this.queueClassProjector = overrides.queueClassProjector ?? new QueueClassProjector();
+    this.policyPackProjector = overrides.policyPackProjector ?? new PolicyPackProjector();
   }
 
   async replay() {
@@ -44,6 +48,8 @@ export class RuntimeProjectionEngine {
     let routing = this.routingProjector.initialState();
     let childSessions = this.childSessionProjector.initialState();
     let agents = this.agentProjector.initialState();
+    let queueClasses = this.queueClassProjector.initialState();
+    let policyPacks = this.policyPackProjector.initialState();
 
     for (const event of sorted) {
       session = this.sessionProjector.apply(session, event);
@@ -57,6 +63,8 @@ export class RuntimeProjectionEngine {
       routing = this.routingProjector.apply(routing, event);
       childSessions = this.childSessionProjector.apply(childSessions, event);
       agents = this.agentProjector.apply(agents, event);
+      queueClasses = this.queueClassProjector.apply(queueClasses, event);
+      policyPacks = this.policyPackProjector.apply(policyPacks, event);
     }
 
     await this.snapshots.writeSession(session);
@@ -70,6 +78,8 @@ export class RuntimeProjectionEngine {
     await this.snapshots.writeRouting(routing);
     await this.snapshots.writeChildSessions(childSessions);
     await this.snapshots.writeAgents(agents);
+    await this.snapshots.writeQueueClasses(queueClasses);
+    await this.snapshots.writePolicyPacks(policyPacks);
 
     return {
       eventsProcessed: sorted.length,

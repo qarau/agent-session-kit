@@ -20,6 +20,7 @@ import { runRoute } from './commands/route.js';
 import { runClaim } from './commands/claim.js';
 import { runChildSession } from './commands/child-session.js';
 import { runAgent } from './commands/agent.js';
+import { runPolicy } from './commands/policy.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -44,6 +45,7 @@ Usage:
   ask claim acquire|release|lock|status
   ask child-session spawn|status
   ask agent register|status
+  ask policy classify|apply|status
   ask replay
   ask handoff create
   ask codex context status|ensure|compact
@@ -154,6 +156,11 @@ export async function runCli(args) {
 
   if (command === 'agent') {
     await runAgent(subcommand, rest);
+    return;
+  }
+
+  if (command === 'policy') {
+    await runPolicy(subcommand, rest);
     return;
   }
 

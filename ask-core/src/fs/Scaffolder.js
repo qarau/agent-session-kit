@@ -70,6 +70,8 @@ export class Scaffolder {
     await this.store.writeJson(this.paths.routingSnapshot(), { tasks: {} });
     await this.store.writeJson(this.paths.childSessionsSnapshot(), { tasks: {} });
     await this.store.writeJson(this.paths.agentsSnapshot(), { agents: {} });
+    await this.store.writeJson(this.paths.queueClassesSnapshot(), { tasks: {} });
+    await this.store.writeJson(this.paths.policyPacksSnapshot(), { tasks: {} });
     await this.store.writeJson(this.paths.taskRegistry(), { tasks: {} });
   }
 }
