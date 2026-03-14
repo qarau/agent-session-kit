@@ -13,6 +13,8 @@ The kit enforces three things:
 4. Optional repo-level lock can override file context to prevent branch drift.
 5. Optional repo-boundary tests can enforce architecture boundaries in CI.
 
+ASK 3.0 extends this into a Session OS runtime: event-ledger append, replay projections, and deterministic command contracts beyond commit/push gates.
+
 The runtime lives in `ask-core/` so policy contracts and session behavior can be tested independently from hook wrapper scripts.
 Session lifecycle depth is persisted with snapshot + journal files under `.ask/sessions/active-session.json`, `.ask/sessions/history.ndjson`, and `.ask/sessions/pending-transition.json`.
 Lifecycle-aware `preflight` and `can-commit` checks use policy keys `allowed_preflight_states` and `allowed_can_commit_states` (default `active,paused`) to reject disallowed states (`blocked`, `closed`, `created`).
@@ -21,11 +23,20 @@ Branch enforcement is configurable via `docs/session/active-work-context.json`:
 - `branchEnforcementMode: "protected"` (default) enforces on `main` and `release/*`.
 - `branchEnforcementMode: "all"` enforces on every branch.
 - `branchEnforcementMode: "advisory"` keeps checks warning-level on every branch.
+- Migration compatibility:
+  - when `branchEnforcementMode` is missing, runtime defaults to `"protected"`.
+  - when `governanceMode` is missing, runtime defaults to `"project"`.
 
 Pre-push release-doc checks are governance-mode aware:
 - `governanceMode: "project"` (default) skips release-doc consistency checks.
 - `governanceMode: "maintainer"` includes release-doc consistency checks and applies branch enforcement using `branchEnforcementMode`.
 Adapter command execution uses guarded runtime behavior: `180s` wall/no-output timeout with one automatic retry on detected stall before failing.
+Delivery governance command families are now first-class runtime contracts:
+- `ask feature create|link-task|status`
+- `ask release create|link-feature|status`
+- `ask promote require|pass|advance|status`
+- `ask rollout start|phase|status`
+- `ask rollback trigger`
 
 ## Flow Overview
 

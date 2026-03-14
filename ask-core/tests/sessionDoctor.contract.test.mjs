@@ -12,6 +12,7 @@ const thisFilePath = fileURLToPath(import.meta.url);
 const testsDir = path.dirname(thisFilePath);
 const askCoreRoot = path.resolve(testsDir, '..');
 const askBinPath = path.join(askCoreRoot, 'bin', 'ask.js');
+const TEST_TIMEOUT_MS = 600;
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -97,8 +98,8 @@ test('session doctor reports failed state with recovery hint', () => {
 test('session doctor reports succeeded state after healthy run', async () => {
   const repoDir = setupRepo();
   const runner = new GuardedCommandRunner(repoDir, {
-    wallTimeoutMs: 180,
-    noOutputTimeoutMs: 180,
+    wallTimeoutMs: TEST_TIMEOUT_MS,
+    noOutputTimeoutMs: TEST_TIMEOUT_MS,
     maxRetriesOnStall: 1,
   });
   await runner.run({

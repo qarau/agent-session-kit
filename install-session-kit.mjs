@@ -155,6 +155,23 @@ function ensureHookExecutables(targetPath, dryRun) {
   }
 }
 
+function bootstrapAskRuntime(targetPath, dryRun) {
+  const askBin = path.join(targetPath, 'ask-core', 'bin', 'ask.js');
+  if (!fs.existsSync(askBin)) {
+    throw new Error(`Missing ask-core binary after install: ${askBin}`);
+  }
+
+  if (dryRun) {
+    console.log(`[bootstrap] node "${askBin}" init`);
+    return;
+  }
+
+  execFileSync(process.execPath, [askBin, 'init'], {
+    cwd: targetPath,
+    stdio: 'inherit',
+  });
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const targetPath = path.resolve(args.target || process.cwd());
@@ -188,6 +205,7 @@ function main() {
   copyDirectory(wrapperScriptsPath, path.join(targetPath, 'scripts', 'session'), true, args.dryRun);
   copyDirectory(hooksPath, path.join(targetPath, '.githooks'), true, args.dryRun);
   updateActiveWorkContext(targetPath, args);
+  bootstrapAskRuntime(targetPath, args.dryRun);
   ensureHookExecutables(targetPath, args.dryRun);
   configureHooks(targetPath, args.dryRun);
 
@@ -198,8 +216,9 @@ function main() {
   console.log('2. node scripts/session/runAskCorePreCommitAdapter.mjs');
   console.log('3. node scripts/session/runAskCorePrePushAdapter.mjs');
   console.log('4. node scripts/session/nextTask.mjs');
+  console.log('5. node ask-core/bin/ask.js replay');
   console.log(
-    '5. Optional: node scripts/session/setRepoWorkContextLock.mjs --branch <branch> --repo-suffix <suffix> --enforce-path-suffix true'
+    '6. Optional: node scripts/session/setRepoWorkContextLock.mjs --branch <branch> --repo-suffix <suffix> --enforce-path-suffix true'
   );
 }
 

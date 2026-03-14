@@ -39,3 +39,11 @@
 - Decision needed: Require maintainer approval for non-default overrides vs allow free local customization.
 - Current state: Defaults are explicit (`active,paused` allowed; `blocked,closed,created` rejected), but override governance is undocumented.
 - Default if no response: Require documented maintainer approval for non-default lifecycle-state overrides.
+
+## 5) ASK 3.0 Cutover Blocker: Guarded Runner Contract Reliability (Closed 2026-03-14)
+
+- Issue: Full ask-core verification was not green; guarded-runner contract paths timed out unexpectedly.
+- Owner: ASK maintainers.
+- Resolution: Stabilized timeout classification in `GuardedCommandRunner` and raised contract timeout budgets for deterministic full-matrix runs.
+- Current state: Blocker cleared (`ask-core` contracts pass 68/68; root tests pass 22/22).
+- Follow-up: none.

@@ -22,6 +22,453 @@
     - `cmd /c npm run ask:verify:baseline` passed.
     - `cmd /c npm run ask:ship:baseline -- --dry-run` passed.
 
+- ASK 3.0 follow-up: migration note + clean-room install smoke:
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `docs/adoption-guide.md`
+    - `docs/how-it-works.md`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added explicit migration guidance for repos missing:
+      - `branchEnforcementMode`
+      - `governanceMode`
+    - Documented fallback behavior when absent (`protected` / `project`) and recommended explicit baseline commit.
+  - Clean-room verification:
+    - Fresh clone source:
+      - `C:\\Users\\Gumatua\\AppData\\Local\\Temp\\ask-cleanroom-94da7486\\agent-session-kit-clone`
+    - Fresh target repo:
+      - `C:\\Users\\Gumatua\\AppData\\Local\\Temp\\ask-cleanroom-94da7486\\target-repo`
+    - Commands run (high level):
+      - install kit into target repo
+      - run hook adapter wrappers
+      - execute session/task/feature/release/promotion/rollout/rollback flow
+      - execute `ask workflow-provider status --workflow superpowers --version 0.3.0`
+      - execute `ask replay` and `ask session doctor`
+    - Outcomes:
+      - installer bootstrap snapshots present (`features`, `release-trains`, `promotion-gates`, `rollout`)
+      - rollback output returned `ok: true` with `status: rolled-back`
+      - workflow provider status returned `compatible` at `0.3.0`
+      - replay returned `ok: true`
+      - session doctor returned `status: succeeded`
+  - Regression:
+    - `cmd /c npm run test` passed (22/22).
+
+- ASK 3.0 post-Task 13 blocker resolution: guarded-runner reliability stabilization:
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/GuardedCommandRunner.js`
+    - `ask-core/tests/guardedCommandRunner.contract.test.mjs`
+    - `ask-core/tests/sessionDoctor.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+    - `docs/session/open-loops.md`
+  - Behavior:
+    - Timeout callbacks now ignore already-exited child processes and avoid stale `killReason` propagation when a process exits with a real exit code.
+    - Contract timeout budgets for guarded-runner/session-doctor tests increased to reduce parallel-load flake.
+  - Verification:
+    - `cmd /c node --test ask-core/tests/guardedCommandRunner.contract.test.mjs ask-core/tests/sessionDoctor.contract.test.mjs` passed (8/8).
+    - `node --test <explicit ask-core test file list>` passed (68/68).
+    - `cmd /c npm run test` passed (22/22).
+
+- ASK 3.0 Task 13 full verification + cutover decision evidence:
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `docs/session/current-status.md`
+    - `docs/session/tasks.md`
+    - `docs/session/change-log.md`
+    - `docs/session/open-loops.md`
+  - Verification matrix:
+    - `cmd /c npm run test` passed (22/22).
+    - `node --test <explicit ask-core test file list>` failed (64/68); failures:
+      - `ask-core/tests/guardedCommandRunner.contract.test.mjs` (3 cases)
+      - `ask-core/tests/sessionDoctor.contract.test.mjs` (`doctor-succeeded` case, guarded-runner timeout path)
+    - `cmd /c node ask-core/bin/ask.js replay` passed (`ok: true`).
+    - `cmd /c node ask-core/bin/ask.js session doctor` passed (`status: succeeded`).
+  - Representative runtime smoke:
+    - Temp repo runtime flow executed successfully for event-ledger/session/task + release/promotion/rollout/rollback.
+    - Snapshot outputs verified for `features`, `release-trains`, `promotion-gates`, and `rollout`.
+    - `ask workflow-provider status --workflow superpowers --version 0.3.0` returned `compatible`.
+  - Cutover decision:
+    - Keep bridge mode.
+    - Block hard cutover until guarded-runner/session-doctor contract regressions are resolved.
+
+- ASK 3.0 Task 12 documentation + installer surface (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `README.md`
+    - `docs/how-it-works.md`
+    - `docs/adoption-guide.md`
+    - `docs/maintainer-mode.md`
+    - `docs/ask-3.0-architecture.md`
+    - `install-session-kit.mjs`
+    - `tests/sessionKitSmoke.test.mjs`
+    - `tests/ask3RuntimeDocs.contract.test.mjs`
+    - `package.json`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Repositioned docs around ASK 3.0 Session OS architecture (event-ledger + replay + governance command contracts).
+    - Added explicit bridge mode and cutover mode migration guidance.
+    - Installer now bootstraps ask-core runtime state (`ask init`) so required `.ask/runtime` snapshots are ready immediately after install.
+    - Added docs contract coverage and extended smoke coverage for installer snapshot scaffolding.
+  - Verification:
+    - RED: `cmd /c node --test tests/sessionKitSmoke.test.mjs tests/ask3RuntimeDocs.contract.test.mjs` failed as expected before docs/installer updates.
+    - GREEN: `cmd /c node --test tests/sessionKitSmoke.test.mjs tests/ask3RuntimeDocs.contract.test.mjs` passed (5/5).
+    - Regression: `cmd /c npm run test` passed (22/22).
+
+- ASK 3.0 Task 11 release trains + promotion gates + rollout policies (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/FeatureRuntime.js`
+    - `ask-core/src/core/ReleaseTrainRuntime.js`
+    - `ask-core/src/core/PromotionRuntime.js`
+    - `ask-core/src/core/RolloutRuntime.js`
+    - `ask-core/src/runtime/projectors/FeatureProjector.js`
+    - `ask-core/src/runtime/projectors/ReleaseTrainProjector.js`
+    - `ask-core/src/runtime/projectors/PromotionGateProjector.js`
+    - `ask-core/src/runtime/projectors/RolloutProjector.js`
+    - `ask-core/src/cli/commands/feature.js`
+    - `ask-core/src/cli/commands/release.js`
+    - `ask-core/src/cli/commands/promote.js`
+    - `ask-core/src/cli/commands/rollout.js`
+    - `ask-core/src/cli/commands/rollback.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/deliveryGovernance.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added deterministic runtime support for feature registration/task linkage, release-train membership, promotion gates/stage advancement, rollout phase control, and rollback capture.
+    - Added replay-driven governance snapshots (`features`, `release-trains`, `promotion-gates`, `rollout`) with CLI status surfaces.
+    - Added command surfaces: `ask feature`, `ask release`, `ask promote`, `ask rollout`, `ask rollback`.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/deliveryGovernance.contract.test.mjs` failed as expected before implementation (`feature` / `release` / `promote` / `rollout` / `rollback` missing).
+    - GREEN: `cmd /c node --test ask-core/tests/deliveryGovernance.contract.test.mjs` passed (4/4).
+
+- ASK 3.0 Task 10 queue classes + policy packs (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/policy/QueueClassRegistry.js`
+    - `ask-core/src/policy/ExecutionPolicyPackRegistry.js`
+    - `ask-core/src/core/TaskClassifier.js`
+    - `ask-core/src/core/ExecutionPolicyRuntime.js`
+    - `ask-core/src/runtime/projectors/QueueClassProjector.js`
+    - `ask-core/src/runtime/projectors/PolicyPackProjector.js`
+    - `ask-core/src/cli/commands/policy.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/src/adapters/SuperpowersAdapter.js`
+    - `ask-core/src/core/WorkflowRuntime.js`
+    - `ask-core/src/policy/defaultPolicy.js`
+    - `ask-core/tests/policyPacks.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added deterministic task queue classification (`planner|implementer|verifier|debugger|integrator|reviewer`).
+    - Added execution policy decisions with dispatch/hold actions and skill routing via policy packs.
+    - Added queue and policy snapshots for replay-driven runtime visibility.
+    - Added `ask policy classify|apply|status` contract surface.
+    - Wired workflow adapter bridge to leverage queue-class context for skill recommendation alignment.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/policyPacks.contract.test.mjs` failed as expected before implementation.
+    - GREEN: `cmd /c node --test ask-core/tests/policyPacks.contract.test.mjs ask-core/tests/agentCoordination.contract.test.mjs` passed (6/6).
+    - Phase gate: `cmd /c npm run ask:verify:phase5` passed (agent + policy contracts 6/6 + repo tests 20/20).
+
+- ASK 3.0 Task 9 agent routing + claims + child sessions (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/RoutingRuntime.js`
+    - `ask-core/src/core/ClaimRuntime.js`
+    - `ask-core/src/core/ChildSessionRuntime.js`
+    - `ask-core/src/core/AgentRuntime.js`
+    - `ask-core/src/policy/AgentCapabilityRegistry.js`
+    - `ask-core/src/policy/RoutingPolicyEngine.js`
+    - `ask-core/src/runtime/projectors/ClaimProjector.js`
+    - `ask-core/src/runtime/projectors/RoutingProjector.js`
+    - `ask-core/src/runtime/projectors/ChildSessionProjector.js`
+    - `ask-core/src/runtime/projectors/AgentProjector.js`
+    - `ask-core/src/cli/commands/route.js`
+    - `ask-core/src/cli/commands/claim.js`
+    - `ask-core/src/cli/commands/child-session.js`
+    - `ask-core/src/cli/commands/agent.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/agentCoordination.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added capability-based routing recommendations with policy-derived required capability.
+    - Added task claim lifecycle runtime and scope locking (`acquire`, `lock`, `release`).
+    - Added child-session spawn runtime with agent linkage projection.
+    - Added agent registration/runtime state projection for capabilities and child-session lineage.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/agentCoordination.contract.test.mjs` failed as expected before implementation (`route` / `claim` / `child-session` / `agent` missing).
+    - GREEN: `cmd /c node --test ask-core/tests/agentCoordination.contract.test.mjs` passed (3/3).
+    - Phase gate: `cmd /c npm run ask:verify:phase5` passed (agent coordination contracts 3/3 + repo tests 20/20).
+
+- ASK 3.0 Task 8 integration orchestration + merge readiness (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/IntegrationRuntime.js`
+    - `ask-core/src/core/AutoIntegrationRuntime.js`
+    - `ask-core/src/git/IntegrationBranchResolver.js`
+    - `ask-core/src/git/IntegrationMergePlanner.js`
+    - `ask-core/src/git/IntegrationOrchestrator.js`
+    - `ask-core/src/git/IntegrationTempWorktreeManager.js`
+    - `ask-core/src/runtime/projectors/IntegrationProjector.js`
+    - `ask-core/src/runtime/projectors/MergeReadinessProjector.js`
+    - `ask-core/src/cli/commands/integration.js`
+    - `ask-core/src/cli/commands/integration-auto.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/integrationRuntime.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added integration planning/running/status runtime with event-first integration lifecycle records.
+    - Added auto integration runtime that emits evidence attachment for pass/fail outcomes.
+    - Added integration and merge-readiness projection snapshots.
+    - Added integration CLI surfaces for manual and auto orchestration.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/integrationRuntime.contract.test.mjs` failed as expected before implementation (`integration` / `integration-auto` missing).
+    - GREEN: `cmd /c node --test ask-core/tests/integrationRuntime.contract.test.mjs` passed (3/3).
+    - Phase gate: `cmd /c npm run ask:verify:phase4` passed (freshness + integration contracts 6/6 + repo tests 20/20).
+
+- ASK 3.0 Task 7 dependency-aware freshness runtime (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/runtime/DependencyGraph.js`
+    - `ask-core/src/runtime/projectors/FreshnessProjector.js`
+    - `ask-core/src/core/FreshnessRuntime.js`
+    - `ask-core/src/cli/commands/freshness.js`
+    - `ask-core/src/cli/commands/task.js`
+    - `ask-core/src/core/TaskRuntime.js`
+    - `ask-core/src/runtime/invariants/taskInvariants.js`
+    - `ask-core/src/runtime/projectors/TaskBoardProjector.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/src/adapters/SuperpowersAdapter.js`
+    - `ask-core/src/core/WorkflowRuntime.js`
+    - `ask-core/src/policy/defaultPolicy.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/freshness.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added task dependency tracking with `TaskDependencyAdded` event via `ask task depends <taskId> <dependencyTaskId>`.
+    - Added freshness projection/runtime with deterministic stale/fresh/unverified states and explanation payloads.
+    - Added `ask freshness status|explain` command family.
+    - Extended runtime snapshot replay to materialize `.ask/runtime/snapshots/freshness.json`.
+    - Passed freshness signal into workflow recommendation input for stale-task routing.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/freshness.contract.test.mjs` failed as expected before implementation (`task depends` and `freshness` command surface missing).
+    - GREEN: `cmd /c node --test ask-core/tests/freshness.contract.test.mjs ask-core/tests/taskRuntime.contract.test.mjs ask-core/tests/workflowAdapter.contract.test.mjs ask-core/tests/superpowersEnterprise.contract.test.mjs` passed (13/13).
+    - Phase gate: `cmd /c npm run ask:verify:phase4` passed (freshness contracts 3/3 + repo tests 20/20).
+
+- ASK 3.0 Task 6A enterprise superpowers guardrails (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/adapters/superpowers/SuperpowersVersionPolicy.js`
+    - `ask-core/src/adapters/superpowers/SuperpowersSkillAllowlist.js`
+    - `ask-core/src/adapters/superpowers/SuperpowersCompatibilityHarness.js`
+    - `ask-core/src/adapters/SuperpowersAdapter.js`
+    - `ask-core/src/adapters/WorkflowRegistry.js`
+    - `ask-core/src/core/WorkflowRuntime.js`
+    - `ask-core/src/core/PolicyEngine.js`
+    - `ask-core/src/policy/defaultPolicy.js`
+    - `ask-core/src/cli/commands/workflow-provider.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/superpowersEnterprise.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added enterprise provider guardrails for superpowers integration (version pinning, skill allowlist, compatibility harness, kill-switch fallback).
+    - Wired workflow registry/runtime to consume `workflow_provider` policy configuration.
+    - Added `ask workflow-provider status` command for deterministic provider compatibility checks.
+    - Added contract coverage for adapter policy failures plus policy-driven CLI/runtime behavior.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/superpowersEnterprise.contract.test.mjs` failed as expected before policy wiring.
+    - GREEN: `cmd /c node --test ask-core/tests/superpowersEnterprise.contract.test.mjs ask-core/tests/workflowAdapter.contract.test.mjs` passed (8/8).
+    - Phase gate: `cmd /c npm run ask:verify:phase3` passed (phase contracts 8/8 + repo tests 20/20).
+
+- ASK 3.0 Task 6 workflow adapter integration (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/adapters/WorkflowAdapter.js`
+    - `ask-core/src/adapters/WorkflowRegistry.js`
+    - `ask-core/src/adapters/SuperpowersAdapter.js`
+    - `ask-core/src/core/WorkflowRuntime.js`
+    - `ask-core/src/runtime/projectors/WorkflowProjector.js`
+    - `ask-core/src/cli/commands/workflow.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/workflowAdapter.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added workflow adapter contract layer with `superpowers` default adapter and registry.
+    - Added workflow runtime commands for recommend/start/artifact/complete/fail with event-first append + replay.
+    - Added workflow projector and snapshot persistence at `.ask/runtime/snapshots/workflow.json`.
+    - Added workflow CLI command family and help surface.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/workflowAdapter.contract.test.mjs` failed as expected before implementation (missing CLI surface and snapshot).
+    - GREEN: `cmd /c node --test ask-core/tests/workflowAdapter.contract.test.mjs` passed (2/2).
+    - Phase gate: `cmd /c npm run ask:verify:phase3` passed (phase contracts 2/2 + repo tests 20/20).
+
+- ASK 3.0 Task 5 evidence + verify runtime commands (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/VerificationRuntime.js`
+    - `ask-core/src/core/EvidenceRecorder.js`
+    - `ask-core/src/cli/commands/evidence.js`
+    - `ask-core/src/cli/commands/verify.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/evidenceVerify.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added runtime commands for evidence attachment and verification pass/fail outcomes.
+    - Added event-first append + replay for evidence and verification events.
+    - Added replay-derived verification snapshot reads in `EvidenceRecorder`.
+    - Extended CLI surface with `ask evidence` and `ask verify`.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/evidenceVerify.contract.test.mjs` failed as expected before implementation (`ask evidence`/`ask verify` unavailable).
+    - GREEN: `cmd /c node --test ask-core/tests/evidenceVerify.contract.test.mjs` passed (2/2).
+    - Phase gate: `cmd /c npm run ask:verify:phase2` passed (phase contracts 4/4 + repo tests 20/20).
+
+- ASK 3.0 Task 4 task runtime + task CLI (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/TaskRuntime.js`
+    - `ask-core/src/runtime/invariants/taskInvariants.js`
+    - `ask-core/src/cli/commands/task.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/taskRuntime.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added event-driven task runtime for `create`, `assign`, `start`, and `status`.
+    - Added task transition invariants with deterministic error payloads.
+    - Added task CLI command family and help surface.
+    - Added contract checks for task lifecycle CLI behavior and transition rejection before event append.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/taskRuntime.contract.test.mjs` failed as expected before implementation (`ask task` command unavailable).
+    - GREEN: `cmd /c node --test ask-core/tests/taskRuntime.contract.test.mjs` passed (2/2).
+    - Phase gate: `cmd /c npm run ask:verify:phase2` passed (phase contracts 2/2 + repo tests 20/20).
+
+- ASK 3.0 Task 3 session runtime bridge to event-first writes (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/SessionRuntime.js`
+    - `ask-core/src/core/HandoffEngine.js`
+    - `ask-core/src/core/WorkContextEngine.js`
+    - `ask-core/tests/sessionEventBridge.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Session transitions now append session events and trigger replay projection refresh.
+    - Handoff creation now emits `SessionHandoffGenerated` and replays snapshots.
+    - Context verify now emits `WorktreeVerified` and replays snapshots.
+    - Backward compatibility preserved for `active-session.json` and `work-context.json` snapshot writes.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs` failed as expected (missing event records before bridge implementation).
+    - GREEN: `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs` passed (3/3).
+    - Regression: `cmd /c node --test ask-core/tests/sessionEventBridge.contract.test.mjs ask-core/tests/sessionLifecycle.contract.test.mjs ask-core/tests/sessionRecovery.contract.test.mjs` passed (8/8).
+    - Phase gate: `cmd /c npm run ask:verify:phase1` passed (phase contracts 8/8 + repo tests 20/20).
+
+- ASK 3.0 Task 2 replay engine + core projectors (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/projectors/SessionProjector.js`
+    - `ask-core/src/runtime/projectors/TaskBoardProjector.js`
+    - `ask-core/src/runtime/projectors/VerificationProjector.js`
+    - `ask-core/src/cli/commands/replay.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/replayProjection.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added replay projection engine that consumes ledger events by `seq` and writes session/task/verification snapshots.
+    - Added minimal core projectors for session, task-board, and verification views.
+    - Added `ask replay` CLI command with concise replay summary output.
+    - Added replay contracts for sorted event replay, snapshot writes, and CLI success behavior.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/replayProjection.contract.test.mjs` failed as expected (`ERR_MODULE_NOT_FOUND` before implementation).
+    - GREEN: `cmd /c node --test ask-core/tests/replayProjection.contract.test.mjs` passed (2/2).
+    - Phase gate: `cmd /c npm run ask:verify:phase1` passed (phase contracts 5/5 + repo tests 20/20).
+
+- ASK 3.0 Task 1 event-ledger foundation (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/runtime/SequenceStore.js`
+    - `ask-core/src/runtime/EventLedger.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/FileStore.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/tests/eventLedger.foundation.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added sequence counter store and append-only event ledger writer/reader.
+    - Added runtime event/snapshot/task path methods in AskPaths.
+    - Added line-based file store primitives for NDJSON event logging.
+    - Scaffolder now seeds runtime event files and sequence state.
+    - Added RED/GREEN contracts for event file scaffolding, deterministic sequence increments, and event envelope/order.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs` failed as expected (`ERR_MODULE_NOT_FOUND` before implementation).
+    - GREEN: `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs` passed (3/3).
+    - Regression check: `cmd /c node --test ask-core/tests/eventLedger.foundation.contract.test.mjs ask-core/tests/sessionStorage.contract.test.mjs` passed (5/5).
+
 - ASK autonomy workflow acceleration:
   - Files:
     - `scripts/autonomy/runPhaseVerification.mjs`

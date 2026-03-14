@@ -38,6 +38,17 @@ Agent Session Kit follows this model.
 - For most downstream repos, keep `governanceMode: "project"` in `docs/session/active-work-context.json` so release-doc checks are not required.
 - Use `governanceMode: "maintainer"` only for repos that publish and enforce ASK release docs.
 
+Migration note for pre-mode repos:
+
+- If your existing `docs/session/active-work-context.json` predates mode keys, add:
+  - `branchEnforcementMode: "protected"`
+  - `governanceMode: "project"`
+- Runtime fallback is already safe when missing:
+  - missing `branchEnforcementMode` resolves to `"protected"`
+  - missing `governanceMode` resolves to `"project"`
+- Recommended path:
+  - add both keys explicitly and commit as a one-time policy-baseline change.
+
 ## Team Conventions
 
 - Update `docs/session/current-status.md` every meaningful cycle.
@@ -46,6 +57,19 @@ Agent Session Kit follows this model.
 - Update `docs/session/open-loops.md` when decisions or risk status changes.
 - Keep bypass usage explicit and rare.
 - Keep `docs/ASK_Runtime/*` local-only; do not commit runtime scratch data.
+
+## ASK 3.0 Migration Modes
+
+Use explicit migration mode language when rolling out ASK 3.0 features:
+
+- Bridge mode:
+  - Keep legacy session docs and hook behavior active.
+  - Add event-ledger and replay snapshots in parallel.
+  - Treat snapshot parity gaps as blockers for cutover.
+- Cutover mode:
+  - Projection snapshots are authoritative for runtime state.
+  - Keep session docs as operator-facing evidence, not the source of runtime truth.
+  - Remove legacy direct-state mutation paths after parity is stable.
 
 Optional strict mode:
 

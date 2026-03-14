@@ -1,14 +1,15 @@
 # Agent Session Kit
 
-## ASK 2.0 Status
+## ASK 3.0 Runtime Status
 
-Current release: `v2.0.0` (2026-03-12)
+Current stable release: `v2.0.0` (2026-03-12)  
+Current development direction: `ASK 3.0 Session OS` (event-ledger runtime expansion)
 
 - [Release notes](docs/releases/v2.0.0.md)
 - [Announcement copy](docs/releases/v2.0.0-announcement.md)
 - [Latest release pointer](docs/releases/latest.md)
 
-ASK 2.0 is a major architectural shift from script-first checks to a standalone runtime core.
+ASK 2.0 established the standalone runtime core. ASK 3.0 expands that core into a full event-ledger runtime for planning, execution, routing, and delivery governance.
 
 ## What ASK Is
 
@@ -16,19 +17,19 @@ Agent Session Kit (ASK) is a Developer-Agent Runtime that governs developer-agen
 
 The runtime is implemented in `ask-core/` and this repository packages installer, adapters, hooks, and governance docs for rollout into target repositories.
 
-## Why ASK 2.0 Exists
+## Why ASK 3.0 Exists
 
-ASK 2.0 exists because AI-assisted development made script-first guardrails too fragile at team scale.
+ASK 3.0 exists because commit/push gates alone are not enough for long-running developer-agent execution.
 
-Before 2.0, teams repeatedly hit the same failure pattern:
+Teams need runtime discipline across the full session lifecycle:
 
-- branch/worktree mistakes discovered too late
-- session docs drift during long-running agent work
-- split logic across wrappers and scripts causing policy drift
-- stalled agent runs without reliable recovery behavior
-- context-loss interruptions that slowed resume and handoff
+- event-first state reconstruction (`ask replay`)
+- deterministic session/task/workflow/evidence traces
+- freshness and integration readiness before merge
+- routing/claims/child-session coordination for multi-agent execution
+- promotion/rollout/rollback governance with explicit invariants
 
-ASK 2.0 addresses this by moving governance into one runtime core (`ask-core`) with a single enforcement path for commit/push checks.
+ASK 3.0 keeps ASK 2.0 branch/doc gates and adds a broader Session OS runtime model on top of the same `ask-core` foundation.
 
 The practical buy-in for developers:
 
@@ -37,11 +38,15 @@ The practical buy-in for developers:
 - faster, cleaner resume and handoff in long sessions
 - less time debugging guardrail inconsistencies
 
-ASK 2.0 provides:
+ASK 3.0 provides:
 
+- event-ledger + projection snapshots (`.ask/runtime/events.ndjson`, `.ask/runtime/snapshots/*`)
 - session docs control plane (`docs/session/**`)
-- branch/worktree guard validator
-- session freshness validator
+- branch/worktree guard validator + lifecycle gating
+- session freshness and dependency-aware verification state
+- integration and merge-readiness runtime slices
+- routing/claims/child-session multi-agent coordination
+- delivery governance runtime (`feature`, `release`, `promote`, `rollout`, `rollback`)
 - pre-commit and pre-push hooks
 - lifecycle-policy aware runtime commands (`ask preflight`, `ask can-commit`)
 - runtime-only commit/push gates (`ask pre-commit-check`, `ask pre-push-check`)
@@ -72,6 +77,16 @@ Core command groups:
   - `ask pre-commit-check`
   - `ask pre-push-check`
   - These are the runtime commands wired into hook adapters.
+- Task/workflow and agent coordination:
+  - `ask task create|assign|start|depends|status`
+  - `ask workflow recommend|start|artifact|complete|fail`
+  - `ask route recommend|status`, `ask claim acquire|release|lock|status`, `ask child-session spawn|status`, `ask agent register|status`
+- Delivery governance:
+  - `ask feature create|link-task|status`
+  - `ask release create|link-feature|status`
+  - `ask promote require|pass|advance|status`
+  - `ask rollout start|phase|status`
+  - `ask rollback trigger`
 - Codex context budget (optional):
   - `ask codex context status|ensure|compact`
   - Use this when Codex Responses API workflows need context-budget monitoring/compaction.
@@ -264,6 +279,7 @@ node scripts/session/clearRepoWorkContextLock.mjs
 Use the focused docs below instead of repeating operational policy in this README:
 
 - [docs/how-it-works.md](docs/how-it-works.md) - runtime flow, enforcement behavior, strict mode, bypass, and diagnostics
+- [docs/ask-3.0-architecture.md](docs/ask-3.0-architecture.md) - ASK 3.0 Session OS architecture, bridge mode, and cutover mode
 - [docs/adoption-guide.md](docs/adoption-guide.md) - rollout sequence, branch policy, team conventions, and branch protection
 - [docs/repo-boundary-guards.md](docs/repo-boundary-guards.md) - CI architecture boundary guard patterns
 - [docs/session/guardrails.md](docs/session/guardrails.md) - maintainer guardrails and session documentation discipline
@@ -304,6 +320,7 @@ Autonomous ship mode (`ask:ship:*`) uses one gate:
 
 - [docs/README.md](docs/README.md) - doc index and reading order
 - [docs/how-it-works.md](docs/how-it-works.md) - architecture and flow overview
+- [docs/ask-3.0-architecture.md](docs/ask-3.0-architecture.md) - ASK 3.0 runtime layers and migration path
 - [docs/adoption-guide.md](docs/adoption-guide.md) - rollout guidance for teams
 - [docs/repo-boundary-guards.md](docs/repo-boundary-guards.md) - reusable repo-boundary guard patterns
 - [docs/team-sop-template.md](docs/team-sop-template.md) - copy-paste SOP template for target repositories

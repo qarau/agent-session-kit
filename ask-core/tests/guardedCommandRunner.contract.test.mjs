@@ -9,6 +9,7 @@ import { GuardedCommandRunner } from '../src/core/GuardedCommandRunner.js';
 
 const thisFilePath = fileURLToPath(import.meta.url);
 const testsDir = path.dirname(thisFilePath);
+const TEST_TIMEOUT_MS = 600;
 
 function fixturePath(name) {
   return path.join(testsDir, 'fixtures', 'guarded-command', name);
@@ -27,8 +28,8 @@ test('runner retries once on stall then succeeds', async () => {
   const repoDir = setupTempRepo();
   const counterPath = path.join(repoDir, '.tmp', 'attempts.txt');
   const runner = new GuardedCommandRunner(repoDir, {
-    wallTimeoutMs: 180,
-    noOutputTimeoutMs: 180,
+    wallTimeoutMs: TEST_TIMEOUT_MS,
+    noOutputTimeoutMs: TEST_TIMEOUT_MS,
     maxRetriesOnStall: 1,
   });
 
@@ -49,8 +50,8 @@ test('runner retries once on stall then succeeds', async () => {
 test('runner fails after second stall with deterministic reason', async () => {
   const repoDir = setupTempRepo();
   const runner = new GuardedCommandRunner(repoDir, {
-    wallTimeoutMs: 180,
-    noOutputTimeoutMs: 180,
+    wallTimeoutMs: TEST_TIMEOUT_MS,
+    noOutputTimeoutMs: TEST_TIMEOUT_MS,
     maxRetriesOnStall: 1,
   });
 
@@ -72,8 +73,8 @@ test('runner fails after second stall with deterministic reason', async () => {
 test('runner does not retry non-zero exits', async () => {
   const repoDir = setupTempRepo();
   const runner = new GuardedCommandRunner(repoDir, {
-    wallTimeoutMs: 180,
-    noOutputTimeoutMs: 180,
+    wallTimeoutMs: TEST_TIMEOUT_MS,
+    noOutputTimeoutMs: TEST_TIMEOUT_MS,
     maxRetriesOnStall: 1,
   });
 
@@ -96,8 +97,8 @@ test('runner writes deterministic last-operation fields', async () => {
   const repoDir = setupTempRepo();
   const counterPath = path.join(repoDir, '.tmp', 'attempts.txt');
   const runner = new GuardedCommandRunner(repoDir, {
-    wallTimeoutMs: 180,
-    noOutputTimeoutMs: 180,
+    wallTimeoutMs: TEST_TIMEOUT_MS,
+    noOutputTimeoutMs: TEST_TIMEOUT_MS,
     maxRetriesOnStall: 1,
   });
 

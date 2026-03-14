@@ -22,6 +22,20 @@ function parseStateList(value) {
     .filter(Boolean);
 }
 
+function isCsvListSectionKey(section, key) {
+  if (section === 'session') {
+    return key === 'allowed_preflight_states' || key === 'allowed_can_commit_states';
+  }
+
+  if (section === 'workflow_provider') {
+    return key === 'superpowers_approved_versions'
+      || key === 'superpowers_allowed_skills'
+      || key === 'superpowers_incompatible_versions';
+  }
+
+  return false;
+}
+
 function parseSimpleYaml(text) {
   const result = {};
   let section = '';
@@ -42,7 +56,7 @@ function parseSimpleYaml(text) {
       const split = line.trim().split(':');
       const key = split.shift().trim();
       const value = split.join(':').trim();
-      if (section === 'session' && (key === 'allowed_preflight_states' || key === 'allowed_can_commit_states')) {
+      if (isCsvListSectionKey(section, key)) {
         result[section][key] = parseStateList(value);
       } else {
         result[section][key] = coerceYamlValue(value);

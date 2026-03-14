@@ -34,6 +34,18 @@ export class AskPaths {
     return path.join(this.root, 'runtime');
   }
 
+  runtimeSnapshotsDir() {
+    return path.join(this.runtimeDir(), 'snapshots');
+  }
+
+  tasksDir() {
+    return path.join(this.root, 'tasks');
+  }
+
+  worktreesDir() {
+    return path.join(this.root, 'worktrees');
+  }
+
   runtimePolicy() {
     return path.join(this.policyDir(), 'runtime-policy.yaml');
   }
@@ -80,5 +92,85 @@ export class AskPaths {
 
   contextSession() {
     return path.join(this.runtimeDir(), 'context-session.json');
+  }
+
+  runtimeEvents() {
+    return path.join(this.runtimeDir(), 'events.ndjson');
+  }
+
+  sequenceState() {
+    return path.join(this.runtimeDir(), 'sequence.json');
+  }
+
+  sessionSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'session.json');
+  }
+
+  taskBoardSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'tasks.json');
+  }
+
+  verificationSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'verification.json');
+  }
+
+  workflowSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'workflow.json');
+  }
+
+  freshnessSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'freshness.json');
+  }
+
+  integrationSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'integration.json');
+  }
+
+  mergeReadinessSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'merge-readiness.json');
+  }
+
+  claimsSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'claims.json');
+  }
+
+  routingSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'routing.json');
+  }
+
+  childSessionsSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'child-sessions.json');
+  }
+
+  agentsSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'agents.json');
+  }
+
+  queueClassesSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'queue-classes.json');
+  }
+
+  policyPacksSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'policy-packs.json');
+  }
+
+  featuresSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'features.json');
+  }
+
+  releaseTrainsSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'release-trains.json');
+  }
+
+  promotionGatesSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'promotion-gates.json');
+  }
+
+  rolloutSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'rollout.json');
+  }
+
+  taskRegistry() {
+    return path.join(this.tasksDir(), 'task-board.json');
   }
 }

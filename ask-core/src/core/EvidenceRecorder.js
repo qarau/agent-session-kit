@@ -18,4 +18,13 @@ export class EvidenceRecorder {
   async writeLatestChecks(payload) {
     await this.store.writeJson(this.paths.latestChecks(), payload);
   }
+
+  async readVerificationSnapshot() {
+    return this.store.readJson(this.paths.verificationSnapshot(), { tasks: {} });
+  }
+
+  async readTaskVerification(taskId) {
+    const snapshot = await this.readVerificationSnapshot();
+    return snapshot.tasks?.[String(taskId ?? '').trim()] ?? null;
+  }
 }

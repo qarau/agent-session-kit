@@ -4,17 +4,32 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Resume ASK 3.0 task execution stream from the active worktree after autonomy ship hardening.
+- [ ] Prepare mainline merge readiness summary for ASK 3.0 runtime branch.
 
 ## Next
 
-- [ ] Use `npm run ask:ship:phase1 -- --message "<commit>"` for one-command verify->commit->push.
-- [ ] Execute Task 2 implementation after RED (replay/projector runtime).
-- [ ] Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
+- [ ] Execute protected-branch release integration flow decision from `docs/session/open-loops.md` item 2.
 
 ## Done
 
 - [x] 2026-03-14 - add autonomous ship runner (`verify -> commit -> push`) with phase npm scripts and contract tests
+- [x] 2026-03-14 - add migration note for repos missing `branchEnforcementMode`/`governanceMode` (adoption + how-it-works fallback guidance)
+- [x] 2026-03-14 - run clean-room smoke from fresh clone and fresh target install (installer bootstrap, delivery-governance flow, replay/doctor/provider checks)
+- [x] 2026-03-14 - stabilize guarded-runner reliability blockers (`GuardedCommandRunner` timeout classification hardening + deterministic test timeout budgets; ask-core matrix 68/68)
+- [x] 2026-03-14 - execute ASK 3.0 Task 13 verification matrix and record bridge-mode cutover decision (root tests pass, ask-core suite 64/68 with guarded-runner blockers, replay/doctor pass, runtime smoke flow pass)
+- [x] 2026-03-14 - complete ASK 3.0 Task 12 docs + installer surface (`README`, architecture/how-it-works/adoption/maintainer docs, installer runtime bootstrap, ask3 docs contract, smoke updates)
+- [x] 2026-03-14 - complete ASK 3.0 Task 11 delivery governance (`FeatureRuntime`, `ReleaseTrainRuntime`, `PromotionRuntime`, `RolloutRuntime`, governance projectors, `ask feature|release|promote|rollout|rollback`, delivery governance contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 10 queue classes + policy packs (`QueueClassRegistry`, `ExecutionPolicyPackRegistry`, `TaskClassifier`, `ExecutionPolicyRuntime`, queue/policy projectors, `ask policy`, policy pack contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 9 agent coordination (`RoutingRuntime`, `ClaimRuntime`, `ChildSessionRuntime`, `AgentRuntime`, routing/claim/child/agent projectors, `ask route|claim|child-session|agent`, agent coordination contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 8 integration orchestration (`IntegrationRuntime`, `AutoIntegrationRuntime`, git integration modules, integration/merge-readiness projectors, `ask integration*` CLI, integration contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 7 dependency-aware freshness (`DependencyGraph`, `FreshnessProjector`, `FreshnessRuntime`, `ask freshness`, `task depends`, freshness contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 6A enterprise guardrails (`SuperpowersAdapter` policy enforcement, policy-driven registry/runtime wiring, `workflow-provider` CLI, `superpowersEnterprise` contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 6 workflow adapter integration (`WorkflowRuntime`, workflow adapters/registry, workflow projector, workflow CLI, contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 5 evidence/verify runtime (`VerificationRuntime`, evidence/verify CLI commands, evidence/verify contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 4 task runtime (`TaskRuntime`, task invariants, task CLI, task contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 3 session-event bridge (`SessionRuntime`/`HandoffEngine`/`WorkContextEngine` event-first writes + replay contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 2 replay runtime (projection engine, snapshot store, projectors, `ask replay`, contracts)
+- [x] 2026-03-14 - complete ASK 3.0 Task 1 foundation (SequenceStore, EventLedger, scaffolder/paths/store updates + contracts)
 - [x] 2026-03-14 - add autonomy verification runner + phase npm scripts + autonomy-mode docs
 - [x] 2026-03-14 - publish ASK 3.0 runtime evolution implementation plan with enterprise Superpowers guardrails
 - [x] 2026-03-14 - add configurable branch enforcement mode and all-branch maintainer policy wiring
