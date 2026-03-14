@@ -47,6 +47,19 @@ Agent Session Kit follows this model.
 - Keep bypass usage explicit and rare.
 - Keep `docs/ASK_Runtime/*` local-only; do not commit runtime scratch data.
 
+## ASK 3.0 Migration Modes
+
+Use explicit migration mode language when rolling out ASK 3.0 features:
+
+- Bridge mode:
+  - Keep legacy session docs and hook behavior active.
+  - Add event-ledger and replay snapshots in parallel.
+  - Treat snapshot parity gaps as blockers for cutover.
+- Cutover mode:
+  - Projection snapshots are authoritative for runtime state.
+  - Keep session docs as operator-facing evidence, not the source of runtime truth.
+  - Remove legacy direct-state mutation paths after parity is stable.
+
 Optional strict mode:
 
 - Set `strictTasksDoc: true` in `docs/session/active-work-context.json` to require `docs/session/tasks.md` on meaningful changes.

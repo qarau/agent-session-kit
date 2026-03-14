@@ -22,6 +22,7 @@ This mode is for teams maintaining ASK itself.
 - In maintainer mode, pre-push includes release-doc consistency checks on protected branches.
 - Runtime behavior should remain policy-equivalent with ASK governance expectations.
 - Session lifecycle recovery relies on `.ask/sessions/pending-transition.json`; maintainers should treat stale pending markers as recovery signals, not noise.
+- For ASK 3.0 cutover, projection snapshots authoritative runtime state is the rule; bridge mode keeps legacy views in parity until cutover criteria are met.
 
 ## Required Maintainer Signals
 

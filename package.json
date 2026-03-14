@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test tests/sessionKitSmoke.test.mjs tests/releaseDocsConsistency.test.mjs tests/resolveBranchEnforcementMode.test.mjs tests/sessionFreshnessBranchMode.test.mjs tests/releaseDocsBranchMode.test.mjs",
+    "test": "node --test tests/sessionKitSmoke.test.mjs tests/ask3RuntimeDocs.contract.test.mjs tests/releaseDocsConsistency.test.mjs tests/resolveBranchEnforcementMode.test.mjs tests/sessionFreshnessBranchMode.test.mjs tests/releaseDocsBranchMode.test.mjs",
     "test:release-docs": "node scripts/verifyReleaseDocsConsistency.mjs",
     "ask:verify:baseline": "node scripts/autonomy/runPhaseVerification.mjs --phase baseline",
     "ask:verify:phase1": "node scripts/autonomy/runPhaseVerification.mjs --phase phase1",

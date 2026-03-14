@@ -5,14 +5,26 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `7fb1afc feat: add policy packs and queue class runtime`
+- Current HEAD: `c2e6b5a feat: add release trains, promotion gates, and rollout runtime`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 12 (documentation + installer surface + release gating) after Task 11 runtime slice completion.
+Execute ASK 3.0 Task 13 (full verification, cutover decision, and session evidence).
 
 ## Completed In This Stream
 
+- Task 12 RED/GREEN docs + installer surface implemented:
+  - Added ASK 3.0 runtime docs contract coverage (`tests/ask3RuntimeDocs.contract.test.mjs`).
+  - Updated smoke coverage to assert ASK 3.0 messaging and installer runtime bootstrap snapshots.
+  - Updated installer to bootstrap ask-core runtime state during install (`ask init`).
+  - Published ASK 3.0 architecture doc (`docs/ask-3.0-architecture.md`).
+  - Updated root docs (`README.md`, `docs/how-it-works.md`, `docs/adoption-guide.md`, `docs/maintainer-mode.md`) for Session OS, bridge/cutover guidance, and delivery-governance command families.
+  - Added the new docs contract test to root `npm test`.
+- RED verification:
+  - `cmd /c node --test tests/sessionKitSmoke.test.mjs tests/ask3RuntimeDocs.contract.test.mjs` failed initially (missing ASK 3.0 docs surface).
+- GREEN verification:
+  - `cmd /c node --test tests/sessionKitSmoke.test.mjs tests/ask3RuntimeDocs.contract.test.mjs` passed (5/5).
+  - `cmd /c npm run test` passed (22/22).
 - Task 11 RED/GREEN delivery governance runtime implemented:
   - Added release governance runtimes (`FeatureRuntime`, `ReleaseTrainRuntime`, `PromotionRuntime`, `RolloutRuntime`).
   - Added delivery governance projectors (`FeatureProjector`, `ReleaseTrainProjector`, `PromotionGateProjector`, `RolloutProjector`).
@@ -165,8 +177,8 @@ Execute ASK 3.0 Task 12 (documentation + installer surface + release gating) aft
 
 ## Next Tasks
 
-1. Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
-2. Execute ASK 3.0 Task 12: docs, installer surface, and release-gating updates.
+1. Execute ASK 3.0 Task 13: full verification matrix, bridge-vs-cutover decision, and recorded evidence.
+2. Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -178,10 +190,10 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/deliveryGovernance.contract.test.mjs` (pass, 4/4)
-- `node --test <explicit ask-core test file list>` (pass 65/68, known pre-existing guarded-command contract failures in `guardedCommandRunner.contract.test.mjs`)
+- `cmd /c node --test tests/sessionKitSmoke.test.mjs tests/ask3RuntimeDocs.contract.test.mjs` (pass, 5/5)
+- `cmd /c npm run test` (pass, 22/22)
 
-Latest status: `Task 11 release trains + promotion gates + rollout policies pass (2026-03-14)`.
+Latest status: `Task 12 docs + installer surface pass (2026-03-14)`.
 
 ## Resume Commands
 
@@ -191,4 +203,5 @@ git log -5 --oneline
 cmd /c npm run ask:verify:phase3
 cmd /c npm run ask:verify:phase4
 cmd /c npm run ask:verify:phase5
+cmd /c npm run test
 ```

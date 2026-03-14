@@ -48,9 +48,10 @@ test('maintainer dogfooding assets exist in repository root', () => {
   assert.equal(fs.existsSync(path.join(kitRoot, 'ask-core', 'bin', 'ask.js')), true);
 });
 
-test('documentation describes branch-aware maintainer mode policy', () => {
+test('documentation describes ASK 3.0 branch-aware maintainer policy', () => {
   const readme = fs.readFileSync(path.join(kitRoot, 'README.md'), 'utf8');
-  assert.match(readme, /ASK 2\.0/i);
+  assert.match(readme, /ASK 3\.0/i);
+  assert.match(readme, /Session OS|event-ledger runtime/i);
 
   const maintainerModePath = path.join(kitRoot, 'docs', 'maintainer-mode.md');
   assert.equal(fs.existsSync(maintainerModePath), true);
@@ -132,4 +133,10 @@ test('agent-session-kit installs ask-core runtime-only flow in a temp repo', () 
     cwd: repoDir,
   });
   assert.equal(prePushResult.status, 0, prePushResult.stdout + prePushResult.stderr);
+
+  assert.equal(fs.existsSync(path.join(repoDir, '.ask', 'runtime', 'events.ndjson')), true);
+  assert.equal(fs.existsSync(path.join(repoDir, '.ask', 'runtime', 'snapshots', 'features.json')), true);
+  assert.equal(fs.existsSync(path.join(repoDir, '.ask', 'runtime', 'snapshots', 'release-trains.json')), true);
+  assert.equal(fs.existsSync(path.join(repoDir, '.ask', 'runtime', 'snapshots', 'promotion-gates.json')), true);
+  assert.equal(fs.existsSync(path.join(repoDir, '.ask', 'runtime', 'snapshots', 'rollout.json')), true);
 });

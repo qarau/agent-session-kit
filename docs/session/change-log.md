@@ -2,6 +2,32 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 12 documentation + installer surface (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `README.md`
+    - `docs/how-it-works.md`
+    - `docs/adoption-guide.md`
+    - `docs/maintainer-mode.md`
+    - `docs/ask-3.0-architecture.md`
+    - `install-session-kit.mjs`
+    - `tests/sessionKitSmoke.test.mjs`
+    - `tests/ask3RuntimeDocs.contract.test.mjs`
+    - `package.json`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Repositioned docs around ASK 3.0 Session OS architecture (event-ledger + replay + governance command contracts).
+    - Added explicit bridge mode and cutover mode migration guidance.
+    - Installer now bootstraps ask-core runtime state (`ask init`) so required `.ask/runtime` snapshots are ready immediately after install.
+    - Added docs contract coverage and extended smoke coverage for installer snapshot scaffolding.
+  - Verification:
+    - RED: `cmd /c node --test tests/sessionKitSmoke.test.mjs tests/ask3RuntimeDocs.contract.test.mjs` failed as expected before docs/installer updates.
+    - GREEN: `cmd /c node --test tests/sessionKitSmoke.test.mjs tests/ask3RuntimeDocs.contract.test.mjs` passed (5/5).
+    - Regression: `cmd /c npm run test` passed (22/22).
+
 - ASK 3.0 Task 11 release trains + promotion gates + rollout policies (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`
