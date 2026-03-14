@@ -4,7 +4,7 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Execute ASK 3.0 Task 13: full verification matrix + bridge/cutover decision + evidence capture.
+- [ ] Fix guarded-runner reliability regressions blocking ASK 3.0 cutover (`guardedCommandRunner.contract`, `sessionDoctor.contract` success path).
 
 ## Next
 
@@ -12,6 +12,7 @@ Last updated: 2026-03-14
 
 ## Done
 
+- [x] 2026-03-14 - execute ASK 3.0 Task 13 verification matrix and record bridge-mode cutover decision (root tests pass, ask-core suite 64/68 with guarded-runner blockers, replay/doctor pass, runtime smoke flow pass)
 - [x] 2026-03-14 - complete ASK 3.0 Task 12 docs + installer surface (`README`, architecture/how-it-works/adoption/maintainer docs, installer runtime bootstrap, ask3 docs contract, smoke updates)
 - [x] 2026-03-14 - complete ASK 3.0 Task 11 delivery governance (`FeatureRuntime`, `ReleaseTrainRuntime`, `PromotionRuntime`, `RolloutRuntime`, governance projectors, `ask feature|release|promote|rollout|rollback`, delivery governance contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 10 queue classes + policy packs (`QueueClassRegistry`, `ExecutionPolicyPackRegistry`, `TaskClassifier`, `ExecutionPolicyRuntime`, queue/policy projectors, `ask policy`, policy pack contracts)

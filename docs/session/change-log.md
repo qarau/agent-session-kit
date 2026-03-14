@@ -2,6 +2,29 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 13 full verification + cutover decision evidence:
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `docs/session/current-status.md`
+    - `docs/session/tasks.md`
+    - `docs/session/change-log.md`
+    - `docs/session/open-loops.md`
+  - Verification matrix:
+    - `cmd /c npm run test` passed (22/22).
+    - `node --test <explicit ask-core test file list>` failed (64/68); failures:
+      - `ask-core/tests/guardedCommandRunner.contract.test.mjs` (3 cases)
+      - `ask-core/tests/sessionDoctor.contract.test.mjs` (`doctor-succeeded` case, guarded-runner timeout path)
+    - `cmd /c node ask-core/bin/ask.js replay` passed (`ok: true`).
+    - `cmd /c node ask-core/bin/ask.js session doctor` passed (`status: succeeded`).
+  - Representative runtime smoke:
+    - Temp repo runtime flow executed successfully for event-ledger/session/task + release/promotion/rollout/rollback.
+    - Snapshot outputs verified for `features`, `release-trains`, `promotion-gates`, and `rollout`.
+    - `ask workflow-provider status --workflow superpowers --version 0.3.0` returned `compatible`.
+  - Cutover decision:
+    - Keep bridge mode.
+    - Block hard cutover until guarded-runner/session-doctor contract regressions are resolved.
+
 - ASK 3.0 Task 12 documentation + installer surface (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`

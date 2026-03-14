@@ -9,10 +9,23 @@ Last updated: 2026-03-14
 
 ## Active Objective
 
-Execute ASK 3.0 Task 13 (full verification, cutover decision, and session evidence).
+Stabilize guarded-runner reliability contracts to unblock ASK 3.0 cutover from bridge mode.
 
 ## Completed In This Stream
 
+- Task 13 verification matrix + cutover decision recorded:
+  - Matrix run:
+    - `cmd /c npm run test` passed (22/22).
+    - `node --test <explicit ask-core test file list>` failed (64/68 passed; 4 failures).
+    - `cmd /c node ask-core/bin/ask.js replay` passed.
+    - `cmd /c node ask-core/bin/ask.js session doctor` passed (`status: succeeded`).
+  - Representative runtime smoke flow executed in temp repo:
+    - Event-ledger/session/task flow passed.
+    - Release/promotion/rollout/rollback flow passed with deterministic snapshots.
+    - `ask workflow-provider status --workflow superpowers --version 0.3.0` returned `compatible`.
+  - Cutover decision:
+    - Keep **bridge mode**.
+    - Cutover deferred until guarded-runner and session-doctor contract failures are resolved and ask-core suite is fully green.
 - Task 12 RED/GREEN docs + installer surface implemented:
   - Added ASK 3.0 runtime docs contract coverage (`tests/ask3RuntimeDocs.contract.test.mjs`).
   - Updated smoke coverage to assert ASK 3.0 messaging and installer runtime bootstrap snapshots.
@@ -177,7 +190,7 @@ Execute ASK 3.0 Task 13 (full verification, cutover decision, and session eviden
 
 ## Next Tasks
 
-1. Execute ASK 3.0 Task 13: full verification matrix, bridge-vs-cutover decision, and recorded evidence.
+1. Fix guarded-runner reliability regressions (`ask-core/tests/guardedCommandRunner.contract.test.mjs` and related `sessionDoctor.contract` case).
 2. Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
@@ -187,13 +200,16 @@ Task board source of truth: `docs/session/tasks.md`.
 
 - ASK 3.0 scope is broad; strict phase gates are required to avoid partial cutovers.
 - Superpowers integration must stay adapter-boundary only (no coupling to upstream internals).
+- Ask-core full suite is not fully green (4 failing contracts tied to guarded-runner timing/retry behavior), which blocks hard cutover.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test tests/sessionKitSmoke.test.mjs tests/ask3RuntimeDocs.contract.test.mjs` (pass, 5/5)
 - `cmd /c npm run test` (pass, 22/22)
+- `node --test <explicit ask-core test file list>` (fail, 64/68; failures in guarded runner + session doctor success-path contract)
+- `cmd /c node ask-core/bin/ask.js replay` (pass)
+- `cmd /c node ask-core/bin/ask.js session doctor` (pass)
 
-Latest status: `Task 12 docs + installer surface pass (2026-03-14)`.
+Latest status: `Task 13 evidence captured; bridge mode retained pending guarded-runner fixes (2026-03-14)`.
 
 ## Resume Commands
 
