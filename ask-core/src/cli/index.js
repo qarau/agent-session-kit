@@ -16,6 +16,10 @@ import { runWorkflowProvider } from './commands/workflow-provider.js';
 import { runFreshness } from './commands/freshness.js';
 import { runIntegration } from './commands/integration.js';
 import { runIntegrationAuto } from './commands/integration-auto.js';
+import { runRoute } from './commands/route.js';
+import { runClaim } from './commands/claim.js';
+import { runChildSession } from './commands/child-session.js';
+import { runAgent } from './commands/agent.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -36,6 +40,10 @@ Usage:
   ask freshness status|explain [task-id]
   ask integration plan|run|status
   ask integration-auto run|status
+  ask route recommend|status
+  ask claim acquire|release|lock|status
+  ask child-session spawn|status
+  ask agent register|status
   ask replay
   ask handoff create
   ask codex context status|ensure|compact
@@ -126,6 +134,26 @@ export async function runCli(args) {
 
   if (command === 'integration-auto') {
     await runIntegrationAuto(subcommand, rest);
+    return;
+  }
+
+  if (command === 'route') {
+    await runRoute(subcommand, rest);
+    return;
+  }
+
+  if (command === 'claim') {
+    await runClaim(subcommand, rest);
+    return;
+  }
+
+  if (command === 'child-session') {
+    await runChildSession(subcommand, rest);
+    return;
+  }
+
+  if (command === 'agent') {
+    await runAgent(subcommand, rest);
     return;
   }
 

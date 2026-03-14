@@ -5,14 +5,25 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `b8f27cd feat: add dependency-aware freshness runtime and CLI`
+- Current HEAD: `7282681 feat: add integration orchestration and merge-readiness projections`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 8 (integration workspace + auto integration + merge readiness) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 9 (agent routing + claims + child task sessions) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 9 RED/GREEN agent coordination implemented:
+  - Added runtime modules for routing, claims, child sessions, and agents (`RoutingRuntime`, `ClaimRuntime`, `ChildSessionRuntime`, `AgentRuntime`).
+  - Added policy helpers for capability matching and routing decisions (`AgentCapabilityRegistry`, `RoutingPolicyEngine`).
+  - Added replay projectors for claims, routing, child sessions, and agents.
+  - Added CLI surfaces `ask route`, `ask claim`, `ask child-session`, and `ask agent`.
+  - Added deterministic coordination contracts in `ask-core/tests/agentCoordination.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/agentCoordination.contract.test.mjs` failed initially (`route` / `claim` / `child-session` / `agent` command surface missing).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/agentCoordination.contract.test.mjs` passed (3/3).
+  - `cmd /c npm run ask:verify:phase5` passed (agent coordination contracts 3/3 + repo tests 20/20).
 - Task 8 RED/GREEN integration orchestration implemented:
   - Added integration runtime stack (`IntegrationRuntime`, `AutoIntegrationRuntime`, branch/planner/orchestrator/workspace git helpers).
   - Added integration and merge-readiness projectors (`IntegrationProjector`, `MergeReadinessProjector`).
@@ -133,7 +144,7 @@ Execute ASK 3.0 Task 8 (integration workspace + auto integration + merge readine
 ## Next Tasks
 
 1. Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
-2. Execute ASK 3.0 Task 9: agent routing + claims + child task sessions.
+2. Execute ASK 3.0 Task 10: queue classes + policy packs.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -145,10 +156,10 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/freshness.contract.test.mjs ask-core/tests/integrationRuntime.contract.test.mjs` (pass, 6/6)
-- `cmd /c npm run ask:verify:phase4` (pass, freshness + integration contracts 6/6 + repo tests 20/20)
+- `cmd /c node --test ask-core/tests/agentCoordination.contract.test.mjs` (pass, 3/3)
+- `cmd /c npm run ask:verify:phase5` (pass, agent coordination contracts 3/3 + repo tests 20/20)
 
-Latest status: `Task 8 integration orchestration pass (2026-03-14)`.
+Latest status: `Task 9 agent coordination pass (2026-03-14)`.
 
 ## Resume Commands
 
@@ -157,4 +168,5 @@ git checkout ask-3-phase1-event-ledger
 git log -5 --oneline
 cmd /c npm run ask:verify:phase3
 cmd /c npm run ask:verify:phase4
+cmd /c npm run ask:verify:phase5
 ```

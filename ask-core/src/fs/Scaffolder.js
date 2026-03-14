@@ -64,6 +64,12 @@ export class Scaffolder {
     await this.store.writeJson(this.paths.verificationSnapshot(), { tasks: {} });
     await this.store.writeJson(this.paths.workflowSnapshot(), { tasks: {} });
     await this.store.writeJson(this.paths.freshnessSnapshot(), { tasks: {} });
+    await this.store.writeJson(this.paths.integrationSnapshot(), { tasks: {} });
+    await this.store.writeJson(this.paths.mergeReadinessSnapshot(), { tasks: {} });
+    await this.store.writeJson(this.paths.claimsSnapshot(), { tasks: {} });
+    await this.store.writeJson(this.paths.routingSnapshot(), { tasks: {} });
+    await this.store.writeJson(this.paths.childSessionsSnapshot(), { tasks: {} });
+    await this.store.writeJson(this.paths.agentsSnapshot(), { agents: {} });
     await this.store.writeJson(this.paths.taskRegistry(), { tasks: {} });
   }
 }

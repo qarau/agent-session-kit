@@ -34,4 +34,20 @@ export class RuntimeSnapshotStore {
   async writeMergeReadiness(payload) {
     await this.store.writeJson(this.paths.mergeReadinessSnapshot(), payload);
   }
+
+  async writeClaims(payload) {
+    await this.store.writeJson(this.paths.claimsSnapshot(), payload);
+  }
+
+  async writeRouting(payload) {
+    await this.store.writeJson(this.paths.routingSnapshot(), payload);
+  }
+
+  async writeChildSessions(payload) {
+    await this.store.writeJson(this.paths.childSessionsSnapshot(), payload);
+  }
+
+  async writeAgents(payload) {
+    await this.store.writeJson(this.paths.agentsSnapshot(), payload);
+  }
 }

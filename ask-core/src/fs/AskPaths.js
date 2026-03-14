@@ -130,6 +130,22 @@ export class AskPaths {
     return path.join(this.runtimeSnapshotsDir(), 'merge-readiness.json');
   }
 
+  claimsSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'claims.json');
+  }
+
+  routingSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'routing.json');
+  }
+
+  childSessionsSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'child-sessions.json');
+  }
+
+  agentsSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'agents.json');
+  }
+
   taskRegistry() {
     return path.join(this.tasksDir(), 'task-board.json');
   }

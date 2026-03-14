@@ -7,6 +7,10 @@ import { WorkflowProjector } from './projectors/WorkflowProjector.js';
 import { FreshnessProjector } from './projectors/FreshnessProjector.js';
 import { IntegrationProjector } from './projectors/IntegrationProjector.js';
 import { MergeReadinessProjector } from './projectors/MergeReadinessProjector.js';
+import { ClaimProjector } from './projectors/ClaimProjector.js';
+import { RoutingProjector } from './projectors/RoutingProjector.js';
+import { ChildSessionProjector } from './projectors/ChildSessionProjector.js';
+import { AgentProjector } from './projectors/AgentProjector.js';
 
 export class RuntimeProjectionEngine {
   constructor(cwd, overrides = {}) {
@@ -19,6 +23,10 @@ export class RuntimeProjectionEngine {
     this.freshnessProjector = overrides.freshnessProjector ?? new FreshnessProjector();
     this.integrationProjector = overrides.integrationProjector ?? new IntegrationProjector();
     this.mergeReadinessProjector = overrides.mergeReadinessProjector ?? new MergeReadinessProjector();
+    this.claimProjector = overrides.claimProjector ?? new ClaimProjector();
+    this.routingProjector = overrides.routingProjector ?? new RoutingProjector();
+    this.childSessionProjector = overrides.childSessionProjector ?? new ChildSessionProjector();
+    this.agentProjector = overrides.agentProjector ?? new AgentProjector();
   }
 
   async replay() {
@@ -32,6 +40,10 @@ export class RuntimeProjectionEngine {
     let freshness = this.freshnessProjector.initialState();
     let integration = this.integrationProjector.initialState();
     let mergeReadiness = this.mergeReadinessProjector.initialState();
+    let claims = this.claimProjector.initialState();
+    let routing = this.routingProjector.initialState();
+    let childSessions = this.childSessionProjector.initialState();
+    let agents = this.agentProjector.initialState();
 
     for (const event of sorted) {
       session = this.sessionProjector.apply(session, event);
@@ -41,6 +53,10 @@ export class RuntimeProjectionEngine {
       freshness = this.freshnessProjector.apply(freshness, event);
       integration = this.integrationProjector.apply(integration, event);
       mergeReadiness = this.mergeReadinessProjector.apply(mergeReadiness, event);
+      claims = this.claimProjector.apply(claims, event);
+      routing = this.routingProjector.apply(routing, event);
+      childSessions = this.childSessionProjector.apply(childSessions, event);
+      agents = this.agentProjector.apply(agents, event);
     }
 
     await this.snapshots.writeSession(session);
@@ -50,6 +66,10 @@ export class RuntimeProjectionEngine {
     await this.snapshots.writeFreshness(freshness);
     await this.snapshots.writeIntegration(integration);
     await this.snapshots.writeMergeReadiness(mergeReadiness);
+    await this.snapshots.writeClaims(claims);
+    await this.snapshots.writeRouting(routing);
+    await this.snapshots.writeChildSessions(childSessions);
+    await this.snapshots.writeAgents(agents);
 
     return {
       eventsProcessed: sorted.length,

@@ -2,6 +2,43 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 9 agent routing + claims + child sessions (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/RoutingRuntime.js`
+    - `ask-core/src/core/ClaimRuntime.js`
+    - `ask-core/src/core/ChildSessionRuntime.js`
+    - `ask-core/src/core/AgentRuntime.js`
+    - `ask-core/src/policy/AgentCapabilityRegistry.js`
+    - `ask-core/src/policy/RoutingPolicyEngine.js`
+    - `ask-core/src/runtime/projectors/ClaimProjector.js`
+    - `ask-core/src/runtime/projectors/RoutingProjector.js`
+    - `ask-core/src/runtime/projectors/ChildSessionProjector.js`
+    - `ask-core/src/runtime/projectors/AgentProjector.js`
+    - `ask-core/src/cli/commands/route.js`
+    - `ask-core/src/cli/commands/claim.js`
+    - `ask-core/src/cli/commands/child-session.js`
+    - `ask-core/src/cli/commands/agent.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/agentCoordination.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added capability-based routing recommendations with policy-derived required capability.
+    - Added task claim lifecycle runtime and scope locking (`acquire`, `lock`, `release`).
+    - Added child-session spawn runtime with agent linkage projection.
+    - Added agent registration/runtime state projection for capabilities and child-session lineage.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/agentCoordination.contract.test.mjs` failed as expected before implementation (`route` / `claim` / `child-session` / `agent` missing).
+    - GREEN: `cmd /c node --test ask-core/tests/agentCoordination.contract.test.mjs` passed (3/3).
+    - Phase gate: `cmd /c npm run ask:verify:phase5` passed (agent coordination contracts 3/3 + repo tests 20/20).
+
 - ASK 3.0 Task 8 integration orchestration + merge readiness (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`

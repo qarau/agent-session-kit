@@ -8,10 +8,11 @@ Last updated: 2026-03-14
 
 ## Next
 
-- [ ] Execute ASK 3.0 Task 9: agent routing + claims + child task sessions.
+- [ ] Execute ASK 3.0 Task 10: queue classes + policy packs.
 
 ## Done
 
+- [x] 2026-03-14 - complete ASK 3.0 Task 9 agent coordination (`RoutingRuntime`, `ClaimRuntime`, `ChildSessionRuntime`, `AgentRuntime`, routing/claim/child/agent projectors, `ask route|claim|child-session|agent`, agent coordination contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 8 integration orchestration (`IntegrationRuntime`, `AutoIntegrationRuntime`, git integration modules, integration/merge-readiness projectors, `ask integration*` CLI, integration contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 7 dependency-aware freshness (`DependencyGraph`, `FreshnessProjector`, `FreshnessRuntime`, `ask freshness`, `task depends`, freshness contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 6A enterprise guardrails (`SuperpowersAdapter` policy enforcement, policy-driven registry/runtime wiring, `workflow-provider` CLI, `superpowersEnterprise` contracts)
