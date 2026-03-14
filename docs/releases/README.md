@@ -6,6 +6,9 @@ Checklist: `release-checklist.md`
 
 ## Released
 
+- `v3.0.0` - ASK 3.0: Session OS Runtime
+  - Notes: `v3.0.0.md`
+  - Announcement: `v3.0.0-announcement.md`
 - `v2.0.0` - ASK 2.0: Developer-Agent Runtime
   - Notes: `v2.0.0.md`
   - Announcement: `v2.0.0-announcement.md`

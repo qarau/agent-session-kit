@@ -4,12 +4,12 @@ Last updated: 2026-03-14
 
 ## Branch and Head
 
-- Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `c04d30f fix: stabilize guarded runner timeout classification under load`
+- Active branch: `main`
+- Current HEAD: `df577a9 merge: complete ask 3.0 runtime cutover into main`
 
 ## Active Objective
 
-Prepare mainline merge readiness summary and final release-flow evidence for ASK 3.0 runtime branch.
+Publish ASK 3.0 release artifacts on `main` (root README/docs alignment, release ledger update, tag, and release note).
 
 ## Completed In This Stream
 

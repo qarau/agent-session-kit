@@ -2,14 +2,14 @@
 
 ## ASK 3.0 Runtime Status
 
-Current stable release: `v2.0.0` (2026-03-12)  
-Current development direction: `ASK 3.0 Session OS` (event-ledger runtime expansion)
+Current stable release: `v3.0.0` (2026-03-14)  
+Current runtime track: `ASK 3.0 Session OS` (event-ledger runtime, multi-agent coordination, and delivery governance)
 
-- [Release notes](docs/releases/v2.0.0.md)
-- [Announcement copy](docs/releases/v2.0.0-announcement.md)
+- [Release notes](docs/releases/v3.0.0.md)
+- [Announcement copy](docs/releases/v3.0.0-announcement.md)
 - [Latest release pointer](docs/releases/latest.md)
 
-ASK 2.0 established the standalone runtime core. ASK 3.0 expands that core into a full event-ledger runtime for planning, execution, routing, and delivery governance.
+ASK 2.0 established the standalone runtime core. ASK 3.0 is the major expansion into a full event-ledger Session OS for planning, execution, routing, and delivery governance.
 
 ## What ASK Is
 
@@ -268,11 +268,13 @@ node scripts/session/clearRepoWorkContextLock.mjs
 - [ ] Use bypass only for controlled recovery (`SESSION_CONTEXT_BYPASS=1`, `SESSION_DOCS_BYPASS=1`).
 - [ ] If bypass is used, document why in `docs/session/change-log.md`.
 
-### 7) Runtime Status (2026-03-12)
+### 7) Runtime Status (2026-03-14)
 
 - [ ] `pre-commit` is ask-core-only (`ask pre-commit-check`).
 - [ ] `pre-push` is ask-core-only (`ask pre-push-check`).
 - [ ] Adapter command execution has stall recovery (`180s` wall/no-output timeout + one retry).
+- [ ] Event-ledger runtime snapshots are first-class (`.ask/runtime/events.ndjson`, `.ask/runtime/snapshots/*`).
+- [ ] Delivery governance CLI families are active (`feature`, `release`, `promote`, `rollout`, `rollback`).
 
 ## Operational Details
 
@@ -328,5 +330,7 @@ Autonomous ship mode (`ask:ship:*`) uses one gate:
 - [docs/releases/README.md](docs/releases/README.md) - release ledger and version mapping
 - [docs/releases/release-checklist.md](docs/releases/release-checklist.md) - release publishing checklist
 - [docs/releases/latest.md](docs/releases/latest.md) - latest released version pointers
+- [docs/releases/v3.0.0.md](docs/releases/v3.0.0.md) - ASK 3.0 release notes
+- [docs/releases/v3.0.0-announcement.md](docs/releases/v3.0.0-announcement.md) - ASK 3.0 announcement copy
 - [docs/releases/v2.0.0.md](docs/releases/v2.0.0.md) - ASK 2.0 release notes
 - [docs/releases/v2.0.0-announcement.md](docs/releases/v2.0.0-announcement.md) - ASK 2.0 announcement copy

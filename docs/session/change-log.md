@@ -2,6 +2,28 @@
 
 ## 2026-03-14
 
+- ASK 3.0 release publishing prep (`v3.0.0` docs/tag flow):
+  - Files:
+    - `README.md`
+    - `docs/releases/README.md`
+    - `docs/releases/latest.md`
+    - `docs/releases/release-checklist.md`
+    - `docs/releases/v3.0.0.md`
+    - `docs/releases/v3.0.0-announcement.md`
+    - `package.json`
+    - `docs/session/current-status.md`
+    - `docs/session/tasks.md`
+    - `docs/session/change-log.md`
+  - Behavior:
+    - Promoted ASK 3.0 as current stable release in root docs and release ledger pointers.
+    - Added formal `v3.0.0` release notes and announcement copy.
+    - Fixed `npm run test:ask-core` to execute the real ask-core matrix (`node --test --test-concurrency=1 ask-core/tests/*.test.mjs`).
+  - Verification:
+    - `cmd /c npm run test:release-docs` passed.
+    - `cmd /c npm run test` passed (30/30).
+    - `cmd /c npm run test:ask-core` passed (68/68).
+    - `cmd /c node scripts/verifyReleaseDocsConsistency.mjs --root .` passed.
+
 - Autonomous commit/push gate after green verification:
   - Files:
     - `scripts/autonomy/runAutonomousShip.mjs`

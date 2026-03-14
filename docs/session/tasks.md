@@ -4,7 +4,7 @@ Last updated: 2026-03-14
 
 ## Now
 
-- [ ] Prepare mainline merge readiness summary for ASK 3.0 runtime branch.
+- [ ] Monitor ASK 3.0 release adoption feedback and follow-up fixes.
 
 ## Next
 
@@ -12,6 +12,7 @@ Last updated: 2026-03-14
 
 ## Done
 
+- [x] 2026-03-14 - publish ASK 3.0 root docs alignment + release ledger/latest + v3.0.0 release notes/announcement and tag
 - [x] 2026-03-14 - add autonomous ship runner (`verify -> commit -> push`) with phase npm scripts and contract tests
 - [x] 2026-03-14 - add migration note for repos missing `branchEnforcementMode`/`governanceMode` (adoption + how-it-works fallback guidance)
 - [x] 2026-03-14 - run clean-room smoke from fresh clone and fresh target install (installer bootstrap, delivery-governance flow, replay/doctor/provider checks)

@@ -25,6 +25,6 @@
     "ask:ship:phase5": "node scripts/autonomy/runAutonomousShip.mjs --phase phase5",
     "ask:ship:phase6": "node scripts/autonomy/runAutonomousShip.mjs --phase phase6",
     "bootstrap:ask-core": "node scripts/bootstrapAskCore.cjs",
-    "test:ask-core": "node --test ask-core/tests"
+    "test:ask-core": "node --test --test-concurrency=1 ask-core/tests/*.test.mjs"
   }
 }
