@@ -8,10 +8,11 @@ Last updated: 2026-03-14
 
 ## Next
 
-- [ ] Execute ASK 3.0 Task 11: release trains + promotion gates + rollout policies.
+- [ ] Execute ASK 3.0 Task 12: docs, installer surface, and release-gating contracts.
 
 ## Done
 
+- [x] 2026-03-14 - complete ASK 3.0 Task 11 delivery governance (`FeatureRuntime`, `ReleaseTrainRuntime`, `PromotionRuntime`, `RolloutRuntime`, governance projectors, `ask feature|release|promote|rollout|rollback`, delivery governance contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 10 queue classes + policy packs (`QueueClassRegistry`, `ExecutionPolicyPackRegistry`, `TaskClassifier`, `ExecutionPolicyRuntime`, queue/policy projectors, `ask policy`, policy pack contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 9 agent coordination (`RoutingRuntime`, `ClaimRuntime`, `ChildSessionRuntime`, `AgentRuntime`, routing/claim/child/agent projectors, `ask route|claim|child-session|agent`, agent coordination contracts)
 - [x] 2026-03-14 - complete ASK 3.0 Task 8 integration orchestration (`IntegrationRuntime`, `AutoIntegrationRuntime`, git integration modules, integration/merge-readiness projectors, `ask integration*` CLI, integration contracts)

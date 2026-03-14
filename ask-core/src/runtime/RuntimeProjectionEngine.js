@@ -13,6 +13,10 @@ import { ChildSessionProjector } from './projectors/ChildSessionProjector.js';
 import { AgentProjector } from './projectors/AgentProjector.js';
 import { QueueClassProjector } from './projectors/QueueClassProjector.js';
 import { PolicyPackProjector } from './projectors/PolicyPackProjector.js';
+import { FeatureProjector } from './projectors/FeatureProjector.js';
+import { ReleaseTrainProjector } from './projectors/ReleaseTrainProjector.js';
+import { PromotionGateProjector } from './projectors/PromotionGateProjector.js';
+import { RolloutProjector } from './projectors/RolloutProjector.js';
 
 export class RuntimeProjectionEngine {
   constructor(cwd, overrides = {}) {
@@ -31,6 +35,10 @@ export class RuntimeProjectionEngine {
     this.agentProjector = overrides.agentProjector ?? new AgentProjector();
     this.queueClassProjector = overrides.queueClassProjector ?? new QueueClassProjector();
     this.policyPackProjector = overrides.policyPackProjector ?? new PolicyPackProjector();
+    this.featureProjector = overrides.featureProjector ?? new FeatureProjector();
+    this.releaseTrainProjector = overrides.releaseTrainProjector ?? new ReleaseTrainProjector();
+    this.promotionGateProjector = overrides.promotionGateProjector ?? new PromotionGateProjector();
+    this.rolloutProjector = overrides.rolloutProjector ?? new RolloutProjector();
   }
 
   async replay() {
@@ -50,6 +58,10 @@ export class RuntimeProjectionEngine {
     let agents = this.agentProjector.initialState();
     let queueClasses = this.queueClassProjector.initialState();
     let policyPacks = this.policyPackProjector.initialState();
+    let features = this.featureProjector.initialState();
+    let releaseTrains = this.releaseTrainProjector.initialState();
+    let promotionGates = this.promotionGateProjector.initialState();
+    let rollout = this.rolloutProjector.initialState();
 
     for (const event of sorted) {
       session = this.sessionProjector.apply(session, event);
@@ -65,6 +77,10 @@ export class RuntimeProjectionEngine {
       agents = this.agentProjector.apply(agents, event);
       queueClasses = this.queueClassProjector.apply(queueClasses, event);
       policyPacks = this.policyPackProjector.apply(policyPacks, event);
+      features = this.featureProjector.apply(features, event);
+      releaseTrains = this.releaseTrainProjector.apply(releaseTrains, event);
+      promotionGates = this.promotionGateProjector.apply(promotionGates, event);
+      rollout = this.rolloutProjector.apply(rollout, event);
     }
 
     await this.snapshots.writeSession(session);
@@ -80,6 +96,10 @@ export class RuntimeProjectionEngine {
     await this.snapshots.writeAgents(agents);
     await this.snapshots.writeQueueClasses(queueClasses);
     await this.snapshots.writePolicyPacks(policyPacks);
+    await this.snapshots.writeFeatures(features);
+    await this.snapshots.writeReleaseTrains(releaseTrains);
+    await this.snapshots.writePromotionGates(promotionGates);
+    await this.snapshots.writeRollout(rollout);
 
     return {
       eventsProcessed: sorted.length,

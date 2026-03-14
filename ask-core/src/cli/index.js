@@ -21,6 +21,11 @@ import { runClaim } from './commands/claim.js';
 import { runChildSession } from './commands/child-session.js';
 import { runAgent } from './commands/agent.js';
 import { runPolicy } from './commands/policy.js';
+import { runFeature } from './commands/feature.js';
+import { runRelease } from './commands/release.js';
+import { runPromote } from './commands/promote.js';
+import { runRollout } from './commands/rollout.js';
+import { runRollback } from './commands/rollback.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -46,6 +51,11 @@ Usage:
   ask child-session spawn|status
   ask agent register|status
   ask policy classify|apply|status
+  ask feature create|link-task|status
+  ask release create|link-feature|status
+  ask promote require|pass|advance|status
+  ask rollout start|phase|status
+  ask rollback trigger
   ask replay
   ask handoff create
   ask codex context status|ensure|compact
@@ -161,6 +171,31 @@ export async function runCli(args) {
 
   if (command === 'policy') {
     await runPolicy(subcommand, rest);
+    return;
+  }
+
+  if (command === 'feature') {
+    await runFeature(subcommand, rest);
+    return;
+  }
+
+  if (command === 'release') {
+    await runRelease(subcommand, rest);
+    return;
+  }
+
+  if (command === 'promote') {
+    await runPromote(subcommand, rest);
+    return;
+  }
+
+  if (command === 'rollout') {
+    await runRollout(subcommand, rest);
+    return;
+  }
+
+  if (command === 'rollback') {
+    await runRollback(subcommand, rest);
     return;
   }
 

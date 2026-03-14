@@ -154,6 +154,22 @@ export class AskPaths {
     return path.join(this.runtimeSnapshotsDir(), 'policy-packs.json');
   }
 
+  featuresSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'features.json');
+  }
+
+  releaseTrainsSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'release-trains.json');
+  }
+
+  promotionGatesSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'promotion-gates.json');
+  }
+
+  rolloutSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'rollout.json');
+  }
+
   taskRegistry() {
     return path.join(this.tasksDir(), 'task-board.json');
   }

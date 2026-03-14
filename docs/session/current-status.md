@@ -5,14 +5,24 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `c64519d feat: add agent routing, claims, and child session runtime`
+- Current HEAD: `7fb1afc feat: add policy packs and queue class runtime`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 10 (queue classes + policy packs) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 12 (documentation + installer surface + release gating) after Task 11 runtime slice completion.
 
 ## Completed In This Stream
 
+- Task 11 RED/GREEN delivery governance runtime implemented:
+  - Added release governance runtimes (`FeatureRuntime`, `ReleaseTrainRuntime`, `PromotionRuntime`, `RolloutRuntime`).
+  - Added delivery governance projectors (`FeatureProjector`, `ReleaseTrainProjector`, `PromotionGateProjector`, `RolloutProjector`).
+  - Added CLI families: `ask feature`, `ask release`, `ask promote`, `ask rollout`, `ask rollback`.
+  - Extended replay/snapshot wiring for `features.json`, `release-trains.json`, `promotion-gates.json`, and `rollout.json`.
+  - Added contract tests in `ask-core/tests/deliveryGovernance.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/deliveryGovernance.contract.test.mjs` failed initially (delivery governance command surface missing).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/deliveryGovernance.contract.test.mjs` passed (4/4).
 - Task 10 RED/GREEN queue classes and policy packs implemented:
   - Added queue class and policy registries (`QueueClassRegistry`, `ExecutionPolicyPackRegistry`).
   - Added task classification and policy execution runtime (`TaskClassifier`, `ExecutionPolicyRuntime`).
@@ -156,7 +166,7 @@ Execute ASK 3.0 Task 10 (queue classes + policy packs) using TDD in isolated wor
 ## Next Tasks
 
 1. Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
-2. Execute ASK 3.0 Task 11: release trains + promotion gates + rollout policies.
+2. Execute ASK 3.0 Task 12: docs, installer surface, and release-gating updates.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -168,10 +178,10 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/agentCoordination.contract.test.mjs ask-core/tests/policyPacks.contract.test.mjs` (pass, 6/6)
-- `cmd /c npm run ask:verify:phase5` (pass, agent + policy contracts 6/6 + repo tests 20/20)
+- `cmd /c node --test ask-core/tests/deliveryGovernance.contract.test.mjs` (pass, 4/4)
+- `node --test <explicit ask-core test file list>` (pass 65/68, known pre-existing guarded-command contract failures in `guardedCommandRunner.contract.test.mjs`)
 
-Latest status: `Task 10 queue classes and policy packs pass (2026-03-14)`.
+Latest status: `Task 11 release trains + promotion gates + rollout policies pass (2026-03-14)`.
 
 ## Resume Commands
 

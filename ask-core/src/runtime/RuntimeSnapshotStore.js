@@ -58,4 +58,20 @@ export class RuntimeSnapshotStore {
   async writePolicyPacks(payload) {
     await this.store.writeJson(this.paths.policyPacksSnapshot(), payload);
   }
+
+  async writeFeatures(payload) {
+    await this.store.writeJson(this.paths.featuresSnapshot(), payload);
+  }
+
+  async writeReleaseTrains(payload) {
+    await this.store.writeJson(this.paths.releaseTrainsSnapshot(), payload);
+  }
+
+  async writePromotionGates(payload) {
+    await this.store.writeJson(this.paths.promotionGatesSnapshot(), payload);
+  }
+
+  async writeRollout(payload) {
+    await this.store.writeJson(this.paths.rolloutSnapshot(), payload);
+  }
 }

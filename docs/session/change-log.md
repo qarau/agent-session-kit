@@ -2,6 +2,40 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 11 release trains + promotion gates + rollout policies (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/FeatureRuntime.js`
+    - `ask-core/src/core/ReleaseTrainRuntime.js`
+    - `ask-core/src/core/PromotionRuntime.js`
+    - `ask-core/src/core/RolloutRuntime.js`
+    - `ask-core/src/runtime/projectors/FeatureProjector.js`
+    - `ask-core/src/runtime/projectors/ReleaseTrainProjector.js`
+    - `ask-core/src/runtime/projectors/PromotionGateProjector.js`
+    - `ask-core/src/runtime/projectors/RolloutProjector.js`
+    - `ask-core/src/cli/commands/feature.js`
+    - `ask-core/src/cli/commands/release.js`
+    - `ask-core/src/cli/commands/promote.js`
+    - `ask-core/src/cli/commands/rollout.js`
+    - `ask-core/src/cli/commands/rollback.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/fs/Scaffolder.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/deliveryGovernance.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added deterministic runtime support for feature registration/task linkage, release-train membership, promotion gates/stage advancement, rollout phase control, and rollback capture.
+    - Added replay-driven governance snapshots (`features`, `release-trains`, `promotion-gates`, `rollout`) with CLI status surfaces.
+    - Added command surfaces: `ask feature`, `ask release`, `ask promote`, `ask rollout`, `ask rollback`.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/deliveryGovernance.contract.test.mjs` failed as expected before implementation (`feature` / `release` / `promote` / `rollout` / `rollback` missing).
+    - GREEN: `cmd /c node --test ask-core/tests/deliveryGovernance.contract.test.mjs` passed (4/4).
+
 - ASK 3.0 Task 10 queue classes + policy packs (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`
