@@ -2,6 +2,38 @@
 
 ## 2026-03-14
 
+- ASK 3.0 Task 8 integration orchestration + merge readiness (worktree slice):
+  - Branch:
+    - `ask-3-phase1-event-ledger`
+  - Files:
+    - `ask-core/src/core/IntegrationRuntime.js`
+    - `ask-core/src/core/AutoIntegrationRuntime.js`
+    - `ask-core/src/git/IntegrationBranchResolver.js`
+    - `ask-core/src/git/IntegrationMergePlanner.js`
+    - `ask-core/src/git/IntegrationOrchestrator.js`
+    - `ask-core/src/git/IntegrationTempWorktreeManager.js`
+    - `ask-core/src/runtime/projectors/IntegrationProjector.js`
+    - `ask-core/src/runtime/projectors/MergeReadinessProjector.js`
+    - `ask-core/src/cli/commands/integration.js`
+    - `ask-core/src/cli/commands/integration-auto.js`
+    - `ask-core/src/runtime/RuntimeProjectionEngine.js`
+    - `ask-core/src/runtime/RuntimeSnapshotStore.js`
+    - `ask-core/src/fs/AskPaths.js`
+    - `ask-core/src/cli/index.js`
+    - `ask-core/tests/integrationRuntime.contract.test.mjs`
+    - `docs/session/current-status.md`
+    - `docs/session/change-log.md`
+    - `docs/session/tasks.md`
+  - Behavior:
+    - Added integration planning/running/status runtime with event-first integration lifecycle records.
+    - Added auto integration runtime that emits evidence attachment for pass/fail outcomes.
+    - Added integration and merge-readiness projection snapshots.
+    - Added integration CLI surfaces for manual and auto orchestration.
+  - Verification:
+    - RED: `cmd /c node --test ask-core/tests/integrationRuntime.contract.test.mjs` failed as expected before implementation (`integration` / `integration-auto` missing).
+    - GREEN: `cmd /c node --test ask-core/tests/integrationRuntime.contract.test.mjs` passed (3/3).
+    - Phase gate: `cmd /c npm run ask:verify:phase4` passed (freshness + integration contracts 6/6 + repo tests 20/20).
+
 - ASK 3.0 Task 7 dependency-aware freshness runtime (worktree slice):
   - Branch:
     - `ask-3-phase1-event-ledger`

@@ -14,6 +14,8 @@ import { runVerify } from './commands/verify.js';
 import { runWorkflow } from './commands/workflow.js';
 import { runWorkflowProvider } from './commands/workflow-provider.js';
 import { runFreshness } from './commands/freshness.js';
+import { runIntegration } from './commands/integration.js';
+import { runIntegrationAuto } from './commands/integration-auto.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -32,6 +34,8 @@ Usage:
   ask workflow recommend|start|artifact|complete|fail
   ask workflow-provider status [--workflow superpowers] [--version <version>]
   ask freshness status|explain [task-id]
+  ask integration plan|run|status
+  ask integration-auto run|status
   ask replay
   ask handoff create
   ask codex context status|ensure|compact
@@ -112,6 +116,16 @@ export async function runCli(args) {
 
   if (command === 'freshness') {
     await runFreshness(subcommand, rest);
+    return;
+  }
+
+  if (command === 'integration') {
+    await runIntegration(subcommand, rest);
+    return;
+  }
+
+  if (command === 'integration-auto') {
+    await runIntegrationAuto(subcommand, rest);
     return;
   }
 

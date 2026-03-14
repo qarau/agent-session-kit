@@ -5,6 +5,8 @@ import { TaskBoardProjector } from './projectors/TaskBoardProjector.js';
 import { VerificationProjector } from './projectors/VerificationProjector.js';
 import { WorkflowProjector } from './projectors/WorkflowProjector.js';
 import { FreshnessProjector } from './projectors/FreshnessProjector.js';
+import { IntegrationProjector } from './projectors/IntegrationProjector.js';
+import { MergeReadinessProjector } from './projectors/MergeReadinessProjector.js';
 
 export class RuntimeProjectionEngine {
   constructor(cwd, overrides = {}) {
@@ -15,6 +17,8 @@ export class RuntimeProjectionEngine {
     this.verificationProjector = overrides.verificationProjector ?? new VerificationProjector();
     this.workflowProjector = overrides.workflowProjector ?? new WorkflowProjector();
     this.freshnessProjector = overrides.freshnessProjector ?? new FreshnessProjector();
+    this.integrationProjector = overrides.integrationProjector ?? new IntegrationProjector();
+    this.mergeReadinessProjector = overrides.mergeReadinessProjector ?? new MergeReadinessProjector();
   }
 
   async replay() {
@@ -26,6 +30,8 @@ export class RuntimeProjectionEngine {
     let verification = this.verificationProjector.initialState();
     let workflow = this.workflowProjector.initialState();
     let freshness = this.freshnessProjector.initialState();
+    let integration = this.integrationProjector.initialState();
+    let mergeReadiness = this.mergeReadinessProjector.initialState();
 
     for (const event of sorted) {
       session = this.sessionProjector.apply(session, event);
@@ -33,6 +39,8 @@ export class RuntimeProjectionEngine {
       verification = this.verificationProjector.apply(verification, event);
       workflow = this.workflowProjector.apply(workflow, event);
       freshness = this.freshnessProjector.apply(freshness, event);
+      integration = this.integrationProjector.apply(integration, event);
+      mergeReadiness = this.mergeReadinessProjector.apply(mergeReadiness, event);
     }
 
     await this.snapshots.writeSession(session);
@@ -40,6 +48,8 @@ export class RuntimeProjectionEngine {
     await this.snapshots.writeVerification(verification);
     await this.snapshots.writeWorkflow(workflow);
     await this.snapshots.writeFreshness(freshness);
+    await this.snapshots.writeIntegration(integration);
+    await this.snapshots.writeMergeReadiness(mergeReadiness);
 
     return {
       eventsProcessed: sorted.length,

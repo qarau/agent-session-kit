@@ -26,4 +26,12 @@ export class RuntimeSnapshotStore {
   async writeFreshness(payload) {
     await this.store.writeJson(this.paths.freshnessSnapshot(), payload);
   }
+
+  async writeIntegration(payload) {
+    await this.store.writeJson(this.paths.integrationSnapshot(), payload);
+  }
+
+  async writeMergeReadiness(payload) {
+    await this.store.writeJson(this.paths.mergeReadinessSnapshot(), payload);
+  }
 }

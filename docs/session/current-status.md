@@ -5,14 +5,25 @@ Last updated: 2026-03-14
 ## Branch and Head
 
 - Active branch: `ask-3-phase1-event-ledger`
-- Current HEAD: `d75a677 feat: add enterprise guardrails for superpowers provider integration`
+- Current HEAD: `b8f27cd feat: add dependency-aware freshness runtime and CLI`
 
 ## Active Objective
 
-Execute ASK 3.0 Task 7 (dependency-aware freshness runtime) using TDD in isolated worktree flow.
+Execute ASK 3.0 Task 8 (integration workspace + auto integration + merge readiness) using TDD in isolated worktree flow.
 
 ## Completed In This Stream
 
+- Task 8 RED/GREEN integration orchestration implemented:
+  - Added integration runtime stack (`IntegrationRuntime`, `AutoIntegrationRuntime`, branch/planner/orchestrator/workspace git helpers).
+  - Added integration and merge-readiness projectors (`IntegrationProjector`, `MergeReadinessProjector`).
+  - Added integration CLI command families (`ask integration plan|run|status`, `ask integration-auto run|status`).
+  - Extended replay snapshots with `integration.json` and `merge-readiness.json`.
+  - Added integration orchestration contracts in `ask-core/tests/integrationRuntime.contract.test.mjs`.
+- RED verification:
+  - `cmd /c node --test ask-core/tests/integrationRuntime.contract.test.mjs` failed initially (`integration`/`integration-auto` commands missing).
+- GREEN verification:
+  - `cmd /c node --test ask-core/tests/integrationRuntime.contract.test.mjs` passed (3/3).
+  - `cmd /c npm run ask:verify:phase4` passed (freshness + integration contracts 6/6 + repo tests 20/20).
 - Task 7 RED/GREEN dependency-aware freshness implemented:
   - Added dependency graph runtime utility (`DependencyGraph`).
   - Added freshness projection/runtime layer (`FreshnessProjector`, `FreshnessRuntime`) with stale/fresh/unverified status computation.
@@ -122,7 +133,7 @@ Execute ASK 3.0 Task 7 (dependency-aware freshness runtime) using TDD in isolate
 ## Next Tasks
 
 1. Add downstream migration note for repos missing `branchEnforcementMode` in `active-work-context.json`.
-2. Execute ASK 3.0 Task 8: integration workspace + auto integration + merge readiness.
+2. Execute ASK 3.0 Task 9: agent routing + claims + child task sessions.
 3. Keep bridge migration discipline until replay-derived snapshots are stable.
 
 Task board source of truth: `docs/session/tasks.md`.
@@ -134,10 +145,10 @@ Task board source of truth: `docs/session/tasks.md`.
 
 ## Verification Baseline (latest run)
 
-- `cmd /c node --test ask-core/tests/freshness.contract.test.mjs` (pass, 3/3)
-- `cmd /c npm run ask:verify:phase4` (pass, freshness contracts 3/3 + repo tests 20/20)
+- `cmd /c node --test ask-core/tests/freshness.contract.test.mjs ask-core/tests/integrationRuntime.contract.test.mjs` (pass, 6/6)
+- `cmd /c npm run ask:verify:phase4` (pass, freshness + integration contracts 6/6 + repo tests 20/20)
 
-Latest status: `Task 7 dependency-aware freshness pass (2026-03-14)`.
+Latest status: `Task 8 integration orchestration pass (2026-03-14)`.
 
 ## Resume Commands
 

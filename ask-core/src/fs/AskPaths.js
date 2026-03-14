@@ -122,6 +122,14 @@ export class AskPaths {
     return path.join(this.runtimeSnapshotsDir(), 'freshness.json');
   }
 
+  integrationSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'integration.json');
+  }
+
+  mergeReadinessSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'merge-readiness.json');
+  }
+
   taskRegistry() {
     return path.join(this.tasksDir(), 'task-board.json');
   }
