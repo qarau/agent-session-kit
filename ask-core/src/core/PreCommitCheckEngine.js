@@ -5,7 +5,9 @@ import { SessionRuntime } from './SessionRuntime.js';
 import { WorkContextEngine } from './WorkContextEngine.js';
 import { PolicyEngine } from './PolicyEngine.js';
 import { EvidenceRecorder } from './EvidenceRecorder.js';
+import { CodexGovernanceParityEngine } from './CodexGovernanceParityEngine.js';
 import { normalizeBranchEnforcementMode, resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js';
+import { evaluateCanCommitGate, evaluatePreflightGate } from './sessionPolicyGates.js';
 
 const REQUIRED_DOCS = ['docs/session/current-status.md', 'docs/session/change-log.md'];
 const TASKS_DOC = 'docs/session/tasks.md';
@@ -35,6 +37,7 @@ export class PreCommitCheckEngine {
     this.contextEngine = new WorkContextEngine(cwd);
     this.policyEngine = new PolicyEngine(cwd);
     this.evidenceRecorder = new EvidenceRecorder(cwd);
+    this.codexParityEngine = new CodexGovernanceParityEngine(cwd);
   }
 
   runGit(args, allowFailure = false) {
@@ -177,43 +180,8 @@ export class PreCommitCheckEngine {
     return true;
   }
 
-  evaluatePreflight(policy, session, context) {
-    const missing = [];
-    const sessionState = String(session.status || 'created').toLowerCase();
-    const allowedStates = Array.isArray(policy.session?.allowed_preflight_states)
-      ? policy.session.allowed_preflight_states
-      : ['active', 'paused'];
-    if (policy.session?.require_resume_before_edit !== false && !allowedStates.includes(sessionState)) {
-      missing.push(`session state ${sessionState} not allowed for preflight`);
-    }
-    if (!context.branch) {
-      missing.push('context verify required');
-    }
-    return missing;
-  }
-
-  evaluateCanCommit(policy, session, evidence) {
-    const missing = [];
-    const sessionState = String(session.status || 'created').toLowerCase();
-    const allowedStates = Array.isArray(policy.session?.allowed_can_commit_states)
-      ? policy.session.allowed_can_commit_states
-      : ['active', 'paused'];
-
-    if (policy.checks?.require_docs_freshness && !evidence.docsFresh) {
-      missing.push('docs freshness');
-    }
-    if (policy.checks?.require_tests_before_commit && !evidence.testsPassed) {
-      missing.push('tests');
-    }
-    if (!allowedStates.includes(sessionState)) {
-      missing.push(`session state ${sessionState} not allowed for can-commit`);
-    }
-
-    return missing;
-  }
-
   async run() {
-    const checks = ['work-context', 'docs-freshness', 'session-preflight', 'session-can-commit'];
+    const checks = ['work-context', 'docs-freshness', 'codex-governance-parity', 'session-preflight', 'session-can-commit'];
     const missing = [];
     const config = this.resolveEffectiveContextConfig(this.readConfig());
     const branchEnforcementMode = this.resolveBranchEnforcementMode(config);
@@ -232,8 +200,14 @@ export class PreCommitCheckEngine {
       missing.push('session docs freshness required');
     }
 
-    missing.push(...this.evaluatePreflight(policy, session, context));
-    missing.push(...this.evaluateCanCommit(policy, session, evidence));
+    const codexParity = this.codexParityEngine.evaluate({
+      policy,
+      sessionId: session.sessionId,
+    });
+    missing.push(...codexParity.missing);
+
+    missing.push(...evaluatePreflightGate(policy, session, context).missing);
+    missing.push(...evaluateCanCommitGate(policy, session, evidence).missing);
 
     return {
       passed: missing.length === 0,

@@ -7,6 +7,13 @@ function toNumber(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function list(value) {
+  if (Array.isArray(value)) {
+    return value.map(entry => normalize(entry).toLowerCase()).filter(Boolean);
+  }
+  return [];
+}
+
 function createTaskState(previous = {}) {
   return {
     latestDecision: previous.latestDecision ?? null,
@@ -50,6 +57,10 @@ export class PolicyPackProjector {
       skill: normalize(payload.skill),
       reason: normalize(payload.reason),
       packId: normalize(payload.packId),
+      providerAllowlist: list(payload.providerAllowlist),
+      allowedOverrides: list(payload.allowedOverrides),
+      redactionLevel: normalize(payload.redactionLevel).toLowerCase(),
+      overrideApprovalRequired: Boolean(payload.overrideApprovalRequired),
       at: normalize(event.ts),
       seq: toNumber(event.seq),
     };

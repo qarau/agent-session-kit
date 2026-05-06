@@ -62,7 +62,7 @@ export class ChildSessionRuntime {
       payload,
       meta,
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async spawn(taskId, agentId, childSessionId = '') {

@@ -63,7 +63,7 @@ export class PromotionRuntime {
       payload,
       meta: { source: 'promotion-runtime' },
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async require(featureId, gateId) {

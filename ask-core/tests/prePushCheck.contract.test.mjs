@@ -65,6 +65,22 @@ function setupRepo(branchName = 'ask-runtime', governanceMode = 'maintainer') {
 function makeHealthyPrePushState(repoDir) {
   runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], { cwd: repoDir });
+  runOrThrow(
+    process.execPath,
+    [
+      askBinPath,
+      'codex',
+      '--command',
+      process.execPath,
+      '--command-arg',
+      '-e',
+      '--command-arg',
+      'process.exit(0)',
+      '--operation',
+      'pre-push-governed-proof',
+    ],
+    { cwd: repoDir }
+  );
   writeJson(path.join(repoDir, '.ask', 'evidence', 'latest-checks.json'), {
     docsFresh: true,
     testsPassed: true,
@@ -85,6 +101,7 @@ test('pre-push-check passes in healthy pre-push state', () => {
   assert.deepEqual(payload.checks, [
     'work-context',
     'docs-freshness',
+    'codex-governance-parity',
     'release-docs',
     'session-preflight',
     'session-can-commit',
@@ -112,6 +129,7 @@ test('pre-push-check fails with deterministic missing entries', () => {
   assert.deepEqual(payload.checks, [
     'work-context',
     'docs-freshness',
+    'codex-governance-parity',
     'release-docs',
     'session-preflight',
     'session-can-commit',
@@ -128,5 +146,22 @@ test('pre-push-check in project mode skips release-docs check', () => {
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.passed, true);
   assert.deepEqual(payload.missing, []);
-  assert.deepEqual(payload.checks, ['work-context', 'docs-freshness', 'session-preflight', 'session-can-commit']);
+  assert.deepEqual(payload.checks, ['work-context', 'docs-freshness', 'codex-governance-parity', 'session-preflight', 'session-can-commit']);
+});
+
+test('pre-push-check fails when codex governance parity evidence is missing', () => {
+  const repoDir = setupRepo('ask-runtime');
+  runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], { cwd: repoDir });
+  writeJson(path.join(repoDir, '.ask', 'evidence', 'latest-checks.json'), {
+    docsFresh: true,
+    testsPassed: true,
+    checks: ['unit-tests', 'docs-freshness', 'release-docs'],
+  });
+
+  const result = run(process.execPath, [askBinPath, 'pre-push-check'], { cwd: repoDir });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.passed, false);
+  assert.match(JSON.stringify(payload.missing), /governed codex launch evidence required/i);
 });

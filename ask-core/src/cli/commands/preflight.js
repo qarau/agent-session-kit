@@ -1,6 +1,7 @@
 import { SessionRuntime } from '../../core/SessionRuntime.js';
 import { WorkContextEngine } from '../../core/WorkContextEngine.js';
 import { PolicyEngine } from '../../core/PolicyEngine.js';
+import { evaluatePreflightGate } from '../../core/sessionPolicyGates.js';
 
 export async function runPreflight() {
   const sessionRuntime = new SessionRuntime(process.cwd());
@@ -10,19 +11,8 @@ export async function runPreflight() {
   const session = await sessionRuntime.getActiveSession();
   const context = await contextEngine.getContext();
   const policy = await policyEngine.load();
-  const missing = [];
-  const sessionState = String(session.status || 'created').toLowerCase();
-  const allowedStates = Array.isArray(policy.session?.allowed_preflight_states)
-    ? policy.session.allowed_preflight_states
-    : ['active', 'paused'];
-
-  if (policy.session?.require_resume_before_edit !== false && !allowedStates.includes(sessionState)) {
-    missing.push(`session state ${sessionState} not allowed for preflight`);
-  }
-
-  if (!context.branch) {
-    missing.push('context verify required');
-  }
+  const gate = evaluatePreflightGate(policy, session, context);
+  const missing = gate.missing;
 
   const passed = missing.length === 0;
   console.log(JSON.stringify({ passed, missing }, null, 2));

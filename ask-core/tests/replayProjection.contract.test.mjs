@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { RuntimeProjectionEngine } from '../src/runtime/RuntimeProjectionEngine.js';
+import { EventLedger } from '../src/runtime/EventLedger.js';
 
 const thisFilePath = fileURLToPath(import.meta.url);
 const testsDir = path.dirname(thisFilePath);
@@ -141,4 +142,48 @@ test('ask replay runs successfully and prints summary', () => {
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stdout, /eventsProcessed/i);
   assert.match(result.stdout, /"lastSeq":\s*1/i);
+});
+
+test('projectIncremental processes only new events and advances projection cursor', async () => {
+  const repoDir = setupRepo();
+  const ledger = new EventLedger(repoDir);
+  const engine = new RuntimeProjectionEngine(repoDir);
+
+  await ledger.append({
+    type: 'SessionStarted',
+    ts: '2026-03-14T00:00:00.000Z',
+    sessionId: 'sess_003',
+    actor: 'local',
+    payload: { goal: 'incremental-replay' },
+    meta: {},
+  });
+
+  const first = await engine.projectIncremental();
+  assert.equal(first.eventsProcessed, 1);
+  assert.equal(first.lastSeq, 1);
+
+  let cursor = JSON.parse(fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'projection-state.json'), 'utf8'));
+  assert.equal(cursor.lastAppliedSeq, 1);
+
+  await ledger.append({
+    type: 'SessionPaused',
+    ts: '2026-03-14T00:00:01.000Z',
+    sessionId: 'sess_003',
+    actor: 'local',
+    payload: { reason: 'pause for test' },
+    meta: {},
+  });
+
+  const second = await engine.projectIncremental();
+  assert.equal(second.eventsProcessed, 1, 'incremental projection should apply only newly appended events');
+  assert.equal(second.lastSeq, 2);
+
+  cursor = JSON.parse(fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'projection-state.json'), 'utf8'));
+  assert.equal(cursor.lastAppliedSeq, 2);
+
+  const sessionSnapshot = JSON.parse(
+    fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'snapshots', 'session.json'), 'utf8')
+  );
+  assert.equal(sessionSnapshot.status, 'paused');
+  assert.equal(sessionSnapshot.lastEventSeq, 2);
 });

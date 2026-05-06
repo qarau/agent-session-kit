@@ -1,9 +1,0 @@
-{
-  "expectedBranch": "main",
-  "expectedRepoPathSuffix": "",
-  "enforceRepoPathSuffix": false,
-  "branchEnforcementMode": "protected",
-  "governanceMode": "project",
-  "strictTasksDoc": false,
-  "bypassEnvVar": "SESSION_CONTEXT_BYPASS"
-}

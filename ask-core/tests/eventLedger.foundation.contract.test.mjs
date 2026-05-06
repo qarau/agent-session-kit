@@ -63,6 +63,151 @@ test('ask init scaffolds runtime event files and sequence state', () => {
   assert.equal(sequence.nextSeq, 1);
 });
 
+test('ask init is non-destructive by default and preserves sequence state', async () => {
+  const repoDir = setupRepo();
+  runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
+
+  const ledger = new EventLedger(repoDir);
+  await ledger.append({
+    type: 'SessionStarted',
+    sessionId: 'sess_001',
+    actor: 'local',
+    payload: { goal: 'non-destructive-init' },
+  });
+  await ledger.append({
+    type: 'TaskCreated',
+    sessionId: 'sess_001',
+    taskId: 'task-1',
+    actor: 'local',
+    payload: { title: 'Preserve sequence' },
+  });
+
+  const sequencePath = path.join(repoDir, '.ask', 'runtime', 'sequence.json');
+  const before = JSON.parse(fs.readFileSync(sequencePath, 'utf8'));
+  assert.equal(before.nextSeq, 3);
+
+  runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
+
+  const after = JSON.parse(fs.readFileSync(sequencePath, 'utf8'));
+  assert.equal(after.nextSeq, 3, 'default init should not reset sequence state');
+
+  const eventsPath = path.join(repoDir, '.ask', 'runtime', 'events.ndjson');
+  const lines = fs
+    .readFileSync(eventsPath, 'utf8')
+    .split(/\r?\n/u)
+    .map(line => line.trim())
+    .filter(Boolean);
+  assert.equal(lines.length, 2, 'default init should not truncate runtime event log');
+});
+
+test('ask init auto-heals duplicate and non-monotonic sequence values', () => {
+  const repoDir = setupRepo();
+  runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
+
+  const runtimeDir = path.join(repoDir, '.ask', 'runtime');
+  const eventsPath = path.join(runtimeDir, 'events.ndjson');
+  const sequencePath = path.join(runtimeDir, 'sequence.json');
+  const now = '2026-03-14T00:00:00.000Z';
+
+  const corrupted = [
+    {
+      seq: 2,
+      type: 'TaskCreated',
+      ts: now,
+      sessionId: 'sess_001',
+      taskId: 'task-1',
+      actor: 'local',
+      payload: { title: 'first' },
+      meta: {},
+    },
+    {
+      seq: 2,
+      type: 'TaskStarted',
+      ts: now,
+      sessionId: 'sess_001',
+      taskId: 'task-1',
+      actor: 'local',
+      payload: {},
+      meta: {},
+    },
+    {
+      seq: 1,
+      type: 'TaskCompleted',
+      ts: now,
+      sessionId: 'sess_001',
+      taskId: 'task-1',
+      actor: 'local',
+      payload: {},
+      meta: {},
+    },
+  ];
+  fs.writeFileSync(eventsPath, `${corrupted.map(record => JSON.stringify(record)).join('\n')}\n`, 'utf8');
+  fs.writeFileSync(sequencePath, `${JSON.stringify({ nextSeq: 2 }, null, 2)}\n`, 'utf8');
+
+  runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
+
+  const repaired = fs
+    .readFileSync(eventsPath, 'utf8')
+    .split(/\r?\n/u)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => JSON.parse(line));
+
+  assert.deepEqual(
+    repaired.map(record => record.type),
+    ['TaskCreated', 'TaskStarted', 'TaskCompleted'],
+    'repair should preserve runtime log line order'
+  );
+  assert.deepEqual(
+    repaired.map(record => record.seq),
+    [1, 2, 3],
+    'repair should rewrite runtime log to strict 1..N sequence'
+  );
+
+  const sequence = JSON.parse(fs.readFileSync(sequencePath, 'utf8'));
+  assert.equal(sequence.nextSeq, 4);
+
+  const runtimeFiles = fs.readdirSync(runtimeDir);
+  const backupFiles = runtimeFiles.filter(file => /^events\.backup\..+\.ndjson$/u.test(file));
+  assert.equal(backupFiles.length > 0, true, 'repair should create an event log backup before resequencing');
+
+  const reportPath = path.join(runtimeDir, 'sequence-repair-report.json');
+  assert.equal(fs.existsSync(reportPath), true, 'repair should write a repair report');
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  assert.equal(report.repaired, true);
+  assert.equal(report.mode, 'resequence');
+});
+
+test('ask init --reset-runtime explicitly clears runtime ledger and sequence state', async () => {
+  const repoDir = setupRepo();
+  runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
+
+  const ledger = new EventLedger(repoDir);
+  await ledger.append({
+    type: 'SessionStarted',
+    sessionId: 'sess_001',
+    actor: 'local',
+    payload: { goal: 'reset-runtime' },
+  });
+  await ledger.append({
+    type: 'TaskCreated',
+    sessionId: 'sess_001',
+    taskId: 'task-1',
+    actor: 'local',
+    payload: { title: 'wipe me' },
+  });
+
+  runOrThrow(process.execPath, [askBinPath, 'init', '--reset-runtime'], { cwd: repoDir });
+
+  const eventsPath = path.join(repoDir, '.ask', 'runtime', 'events.ndjson');
+  const eventsRaw = fs.readFileSync(eventsPath, 'utf8').trim();
+  assert.equal(eventsRaw, '');
+
+  const sequencePath = path.join(repoDir, '.ask', 'runtime', 'sequence.json');
+  const sequence = JSON.parse(fs.readFileSync(sequencePath, 'utf8'));
+  assert.equal(sequence.nextSeq, 1);
+});
+
 test('SequenceStore next increments deterministically', async () => {
   const repoDir = setupRepo();
   runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });

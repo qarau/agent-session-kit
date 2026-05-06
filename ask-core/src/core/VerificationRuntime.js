@@ -67,7 +67,7 @@ export class VerificationRuntime {
       payload,
       meta,
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async attach(taskId, kind, filePath, summary = '') {

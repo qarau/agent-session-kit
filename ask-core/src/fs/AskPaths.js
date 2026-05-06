@@ -74,6 +74,10 @@ export class AskPaths {
     return path.join(this.continuityDir(), 'next-actions.md');
   }
 
+  resumePacket() {
+    return path.join(this.continuityDir(), 'resume.json');
+  }
+
   latestChecks() {
     return path.join(this.evidenceDir(), 'latest-checks.json');
   }
@@ -100,6 +104,18 @@ export class AskPaths {
 
   sequenceState() {
     return path.join(this.runtimeDir(), 'sequence.json');
+  }
+
+  projectionState() {
+    return path.join(this.runtimeDir(), 'projection-state.json');
+  }
+
+  runtimeMetrics() {
+    return path.join(this.runtimeDir(), 'metrics.json');
+  }
+
+  sequenceRepairReport() {
+    return path.join(this.runtimeDir(), 'sequence-repair-report.json');
   }
 
   sessionSnapshot() {
@@ -168,6 +184,14 @@ export class AskPaths {
 
   rolloutSnapshot() {
     return path.join(this.runtimeSnapshotsDir(), 'rollout.json');
+  }
+
+  subagentDispatchSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'subagent-dispatch.json');
+  }
+
+  subagentDispatchControlSnapshot() {
+    return path.join(this.runtimeSnapshotsDir(), 'subagent-dispatch-control.json');
   }
 
   taskRegistry() {

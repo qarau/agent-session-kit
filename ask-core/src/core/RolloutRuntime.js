@@ -54,7 +54,7 @@ export class RolloutRuntime {
       payload,
       meta: { source: 'rollout-runtime' },
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async assertFeature(featureId) {

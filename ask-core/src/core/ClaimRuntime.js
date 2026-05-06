@@ -59,7 +59,7 @@ export class ClaimRuntime {
       payload,
       meta,
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async mutate(type, taskId, agentId, scope = 'task') {

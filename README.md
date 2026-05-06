@@ -1,315 +1,197 @@
 # Agent Session Kit
 
-## ASK 3.0 Runtime Status
+## ASK 4.0 Runtime Status
 
-Current stable release: `v3.0.0` (2026-03-14)  
-Current runtime track: `ASK 3.0 Session OS` (event-ledger runtime, multi-agent coordination, and delivery governance)
+Current release line: `v4.0.0`
 
-- [Release notes](docs/releases/v3.0.0.md)
-- [Announcement copy](docs/releases/v3.0.0-announcement.md)
-- [Latest release pointer](docs/releases/latest.md)
+Agent Session Kit (ASK) is a Developer-Agent Runtime for governing long-running implementation sessions before code reaches remote CI. It enforces session and policy checks at commit/push boundaries and keeps runtime state reconstructable through an event ledger.
 
-ASK 2.0 established the standalone runtime core. ASK 3.0 is the major expansion into a full event-ledger Session OS for planning, execution, routing, and delivery governance.
+ASK is implemented in `ask-core/` and integrated through git hooks and session adapter wrappers.
 
 ## What ASK Is
 
-Agent Session Kit (ASK) is a Developer-Agent Runtime that governs developer-agent work in progress.
+ASK is a runtime discipline layer for AI-assisted software delivery. It gives teams:
 
-The runtime is implemented in `ask-core/` and this repository packages installer, adapters, hooks, and governance docs for rollout into target repositories.
+- deterministic session and task lifecycle signals
+- policy-aware preflight and commit readiness checks
+- commit/push guard enforcement through hooks
+- replayable runtime history via `.ask/runtime/events.ndjson`
+- projection snapshots for operational visibility
 
-## Why ASK 3.0 Exists
+In practical terms, ASK reduces avoidable integration mistakes by enforcing the same checks locally that teams usually discover too late in CI.
 
-ASK 3.0 exists because commit/push gates alone are not enough for long-running developer-agent execution.
+## Why Teams Use It
 
-Teams need runtime discipline across the full session lifecycle:
+Without explicit runtime governance, agent sessions drift: context mismatches, stale verification, and weak handoff continuity. ASK addresses this by coupling workflow commands with policy gates.
 
-- event-first state reconstruction (`ask replay`)
-- deterministic session/task/workflow/evidence traces
-- freshness and integration readiness before merge
-- routing/claims/child-session coordination for multi-agent execution
-- promotion/rollout/rollback governance with explicit invariants
+Developer outcomes:
 
-ASK 3.0 keeps ASK 2.0 branch/doc gates and adds a broader Session OS runtime model on top of the same `ask-core` foundation.
+- safer day-to-day commit/push behavior
+- consistent policy behavior across contributors and machines
+- faster resume/recovery for long-running sessions
+- clearer evidence trail for merge readiness
 
-The practical buy-in for developers:
+## ASK 4 Architecture at a Glance
 
-- fewer avoidable workflow mistakes before CI
-- consistent policy behavior across machines and agents
-- faster, cleaner resume and handoff in long sessions
-- less time debugging guardrail inconsistencies
-
-ASK 3.0 provides:
-
-- event-ledger + projection snapshots (`.ask/runtime/events.ndjson`, `.ask/runtime/snapshots/*`)
-- session docs control plane (`docs/session/**`)
-- branch/worktree guard validator + lifecycle gating
-- session freshness and dependency-aware verification state
-- integration and merge-readiness runtime slices
-- routing/claims/child-session multi-agent coordination
-- delivery governance runtime (`feature`, `release`, `promote`, `rollout`, `rollback`)
-- pre-commit and pre-push hooks
-- lifecycle-policy aware runtime commands (`ask preflight`, `ask can-commit`)
-- runtime-only commit/push gates (`ask pre-commit-check`, `ask pre-push-check`)
-- guarded adapter execution (`180s` stall timeout, one automatic retry)
-- optional Codex context-budget commands for long-session resilience
-
-## ASK CLI Quick Reference
-
-Run the CLI directly from this repository:
-
-```bash
-node ask-core/bin/ask.js <command>
-```
-
-Core command groups:
-
-- Session lifecycle:
-  - `ask session start|pause|resume|block|status|close|doctor`
-  - Use this to track active work state, enforce lifecycle policy, and inspect runtime health.
-- Work context:
-  - `ask context verify|status`
-  - Use this to validate branch/worktree/repo context before commit/push.
-- Policy checks:
-  - `ask preflight`
-  - `ask can-commit`
-  - Use this to evaluate readiness and policy requirements for current session state.
-- Git gate contracts:
-  - `ask pre-commit-check`
-  - `ask pre-push-check`
-  - These are the runtime commands wired into hook adapters.
-- Task/workflow and agent coordination:
-  - `ask task create|assign|start|depends|status`
-  - `ask workflow recommend|start|artifact|complete|fail`
-  - `ask route recommend|status`, `ask claim acquire|release|lock|status`, `ask child-session spawn|status`, `ask agent register|status`
-- Delivery governance:
-  - `ask feature create|link-task|status`
-  - `ask release create|link-feature|status`
-  - `ask promote require|pass|advance|status`
-  - `ask rollout start|phase|status`
-  - `ask rollback trigger`
-- Codex context budget (optional):
-  - `ask codex context status|ensure|compact`
-  - Use this when Codex Responses API workflows need context-budget monitoring/compaction.
-
-Common examples:
-
-```bash
-node ask-core/bin/ask.js session start
-node ask-core/bin/ask.js context verify
-node ask-core/bin/ask.js pre-commit-check
-node ask-core/bin/ask.js session doctor
-```
+- `ask-core/`: runtime engine + CLI command surface
+- `.ask/`: runtime state directory generated at execution time
+- `.githooks/pre-commit` and `.githooks/pre-push`: enforcement entrypoints
+- `scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`: wrapper adapters called by hooks
+- `scripts/session/installHooks.mjs`: hook activation helper (`core.hooksPath=.githooks`)
 
 ## Prerequisites
 
 - Node.js 20+
 - Git
 
-## Compatibility
-
-- Developed and tested in Codex 5.3 CLI.
-- Works well with [Superpowers](https://github.com/obra/superpowers) for skill-driven agent workflows.
-- ASK Runtime is platform-agnostic at the workflow layer; it can improve CLI and GUI agent workflows (for example Codex and Claude) when those workflows use the same git/hooks/session-doc guardrails.
-
-## Ideal Pairing: Superpowers + ASK Runtime
-
-This is the recommended operating model for AI-assisted development:
-
-- Superpowers: development workflow (how work gets designed and executed)
-- Codex 5.3: implementation worker (fast execution in the loop)
-- ASK Runtime: session discipline (how work stays governed and shippable)
-
-Together, Superpowers + Codex 5.3 + ASK Runtime provide a high-leverage workflow: plan with rigor, execute quickly, and stay policy-safe from first edit to push.
-
-Responsibility split:
-
-- Superpowers drives process quality through skills (for example: brainstorming, writing plans, executing plans, code review).
-- Codex 5.3 executes implementation tasks rapidly inside that process.
-- ASK Runtime enforces session and git discipline (context checks, freshness checks, lifecycle gates, pre-commit/pre-push policy).
-
-Why the pairing works:
-
-- You get better decisions before coding (Superpowers).
-- You get safer execution during coding (ASK Runtime).
-- You get consistent merge readiness at commit/push time (ASK Runtime hooks and runtime checks).
-
-Typical combined flow:
-
-1. Use Superpowers skills to design and plan the change.
-2. Use ASK commands (`ask session start`, `ask context verify`, `ask preflight`) to establish runtime safety.
-3. Implement with Superpowers-guided execution while keeping `docs/session/*` current.
-4. Let ASK pre-commit/pre-push checks enforce repository policy before integration.
-
-## Install
-
-From this folder:
-
-```powershell
-node install-session-kit.mjs --target "C:\path\to\your-repo" --branch main
-```
+## Quick Start (Inside This Repository)
 
 ```bash
-node install-session-kit.mjs --target /path/to/your-repo --branch main
+npm test
+node ask-core/bin/ask.js --help
+node ask-core/bin/ask.js preflight
+node ask-core/bin/ask.js can-commit
 ```
 
-Optional flags:
+Enable hooks:
 
-- `--force` overwrite existing kit files
-- `--repo-suffix worktrees/feature-x` set expected repo path suffix in active context
-- `--enforce-path-suffix true|false` (default `false`)
-- `--dry-run` preview only
+```bash
+npm run session:hooks:install
+git config --get core.hooksPath
+```
 
-## What gets installed
+Expected output:
 
-- `.githooks/pre-commit`
-- `.githooks/pre-push`
-- `.githooks/post-commit`
-- `ask-core/**`
+```text
+.githooks
+```
+
+## Adopt ASK in Another Repository (Vendor Copy + Hooks)
+
+ASK 4 currently uses a vendor-copy model. Copy these assets into your target repository:
+
+- `ask-core/`
+- `.githooks/`
+- `scripts/session/installHooks.mjs`
 - `scripts/session/runAskCorePreCommitAdapter.mjs`
 - `scripts/session/runAskCorePrePushAdapter.mjs`
-- `scripts/session/installHooks.mjs`
-- `scripts/session/setRepoWorkContextLock.mjs`
-- `scripts/session/clearRepoWorkContextLock.mjs`
-- `scripts/session/resumeSession.mjs`
-- `scripts/session/archiveSessionLog.mjs`
-- `scripts/session/nextTask.mjs`
-- `scripts/session/completeTask.mjs`
-- `docs/session/AGENT_SESSION_LAWS.md`
-- `docs/session/guardrails.md`
-- `docs/session/active-work-context.json`
-- `docs/session/current-status.md`
-- `docs/session/tasks.md`
-- `docs/session/open-loops.md`
-- `docs/session/change-log.md`
 
-## Post-install in target repo
+Then in the target repo:
 
-```powershell
+```bash
 node scripts/session/installHooks.mjs
+node ask-core/bin/ask.js init
+```
+
+Optional validation:
+
+```bash
 node scripts/session/runAskCorePreCommitAdapter.mjs
 node scripts/session/runAskCorePrePushAdapter.mjs
-node scripts/session/resumeSession.mjs
-node scripts/session/nextTask.mjs
-node scripts/session/archiveSessionLog.mjs --keep-sections 14
 ```
+
+## Git Hook Enforcement Contract
+
+ASK hook enforcement is intentionally explicit and stable:
+
+- `.githooks/pre-commit` executes `node scripts/session/runAskCorePreCommitAdapter.mjs`
+- `.githooks/pre-push` executes `node scripts/session/runAskCorePrePushAdapter.mjs`
+- adapters execute `ask init`, `ask context verify`, then gate checks (`ask pre-commit-check` / `ask pre-push-check`)
+
+A non-zero adapter exit blocks the git operation.
+
+## CLI Command Catalog (Grouped)
+
+Run all commands via:
 
 ```bash
-node scripts/session/installHooks.mjs
-node scripts/session/runAskCorePreCommitAdapter.mjs
-node scripts/session/runAskCorePrePushAdapter.mjs
-node scripts/session/resumeSession.mjs
-node scripts/session/nextTask.mjs
-node scripts/session/archiveSessionLog.mjs --keep-sections 14
+node ask-core/bin/ask.js <command>
 ```
 
-## Project Onboarding Checklist
+Session and context:
 
-### 1) One-Time Repo Setup (Owner)
+- `ask init [--reset-runtime]`
+- `ask session start|pause|resume|block|status|close|doctor`
+- `ask context verify|status`
 
-- [ ] Install ASK into the repo:
+Policy and commit readiness:
 
-```bash
-node /path/to/agent-session-kit/install-session-kit.mjs --target . --branch main
-```
+- `ask preflight`
+- `ask can-commit`
+- `ask pre-commit-check`
+- `ask pre-push-check`
 
-- [ ] Install git hooks:
+Task, workflow, and continuity:
 
-```bash
-node scripts/session/installHooks.mjs
-```
+- `ask task create|assign|start|depends|status`
+- `ask workflow recommend|start|artifact|complete|fail`
+- `ask continue`, `ask project-state`, `ask resume-packet show`, `ask metrics show`
 
-- [ ] Create initial session baseline:
+Coordination and routing:
 
-```bash
-node scripts/session/resumeSession.mjs
-```
+- `ask route recommend|status`
+- `ask claim acquire|release|lock|status`
+- `ask child-session spawn|status`
+- `ask agent register|status|dispatch`
 
-- [ ] Commit installed ASK files (`.githooks/*`, `scripts/session/*`, `docs/session/*`).
+Delivery governance:
 
-### 2) Team Setup (Each Developer)
+- `ask feature create|link-task|status`
+- `ask release create|link-feature|status`
+- `ask promote require|pass|advance|status`
+- `ask rollout start|phase|status`
+- `ask rollback trigger`
 
-- [ ] Pull latest repo changes.
-- [ ] Confirm hooks are active (`.githooks/pre-commit`, `.githooks/pre-push`).
-- [ ] Run:
+Codex-specific controls:
 
-```bash
-node scripts/session/resumeSession.mjs
-```
+- `ask codex [launch] ...`
+- `ask codex direct --reason <text> ...`
+- `ask codex context status|ensure|compact`
 
-### 3) Daily Workflow
+## Recommended Developer Flow
 
-- [ ] Start by updating `docs/session/current-status.md`.
-- [ ] Track active work in `docs/session/tasks.md`.
-- [ ] Update `docs/session/open-loops.md` when decisions or risks change.
-- [ ] Append verification evidence to `docs/session/change-log.md`.
-- [ ] Commit and push normally (hooks enforce context/freshness checks).
+1. `ask init`
+2. `ask session start`
+3. `ask context verify`
+4. Implement work and track runtime artifacts
+5. `ask preflight` and `ask can-commit`
+6. Commit and push with hooks enforcing final gates
 
-### 4) Required Session Docs For Meaningful Code Changes
+## Runtime State and Source Control
 
-- [ ] `docs/session/current-status.md`
-- [ ] `docs/session/change-log.md`
+- ASK runtime state is generated under `.ask/`.
+- Volatile runtime logs and snapshots should remain excluded from version control.
+- Keep static policy/configuration files as needed by your team.
 
-### 5) Optional Guardrails
+## v3 to v4 Migration Notes
 
-- [ ] Enable repo lock for multi-worktree safety:
+v4 keeps core runtime governance and hook enforcement, but repository packaging changed.
 
-```bash
-node scripts/session/setRepoWorkContextLock.mjs --branch <branch> --repo-suffix <path-suffix> --enforce-path-suffix true
-```
+Key changes from v3:
 
-- [ ] Clear lock when changing branch/worktree policy:
+- Removed bundled installer path (`install-session-kit.mjs`)
+- Removed legacy `kit/` helper surface (`resumeSession`, `nextTask`, archive helpers, lock helpers)
+- Removed v3 release-doc and autonomy wrapper surfaces from this repo
+- Retained and strengthened `ask-core` runtime + hook adapter enforcement
 
-```bash
-node scripts/session/clearRepoWorkContextLock.mjs
-```
+Migration checklist for v3 users:
 
-### 6) Recovery / Emergency
-
-- [ ] Use bypass only for controlled recovery (`SESSION_CONTEXT_BYPASS=1`, `SESSION_DOCS_BYPASS=1`).
-- [ ] If bypass is used, document why in `docs/session/change-log.md`.
-
-### 7) Runtime Status (2026-03-14)
-
-- [ ] `pre-commit` is ask-core-only (`ask pre-commit-check`).
-- [ ] `pre-push` is ask-core-only (`ask pre-push-check`).
-- [ ] Adapter command execution has stall recovery (`180s` wall/no-output timeout + one retry).
-- [ ] Event-ledger runtime snapshots are first-class (`.ask/runtime/events.ndjson`, `.ask/runtime/snapshots/*`).
-- [ ] Delivery governance CLI families are active (`feature`, `release`, `promote`, `rollout`, `rollback`).
-
-## Operational Details
-
-Use the focused docs below instead of repeating operational policy in this README:
-
-- [docs/how-it-works.md](docs/how-it-works.md) - runtime flow, enforcement behavior, strict mode, bypass, and diagnostics
-- [docs/ask-3.0-architecture.md](docs/ask-3.0-architecture.md) - ASK 3.0 Session OS architecture, bridge mode, and cutover mode
-- [docs/adoption-guide.md](docs/adoption-guide.md) - rollout sequence, branch policy, team conventions, and branch protection
-- [docs/repo-boundary-guards.md](docs/repo-boundary-guards.md) - CI architecture boundary guard patterns
-- [docs/session/guardrails.md](docs/session/guardrails.md) - maintainer guardrails and session documentation discipline
-- [docs/maintainer-mode.md](docs/maintainer-mode.md) - maintainer-only governance and protected-branch verification flow
-- [docs/autonomy-mode.md](docs/autonomy-mode.md) - phase-based autonomous verification workflow for Codex execution
+1. Stop relying on `install-session-kit.mjs` and `kit/` scripts.
+2. Vendor-copy the v4 assets listed in "Adopt ASK in Another Repository".
+3. Run `node scripts/session/installHooks.mjs` in each target repo.
+4. Validate `core.hooksPath` is `.githooks`.
+5. Verify your team workflow against `ask preflight`, `ask can-commit`, and hook gate behavior.
 
 ## Local Development
 
-From `agent-session-kit/`:
-
 ```bash
-npm run test
-npm run test:release-docs
-npm run ask:verify:phase1
-npm run ask:ship:phase1 -- --message "feat: your change"
+npm test
+npm run ask
+npm run ask:preflight
+npm run ask:can-commit
+npm run ask:pre-commit-check
+npm run ask:pre-push-check
 ```
-
-This runs the smoke test that installs the kit in a temp repo and validates:
-
-- work-context guard pass/fail behavior
-- repo-level work-context lock pass/fail behavior
-- session freshness guard pass/fail behavior
-- installer wiring and hook setup path
-- release-doc mapping guard behavior (released vs draft + latest pointer checks)
-
-Autonomous ship mode (`ask:ship:*`) uses one gate:
-- verification must pass first
-- then ASK stages, commits, and pushes automatically
 
 ## Open Source Files
 
@@ -317,20 +199,3 @@ Autonomous ship mode (`ask:ship:*`) uses one gate:
 - `CONTRIBUTING.md`
 - `CODE_OF_CONDUCT.md`
 - `SECURITY.md`
-
-## Documentation
-
-- [docs/README.md](docs/README.md) - doc index and reading order
-- [docs/how-it-works.md](docs/how-it-works.md) - architecture and flow overview
-- [docs/ask-3.0-architecture.md](docs/ask-3.0-architecture.md) - ASK 3.0 runtime layers and migration path
-- [docs/adoption-guide.md](docs/adoption-guide.md) - rollout guidance for teams
-- [docs/repo-boundary-guards.md](docs/repo-boundary-guards.md) - reusable repo-boundary guard patterns
-- [docs/team-sop-template.md](docs/team-sop-template.md) - copy-paste SOP template for target repositories
-- [docs/maintainer-mode.md](docs/maintainer-mode.md) - branch-aware maintainer policy and verification flow
-- [docs/releases/README.md](docs/releases/README.md) - release ledger and version mapping
-- [docs/releases/release-checklist.md](docs/releases/release-checklist.md) - release publishing checklist
-- [docs/releases/latest.md](docs/releases/latest.md) - latest released version pointers
-- [docs/releases/v3.0.0.md](docs/releases/v3.0.0.md) - ASK 3.0 release notes
-- [docs/releases/v3.0.0-announcement.md](docs/releases/v3.0.0-announcement.md) - ASK 3.0 announcement copy
-- [docs/releases/v2.0.0.md](docs/releases/v2.0.0.md) - ASK 2.0 release notes
-- [docs/releases/v2.0.0-announcement.md](docs/releases/v2.0.0-announcement.md) - ASK 2.0 announcement copy

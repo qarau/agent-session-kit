@@ -128,3 +128,40 @@ test('verify pass and fail append events and update verification status', () => 
   assert.ok(eventTypes.includes('VerificationPassed'));
   assert.ok(eventTypes.includes('VerificationFailed'));
 });
+
+test('evidence checks record and status expose deterministic gate payload', () => {
+  const repoDir = setupRepo();
+
+  const recorded = runOrThrow(
+    process.execPath,
+    [
+      askBinPath,
+      'evidence',
+      'checks',
+      'record',
+      '--tests-passed',
+      'true',
+      '--docs-fresh',
+      'true',
+      '--checks',
+      'unit-tests,lint',
+      '--source',
+      'ci',
+    ],
+    { cwd: repoDir }
+  );
+  const recordedPayload = JSON.parse(recorded.stdout);
+  assert.equal(recordedPayload.ok, true);
+  assert.equal(recordedPayload.evidence.testsPassed, true);
+  assert.equal(recordedPayload.evidence.docsFresh, true);
+  assert.deepEqual(recordedPayload.evidence.checks, ['unit-tests', 'lint']);
+  assert.equal(recordedPayload.evidence.source, 'ci');
+
+  const status = runOrThrow(process.execPath, [askBinPath, 'evidence', 'checks', 'status'], { cwd: repoDir });
+  const statusPayload = JSON.parse(status.stdout);
+  assert.equal(statusPayload.ok, true);
+  assert.equal(statusPayload.evidence.testsPassed, true);
+  assert.equal(statusPayload.evidence.docsFresh, true);
+  assert.deepEqual(statusPayload.evidence.checks, ['unit-tests', 'lint']);
+  assert.equal(statusPayload.evidence.source, 'ci');
+});
