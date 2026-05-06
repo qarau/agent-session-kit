@@ -2,11 +2,19 @@
 
 ## ASK 4.0 Runtime Status
 
-Current release line: `v4.0.0`
+Current release line: `v4.0.1`
 
 Agent Session Kit (ASK) is a Developer-Agent Runtime for governing long-running implementation sessions before code reaches remote CI. It enforces session and policy checks at commit/push boundaries and keeps runtime state reconstructable through an event ledger.
 
 ASK is implemented in `ask-core/` and integrated through git hooks and session adapter wrappers.
+
+## What Changed in 4.0 (from 3.0)
+
+ASK 3.0 was primarily a session governance toolkit packaged with installer and helper utilities around the runtime.  
+ASK 4.0 is becoming a runtime-first execution layer: `ask-core` is the product center, hook-enforced policy gates are the stable contract, and orchestration intelligence lives in governed CLI/runtime flows.
+The `ask codex` command family is a core part of this shift, moving Codex execution from ad-hoc usage to policy-governed launch, direct-exception control, and context-budget management.
+
+For developers, this means less tooling sprawl, clearer enforcement boundaries, and a more explicit operating model for long-running AI-assisted delivery.
 
 ## What ASK Is
 
@@ -166,6 +174,7 @@ Codex-specific controls:
 ## v3 to v4 Migration Notes
 
 v4 keeps core runtime governance and hook enforcement, but repository packaging changed.
+The change above is intentional: v4 shifts from “tool bundle + helpers” toward “runtime core + enforcement contract,” and the migration steps below reflect that operating model.
 
 Key changes from v3:
 
