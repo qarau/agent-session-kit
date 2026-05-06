@@ -56,7 +56,7 @@ export class TaskRuntime {
       payload,
       meta,
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
     const board = await this.readTaskBoard();
     return board.tasks?.[normalize(taskId)] ?? null;
   }

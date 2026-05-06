@@ -86,7 +86,7 @@ export class WorkflowRuntime {
       payload,
       meta,
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async registry() {

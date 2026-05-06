@@ -73,7 +73,7 @@ export class IntegrationRuntime {
       payload,
       meta,
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async plan(taskId, options = {}) {

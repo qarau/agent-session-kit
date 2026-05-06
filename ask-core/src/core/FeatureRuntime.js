@@ -54,7 +54,7 @@ export class FeatureRuntime {
       payload,
       meta: { source: 'feature-runtime' },
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async create(featureId, title) {

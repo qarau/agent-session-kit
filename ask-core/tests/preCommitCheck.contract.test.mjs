@@ -44,6 +44,11 @@ function writeJson(filePath, payload) {
   fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
+function writeText(filePath, content) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, 'utf8');
+}
+
 function setupRepo(branchName = 'main') {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-core-pre-commit-check-'));
   runOrThrow('git', ['init'], { cwd: tempRoot });
@@ -64,6 +69,22 @@ function setupRepo(branchName = 'main') {
 function makeHealthyPreCommitState(repoDir) {
   runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], { cwd: repoDir });
+  runOrThrow(
+    process.execPath,
+    [
+      askBinPath,
+      'codex',
+      '--command',
+      process.execPath,
+      '--command-arg',
+      '-e',
+      '--command-arg',
+      'process.exit(0)',
+      '--operation',
+      'pre-commit-governed-proof',
+    ],
+    { cwd: repoDir }
+  );
   writeJson(path.join(repoDir, '.ask', 'evidence', 'latest-checks.json'), {
     docsFresh: true,
     testsPassed: true,
@@ -81,7 +102,7 @@ test('pre-commit-check passes in healthy pre-commit state', () => {
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.passed, true);
   assert.deepEqual(payload.missing, []);
-  assert.deepEqual(payload.checks, ['work-context', 'docs-freshness', 'session-preflight', 'session-can-commit']);
+  assert.deepEqual(payload.checks, ['work-context', 'docs-freshness', 'codex-governance-parity', 'session-preflight', 'session-can-commit']);
 });
 
 test('pre-commit-check fails with deterministic missing entries', () => {
@@ -101,5 +122,80 @@ test('pre-commit-check fails with deterministic missing entries', () => {
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.passed, false);
   assert.match(JSON.stringify(payload.missing), /work context mismatch for pre-commit/i);
-  assert.deepEqual(payload.checks, ['work-context', 'docs-freshness', 'session-preflight', 'session-can-commit']);
+  assert.deepEqual(payload.checks, ['work-context', 'docs-freshness', 'codex-governance-parity', 'session-preflight', 'session-can-commit']);
+});
+
+test('pre-commit-check fails when codex governance parity evidence is missing', () => {
+  const repoDir = setupRepo('main');
+  runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], { cwd: repoDir });
+  writeJson(path.join(repoDir, '.ask', 'evidence', 'latest-checks.json'), {
+    docsFresh: true,
+    testsPassed: true,
+    checks: ['unit-tests', 'docs-freshness'],
+  });
+
+  const result = run(process.execPath, [askBinPath, 'pre-commit-check'], { cwd: repoDir });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.passed, false);
+  assert.match(JSON.stringify(payload.missing), /governed codex launch evidence required/i);
+});
+
+test('pre-commit-check fails when direct launch exception appears in current session', () => {
+  const repoDir = setupRepo('main');
+  runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'context', 'verify'], { cwd: repoDir });
+  writeText(path.join(repoDir, '.ask', 'policy', 'runtime-policy.yaml'), `version: 1
+
+session:
+  require_resume_before_edit: true
+  allowed_preflight_states: active,paused
+  allowed_can_commit_states: active,paused
+
+checks:
+  require_docs_freshness: true
+  require_tests_before_commit: true
+
+codex_runtime:
+  allow_direct_launch_exception: true
+  require_direct_launch_reason: true
+  require_direct_launch_approval: true
+  require_direct_launch_approval_ticket: true
+  require_governed_launch_evidence_for_change_gates: true
+  require_governed_checkpoint_for_change_gates: true
+  forbid_direct_launch_exception_for_change_gates: true
+`);
+  runOrThrow(
+    process.execPath,
+    [
+      askBinPath,
+      'codex',
+      'direct',
+      '--reason',
+      'incident recovery procedure',
+      '--approved-by',
+      'maintainer-oncall',
+      '--approval-ticket',
+      'INC-9001',
+      '--command',
+      process.execPath,
+      '--command-arg',
+      '-e',
+      '--command-arg',
+      'process.exit(0)',
+    ],
+    { cwd: repoDir }
+  );
+  writeJson(path.join(repoDir, '.ask', 'evidence', 'latest-checks.json'), {
+    docsFresh: true,
+    testsPassed: true,
+    checks: ['unit-tests', 'docs-freshness'],
+  });
+
+  const result = run(process.execPath, [askBinPath, 'pre-commit-check'], { cwd: repoDir });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.passed, false);
+  assert.match(JSON.stringify(payload.missing), /direct codex launch exceptions are not allowed/i);
 });

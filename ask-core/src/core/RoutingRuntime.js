@@ -80,7 +80,7 @@ export class RoutingRuntime {
       payload,
       meta,
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async recommend(taskId, candidates = '') {

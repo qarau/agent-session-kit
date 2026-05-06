@@ -54,7 +54,7 @@ export class ReleaseTrainRuntime {
       payload,
       meta: { source: 'release-train-runtime' },
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async create(trainId, title) {

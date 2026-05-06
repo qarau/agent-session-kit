@@ -40,7 +40,7 @@ export class HandoffEngine {
         source: 'handoff-engine',
       },
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
     console.log('[ask-core] handoff created');
   }
 }

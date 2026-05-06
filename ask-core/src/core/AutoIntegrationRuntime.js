@@ -39,7 +39,7 @@ export class AutoIntegrationRuntime {
       payload,
       meta,
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async run(taskId, options = {}) {

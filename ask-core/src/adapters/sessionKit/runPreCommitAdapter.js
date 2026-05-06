@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GuardedCommandRunner } from '../../core/GuardedCommandRunner.js';
@@ -23,23 +22,6 @@ function resolvePaths() {
   return {
     askBinPath: path.join(repoRoot, 'ask-core', 'bin', 'ask.js'),
   };
-}
-
-function writeEvidence(cwd) {
-  const evidenceDir = path.join(cwd, '.ask', 'evidence');
-  fs.mkdirSync(evidenceDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(evidenceDir, 'latest-checks.json'),
-    `${JSON.stringify(
-      {
-        docsFresh: true,
-        testsPassed: true,
-        checks: ['ask-core-pre-commit-check'],
-      },
-      null,
-      2
-    )}\n`
-  );
 }
 
 function createRunner(cwd) {
@@ -69,8 +51,6 @@ export async function runPreCommitAdapter(cwd = process.cwd()) {
   const { askBinPath } = resolvePaths();
   const runner = createRunner(cwd);
   await runAskCommand(runner, cwd, askBinPath, 'pre-commit-adapter:ask init', ['init']);
-  await runAskCommand(runner, cwd, askBinPath, 'pre-commit-adapter:ask session start', ['session', 'start']);
   await runAskCommand(runner, cwd, askBinPath, 'pre-commit-adapter:ask context verify', ['context', 'verify']);
-  writeEvidence(cwd);
   await runAskCommand(runner, cwd, askBinPath, 'pre-commit-adapter:ask pre-commit-check', ['pre-commit-check']);
 }

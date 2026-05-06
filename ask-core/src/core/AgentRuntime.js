@@ -60,7 +60,7 @@ export class AgentRuntime {
       payload,
       meta,
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async register(agentId, capabilities = '') {

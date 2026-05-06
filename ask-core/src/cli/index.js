@@ -26,12 +26,19 @@ import { runRelease } from './commands/release.js';
 import { runPromote } from './commands/promote.js';
 import { runRollout } from './commands/rollout.js';
 import { runRollback } from './commands/rollback.js';
+import { runContinue } from './commands/continue.js';
+import { runProjectState } from './commands/project-state.js';
+import { runIntent } from './commands/intent.js';
+import { runSlice } from './commands/slice.js';
+import { runValidateLast } from './commands/validate-last.js';
+import { runResumePacket } from './commands/resume-packet.js';
+import { runMetrics } from './commands/metrics.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
 
 Usage:
-  ask init
+  ask init [--reset-runtime]
   ask session start|pause|resume|block|status|close|doctor
   ask context verify|status
   ask preflight
@@ -40,6 +47,7 @@ Usage:
   ask pre-push-check
   ask task create|assign|start|depends|status
   ask evidence attach
+  ask evidence checks record|status
   ask verify pass|fail
   ask workflow recommend|start|artifact|complete|fail
   ask workflow-provider status [--workflow superpowers] [--version <version>]
@@ -49,15 +57,24 @@ Usage:
   ask route recommend|status
   ask claim acquire|release|lock|status
   ask child-session spawn|status
-  ask agent register|status
+  ask agent register|status|dispatch
   ask policy classify|apply|status
   ask feature create|link-task|status
   ask release create|link-feature|status
   ask promote require|pass|advance|status
   ask rollout start|phase|status
   ask rollback trigger
+  ask continue [--once] [--max-slices <n>] [--until blocked|complete]
+  ask project-state
+  ask intent preview
+  ask slice preview [--command <bin>] [--command-arg <arg>] [--operation <name>] [--allowed-command <cmd>]
+  ask validate-last
+  ask resume-packet show
+  ask metrics show
   ask replay
   ask handoff create
+  ask codex [launch] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--allow-fail-open] [--fail-open-reason <text>] [--approved-by <id>] [--approval-ticket <id>] [--touched-file <path>] [-- <args...>]
+  ask codex direct --reason <text> [--approved-by <id>] [--approval-ticket <id>] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--touched-file <path>] [-- <args...>]
   ask codex context status|ensure|compact
 `);
 }
@@ -70,7 +87,7 @@ export async function runCli(args) {
   }
 
   if (command === 'init') {
-    await runInit();
+    await runInit([subcommand, ...rest].filter(Boolean));
     return;
   }
 
@@ -196,6 +213,41 @@ export async function runCli(args) {
 
   if (command === 'rollback') {
     await runRollback(subcommand, rest);
+    return;
+  }
+
+  if (command === 'continue') {
+    await runContinue([subcommand, ...rest].filter(Boolean));
+    return;
+  }
+
+  if (command === 'project-state') {
+    await runProjectState();
+    return;
+  }
+
+  if (command === 'intent') {
+    await runIntent(subcommand);
+    return;
+  }
+
+  if (command === 'slice') {
+    await runSlice(subcommand, rest);
+    return;
+  }
+
+  if (command === 'validate-last') {
+    await runValidateLast([subcommand, ...rest].filter(Boolean));
+    return;
+  }
+
+  if (command === 'resume-packet') {
+    await runResumePacket(subcommand);
+    return;
+  }
+
+  if (command === 'metrics') {
+    await runMetrics(subcommand);
     return;
   }
 

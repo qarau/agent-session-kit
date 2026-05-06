@@ -32,7 +32,7 @@ export class WorkContextEngine {
     this.projectionEngine = new RuntimeProjectionEngine(cwd);
   }
 
-  async verify() {
+  async verifyQuiet() {
     const repoRoot = await getGitValue(this.cwd, ['rev-parse', '--show-toplevel'], true);
     const branch = await getGitValue(this.cwd, ['branch', '--show-current'], true);
     const context = {
@@ -55,7 +55,12 @@ export class WorkContextEngine {
         source: 'work-context-engine',
       },
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
+    return context;
+  }
+
+  async verify() {
+    const context = await this.verifyQuiet();
     console.log(JSON.stringify(context, null, 2));
   }
 

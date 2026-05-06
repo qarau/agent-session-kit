@@ -95,7 +95,6 @@ test('runner does not retry non-zero exits', async () => {
 
 test('runner writes deterministic last-operation fields', async () => {
   const repoDir = setupTempRepo();
-  const counterPath = path.join(repoDir, '.tmp', 'attempts.txt');
   const runner = new GuardedCommandRunner(repoDir, {
     wallTimeoutMs: TEST_TIMEOUT_MS,
     noOutputTimeoutMs: TEST_TIMEOUT_MS,
@@ -105,7 +104,7 @@ test('runner writes deterministic last-operation fields', async () => {
   await runner.run({
     operation: 'contract:last-operation-fields',
     command: process.execPath,
-    args: [fixturePath('emitThenHang.mjs'), counterPath],
+    args: [fixturePath('exitCode.mjs'), '0'],
   });
 
   const state = readLastOperation(repoDir);

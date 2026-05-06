@@ -244,7 +244,7 @@ export class SessionRuntime {
         source: 'session-runtime',
       },
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async transition(to, options = {}) {

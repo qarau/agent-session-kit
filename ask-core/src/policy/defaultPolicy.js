@@ -23,4 +23,42 @@ codex_context:
   reserve_output_tokens: 12000
   max_context_tokens: 400000
   strategy: explicit
+
+codex_runtime:
+  governed_launch_default: true
+  allow_fail_open_launch: false
+  require_governed_launch_evidence_for_change_gates: true
+  require_governed_checkpoint_for_change_gates: true
+  forbid_direct_launch_exception_for_change_gates: true
+  require_fail_open_reason: true
+  fail_open_reason_min_length: 10
+  require_fail_open_approval: true
+  require_fail_open_approval_ticket: true
+  allow_direct_launch_exception: false
+  require_direct_launch_reason: true
+  direct_launch_reason_min_length: 10
+  require_direct_launch_approval: true
+  require_direct_launch_approval_ticket: true
+
+autonomy:
+  enabled: true
+  default_mode: once
+  max_slices_per_run: 1
+  allow_until_complete: false
+  require_clean_worktree: true
+
+retry:
+  max_attempts_per_slice: 2
+  max_same_failure_repeats: 2
+  max_total_failures_per_session: 5
+
+validation:
+  require_acceptance_criteria: true
+  require_test_evidence: true
+  allow_inconclusive_pass: false
+
+context_recovery:
+  target_max_percent: 10
+  warning_percent: 20
+  danger_percent: 35
 `;

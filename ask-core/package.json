@@ -7,7 +7,8 @@
     "ask": "./bin/ask.js"
   },
   "scripts": {
-    "test": "node --test tests"
+    "test": "node --test \"tests/*.mjs\"",
+    "smoke:bridge-dispatch": "node scripts/smoke/bridgeDispatchSmoke.mjs"
   },
   "license": "MIT"
 }

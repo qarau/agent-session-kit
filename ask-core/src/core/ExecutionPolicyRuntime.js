@@ -84,7 +84,7 @@ export class ExecutionPolicyRuntime {
       payload,
       meta,
     });
-    await this.projectionEngine.replay();
+    await this.projectionEngine.projectIncremental();
   }
 
   async resolveQueueClass(taskId, overrideQueueClass = '') {
