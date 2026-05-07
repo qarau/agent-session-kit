@@ -33,6 +33,10 @@ function fail(code, message, extra = {}) {
   };
 }
 
+function nowIso() {
+  return new Date().toISOString();
+}
+
 function buildHash(text) {
   return `sha256:${crypto.createHash('sha256').update(String(text), 'utf8').digest('hex')}`;
 }
@@ -152,6 +156,48 @@ export class PlanIngestRuntime {
         artifactHashes: { ...payload.artifactHashes },
       },
     };
+  }
+
+  buildBatchBase(prepared) {
+    return {
+      planBatchId: prepared.planBatchId,
+      artifactHash: prepared.artifactHash,
+      taskId: prepared.taskId,
+      runId: prepared.runId,
+      artifactPath: prepared.artifact.path,
+      planPrefix: prepared.planPrefix,
+      planTitle: prepared.planTitle,
+      sliceCount: prepared.materialized.length,
+      plannedTaskIds: prepared.materialized.map(slice => slice.taskId),
+    };
+  }
+
+  async writeBatchState(prepared, patch = {}) {
+    const registryDecision = await this.readBatchRegistry();
+    const registry = registryDecision.ok ? registryDecision.registry : prepared.registry;
+    const existingBatch = registry.batches?.[prepared.planBatchId] ?? {};
+    const existingForHash = Array.isArray(registry.artifactHashes?.[prepared.artifactHash])
+      ? registry.artifactHashes[prepared.artifactHash]
+      : [];
+    const nextBatch = {
+      ...this.buildBatchBase(prepared),
+      ...existingBatch,
+      ...patch,
+      updatedAt: nowIso(),
+    };
+    const nextRegistry = {
+      ...registry,
+      batches: {
+        ...registry.batches,
+        [prepared.planBatchId]: nextBatch,
+      },
+      artifactHashes: {
+        ...registry.artifactHashes,
+        [prepared.artifactHash]: Array.from(new Set([...existingForHash, prepared.planBatchId])),
+      },
+    };
+    await this.store.writeJson(this.paths.planBatchRegistry(), nextRegistry);
+    return nextRegistry;
   }
 
   resolvePlanArtifact(workflow, taskId, runId, pathOverride = '') {
@@ -482,92 +528,96 @@ export class PlanIngestRuntime {
     const sessionId = normalize(activeSession.sessionId);
     const actor = normalize(activeSession.actorId) || 'local';
 
-    await this.appendRuntimeEvent('PlanIngested', sessionId, actor, prepared.taskId, {
-      planBatchId: prepared.planBatchId,
-      taskId: prepared.taskId,
-      runId: prepared.runId,
-      artifactPath: prepared.artifact.path,
-      artifactHash: prepared.artifactHash,
-      planPrefix: prepared.planPrefix,
-      planTitle: prepared.planTitle,
-      sliceCount: prepared.materialized.length,
-    });
-
     const createdTaskIds = [];
     const dependencyGraph = {};
 
-    for (let index = 0; index < prepared.materialized.length; index += 1) {
-      const slice = prepared.materialized[index];
-      const origin = {
-        type: 'plan-ingest',
+    await this.writeBatchState(prepared, {
+      status: 'pending',
+      createdTaskIds,
+      dependencyGraph,
+      createdAt: nowIso(),
+    });
+
+    try {
+      await this.appendRuntimeEvent('PlanIngested', sessionId, actor, prepared.taskId, {
+        planBatchId: prepared.planBatchId,
         taskId: prepared.taskId,
         runId: prepared.runId,
+        artifactPath: prepared.artifact.path,
         artifactHash: prepared.artifactHash,
-        planBatchId: prepared.planBatchId,
-        sliceIndex: index + 1,
-        sliceId: slice.sliceId,
-      };
-      await this.appendRuntimeEvent('TaskCreated', sessionId, actor, slice.taskId, {
-        title: slice.title,
-        description: slice.description,
-        acceptanceCriteria: slice.acceptanceCriteria,
-        queueClassHint: slice.queueClass,
-        origin,
+        planPrefix: prepared.planPrefix,
+        planTitle: prepared.planTitle,
+        sliceCount: prepared.materialized.length,
       });
-      await this.appendRuntimeEvent('PlanSliceMaterialized', sessionId, actor, slice.taskId, {
-        planBatchId: prepared.planBatchId,
-        sourceTaskId: prepared.taskId,
-        sourceRunId: prepared.runId,
-        sourceSliceId: slice.sliceId,
-        materializedTaskId: slice.taskId,
-      });
-      if (slice.queueClass) {
-        await this.appendRuntimeEvent('TaskClassified', sessionId, actor, slice.taskId, {
-          queueClass: slice.queueClass,
-        });
-      }
-      createdTaskIds.push(slice.taskId);
-      dependencyGraph[slice.taskId] = [...slice.dependencyTaskIds];
-    }
 
-    for (const slice of prepared.materialized) {
-      for (const dependencyTaskId of slice.dependencyTaskIds) {
-        await this.appendRuntimeEvent('TaskDependencyAdded', sessionId, actor, slice.taskId, {
-          dependencyTaskId,
-        });
-      }
-    }
-
-    const nextRegistry = {
-      ...prepared.registry,
-      batches: {
-        ...prepared.registry.batches,
-        [prepared.planBatchId]: {
-          planBatchId: prepared.planBatchId,
-          artifactHash: prepared.artifactHash,
+      for (let index = 0; index < prepared.materialized.length; index += 1) {
+        const slice = prepared.materialized[index];
+        const origin = {
+          type: 'plan-ingest',
           taskId: prepared.taskId,
           runId: prepared.runId,
-          artifactPath: prepared.artifact.path,
-          planPrefix: prepared.planPrefix,
-          planTitle: prepared.planTitle,
-          createdTaskIds,
-          dependencyGraph,
-          createdAt: new Date().toISOString(),
+          artifactHash: prepared.artifactHash,
+          planBatchId: prepared.planBatchId,
+          sliceIndex: index + 1,
+          sliceId: slice.sliceId,
+        };
+        await this.appendRuntimeEvent('TaskCreated', sessionId, actor, slice.taskId, {
+          title: slice.title,
+          description: slice.description,
+          acceptanceCriteria: slice.acceptanceCriteria,
+          queueClassHint: slice.queueClass,
+          origin,
+        });
+        await this.appendRuntimeEvent('PlanSliceMaterialized', sessionId, actor, slice.taskId, {
+          planBatchId: prepared.planBatchId,
+          sourceTaskId: prepared.taskId,
+          sourceRunId: prepared.runId,
+          sourceSliceId: slice.sliceId,
+          materializedTaskId: slice.taskId,
+        });
+        if (slice.queueClass) {
+          await this.appendRuntimeEvent('TaskClassified', sessionId, actor, slice.taskId, {
+            queueClass: slice.queueClass,
+          });
+        }
+        createdTaskIds.push(slice.taskId);
+        dependencyGraph[slice.taskId] = [...slice.dependencyTaskIds];
+      }
+
+      for (const slice of prepared.materialized) {
+        for (const dependencyTaskId of slice.dependencyTaskIds) {
+          await this.appendRuntimeEvent('TaskDependencyAdded', sessionId, actor, slice.taskId, {
+            dependencyTaskId,
+          });
+        }
+      }
+
+      await this.writeBatchState(prepared, {
+        status: 'completed',
+        createdTaskIds,
+        dependencyGraph,
+        completedAt: nowIso(),
+      });
+    } catch (error) {
+      const message = normalize(error?.message || String(error));
+      await this.writeBatchState(prepared, {
+        status: 'failed',
+        createdTaskIds,
+        dependencyGraph,
+        failure: {
+          code: 'E_PLAN_INGEST_FAILED',
+          message,
         },
-      },
-      artifactHashes: {
-        ...prepared.registry.artifactHashes,
-        [prepared.artifactHash]: Array.from(
-          new Set([
-            ...(Array.isArray(prepared.registry.artifactHashes[prepared.artifactHash])
-              ? prepared.registry.artifactHashes[prepared.artifactHash]
-              : []),
-            prepared.planBatchId,
-          ])
-        ),
-      },
-    };
-    await this.store.writeJson(this.paths.planBatchRegistry(), nextRegistry);
+        failedAt: nowIso(),
+      });
+      return fail('E_PLAN_INGEST_FAILED', message || 'plan ingest failed during materialization', {
+        taskId: prepared.taskId,
+        runId: prepared.runId,
+        planBatchId: prepared.planBatchId,
+        artifactHash: prepared.artifactHash,
+        createdTaskIds,
+      });
+    }
 
     return {
       ok: true,
