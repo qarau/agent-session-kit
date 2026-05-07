@@ -4,8 +4,7 @@ Governed Autonomous Software Development
 
 ## Runtime Status
 
-Current release line: `v4.0.1`
-Planned next release: `v5.0.0` (major, runtime governance expansion + brand evolution)
+Current release line: `v5.0.0`
 
 ASK Forge is a Developer-Agent Runtime for governing long-running implementation sessions before code reaches remote CI. It enforces session and policy checks at commit/push boundaries and keeps runtime state reconstructable through an event ledger.
 
