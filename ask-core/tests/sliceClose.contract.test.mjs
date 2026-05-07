@@ -101,6 +101,19 @@ function readTaskStatus(repoDir, taskId) {
   return JSON.parse(result.stdout).task.status;
 }
 
+function readEvents(repoDir) {
+  const eventsPath = path.join(repoDir, '.ask', 'runtime', 'events.ndjson');
+  const raw = fs.readFileSync(eventsPath, 'utf8').trim();
+  if (!raw) {
+    return [];
+  }
+  return raw
+    .split(/\r?\n/u)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => JSON.parse(line));
+}
+
 function setFastFullSuiteCommand(repoDir, commandSnippet = 'process.exit(0)') {
   const policyPath = path.join(repoDir, '.ask', 'policy', 'runtime-policy.yaml');
   const raw = fs.readFileSync(policyPath, 'utf8');
@@ -156,6 +169,10 @@ test('slice close auto-completes auto-commits and passes pre-push checks', () =>
 
   const commitMessage = runOrThrow('git', ['log', '-1', '--pretty=%B'], { cwd: repoDir }).stdout;
   assert.match(commitMessage, /ASK-Slice:\s*slice-001/i);
+
+  const eventTypes = readEvents(repoDir).map(event => event.type);
+  assert.ok(eventTypes.includes('ArchitectValidationCompleted'));
+  assert.ok(eventTypes.includes('ReplayabilityValidated'));
 });
 
 test('slice close rolls task back to in-progress when commit cannot be created', () => {
@@ -242,6 +259,10 @@ test('slice close blocks before completing task when OHDER assessment blocks', (
 
   const headAfter = runOrThrow('git', ['rev-parse', 'HEAD'], { cwd: repoDir }).stdout.trim();
   assert.equal(headAfter, headBefore);
+
+  const eventTypes = readEvents(repoDir).map(event => event.type);
+  assert.ok(eventTypes.includes('ArchitectValidationCompleted'));
+  assert.ok(eventTypes.includes('ArchitectureViolationDetected'));
 });
 
 test('slice close keeps task completed when commit succeeds but pre-push fails', () => {

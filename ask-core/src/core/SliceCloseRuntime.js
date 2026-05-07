@@ -15,6 +15,8 @@ import { evaluateCanCommitGate, evaluatePreflightGate } from './sessionPolicyGat
 import { normalizeBranchEnforcementMode, resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js';
 import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
+import { EventLedger } from '../runtime/EventLedger.js';
+import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -88,6 +90,8 @@ export class SliceCloseRuntime {
     this.architectRuntime = new ArchitectRuntime(cwd);
     this.paths = new AskPaths(cwd);
     this.store = new FileStore();
+    this.ledger = new EventLedger(cwd);
+    this.projectionEngine = new RuntimeProjectionEngine(cwd);
   }
 
   runGit(args, allowFailure = false) {
@@ -308,6 +312,58 @@ export class SliceCloseRuntime {
     });
   }
 
+  async emitRuntimeEvent(type, session, taskId, payload = {}) {
+    await this.ledger.append({
+      type,
+      sessionId: normalize(session?.sessionId),
+      taskId: normalize(taskId),
+      actor: normalize(session?.actorId) || 'local',
+      payload,
+      meta: {
+        source: 'slice-close-runtime',
+        schemaVersion: 1,
+      },
+    });
+    await this.projectionEngine.projectIncremental();
+  }
+
+  buildArchitectEventPayload(taskId, architect) {
+    return {
+      taskId,
+      sliceId: taskId,
+      status: normalize(architect?.status),
+      blocking: architect?.blocking === true,
+      lawOutcome: normalize(architect?.lawOutcome),
+      lawViolations: Array.isArray(architect?.lawViolations) ? architect.lawViolations : [],
+      entropyDelta: Number(architect?.entropyDelta ?? 0) || 0,
+      couplingDelta: Number(architect?.couplingDelta ?? 0) || 0,
+      replayabilityRisk: normalize(architect?.replayabilityRisk),
+    };
+  }
+
+  async emitArchitectReplayabilityEvents(session, taskId, architect) {
+    const payload = this.buildArchitectEventPayload(taskId, architect);
+    await this.emitRuntimeEvent('ArchitectValidationCompleted', session, taskId, payload);
+
+    for (const violation of payload.lawViolations) {
+      await this.emitRuntimeEvent('ArchitectureViolationDetected', session, taskId, {
+        ...payload,
+        violation,
+        law: normalize(violation?.id),
+        severity: normalize(violation?.severity),
+        reason: normalize(violation?.message),
+      });
+    }
+
+    const replayabilityRisk = normalize(architect?.replayabilityRisk).toLowerCase();
+    if (architect?.blocking !== true && ['low', 'medium'].includes(replayabilityRisk)) {
+      await this.emitRuntimeEvent('ReplayabilityValidated', session, taskId, {
+        ...payload,
+        valid: true,
+      });
+    }
+  }
+
   commitWithSliceFooter(taskId, policy, task) {
     const indexGuard = this.evaluatePreStagedGuard(policy);
     if (!indexGuard.ok) {
@@ -435,6 +491,7 @@ export class SliceCloseRuntime {
     }
 
     const architect = await this.assessOhderBeforeClose(resolvedTaskId, task, policy, fullSuiteResult, evidence);
+    await this.emitArchitectReplayabilityEvents(session, resolvedTaskId, architect);
     if (architect.blocking === true) {
       return fail('slice-close-ohder-blocked', 'OHDER architect governance blocked slice close', {
         taskId: resolvedTaskId,
