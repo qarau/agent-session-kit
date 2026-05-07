@@ -61,6 +61,7 @@ function setupRepo(branchName = 'ask-runtime') {
   });
   runOrThrow('git', ['add', '.'], { cwd: tempRoot });
   runOrThrow('git', ['commit', '-m', 'baseline'], { cwd: tempRoot });
+  runOrThrow('git', ['branch', 'main'], { cwd: tempRoot });
   return tempRoot;
 }
 
