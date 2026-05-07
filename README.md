@@ -143,7 +143,7 @@ Task, workflow, and continuity:
 - `ask task create|assign|start|complete|depends|status`
 - `ask workflow recommend|start|artifact|complete|fail`
 - `ask flow list|status|discover --last|validate --last|promote ...`
-- `ask design list|status|discover --last|validate --last`
+- `ask design list|status|discover --last|validate --last|promote ...`
 - `ask continue`, `ask project-state`, `ask resume-packet show`, `ask metrics show`
 
 Coordination and routing:

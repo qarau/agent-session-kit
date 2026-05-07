@@ -7,7 +7,20 @@ function normalize(value) {
 }
 
 function printUsage() {
-  console.log('Usage: ask design status | ask design list | ask design discover --last | ask design validate --last');
+  console.log('Usage: ask design status | ask design list | ask design discover --last | ask design validate --last | ask design promote <region-id> --to <stage> --reason <text> [--approved-by <id>] [--approval-ticket <id>]');
+}
+
+function getArgValue(args, name) {
+  for (let index = 0; index < args.length; index += 1) {
+    const value = String(args[index] ?? '');
+    if (value === name) {
+      return String(args[index + 1] ?? '');
+    }
+    if (value.startsWith(`${name}=`)) {
+      return value.slice(name.length + 1);
+    }
+  }
+  return '';
 }
 
 function findLatestByType(events, type) {
@@ -49,6 +62,24 @@ export async function runDesign(subcommand, args = []) {
   if (action === 'list') {
     const payload = await runtime.list();
     console.log(JSON.stringify(payload, null, 2));
+    return;
+  }
+
+  if (action === 'promote') {
+    const regionId = String(args[0] ?? '');
+    const policy = await policyEngine.load();
+    const payload = await runtime.promoteRegion({
+      regionId,
+      toStage: getArgValue(args.slice(1), '--to'),
+      reason: getArgValue(args.slice(1), '--reason'),
+      approvedBy: getArgValue(args.slice(1), '--approved-by'),
+      approvalTicket: getArgValue(args.slice(1), '--approval-ticket'),
+      policy,
+    });
+    console.log(JSON.stringify(payload, null, 2));
+    if (!payload.ok) {
+      process.exitCode = 1;
+    }
     return;
   }
 
@@ -117,4 +148,3 @@ export async function runDesign(subcommand, args = []) {
     process.exitCode = 1;
   }
 }
-

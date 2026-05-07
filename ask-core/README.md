@@ -30,7 +30,7 @@ Governance and operations:
 - `ask governance status|explain`
 - `ask architect exempt add|list`
 - `ask flow list|promote|status|validate --last|discover --last`
-- `ask design list|status|discover --last|validate --last`
+- `ask design list|status|discover --last|validate --last|promote`
 - `ask metrics show [--history <n>]`
 
 Operator playbooks are documented in `../docs/operations/`.

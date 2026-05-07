@@ -58,6 +58,12 @@ Flow lifecycle/promotion controls:
 - `discovery_enabled`
 - `warn_only`
 - `block_on_protected_violation`
+- `require_promotion_reason`
+- `promotion_reason_min_length`
+- `require_approval_for_standardized`
+- `require_approval_ticket_for_standardized`
+- `require_approval_for_protected`
+- `require_approval_ticket_for_protected`
 
 Design runtime uses changed-files + visual-regression map evidence to emit design drift warnings and metrics.
 

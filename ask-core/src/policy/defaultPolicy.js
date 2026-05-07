@@ -94,6 +94,12 @@ design:
   discovery_enabled: true
   warn_only: true
   block_on_protected_violation: false
+  require_promotion_reason: true
+  promotion_reason_min_length: 10
+  require_approval_for_standardized: true
+  require_approval_ticket_for_standardized: false
+  require_approval_for_protected: true
+  require_approval_ticket_for_protected: true
 
 context_recovery:
   target_max_percent: 10

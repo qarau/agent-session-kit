@@ -49,6 +49,13 @@ Inspect design runtime state:
 - `node ask-core/bin/ask.js design discover --last`
 - `node ask-core/bin/ask.js design validate --last`
 
+Promote design lifecycle stages (sequential only):
+
+- `node ask-core/bin/ask.js design promote <region-id> --to emerging --reason "..."`
+- `node ask-core/bin/ask.js design promote <region-id> --to guided --reason "..."`
+- `node ask-core/bin/ask.js design promote <region-id> --to standardized --reason "..." --approved-by <id>`
+- `node ask-core/bin/ask.js design promote <region-id> --to protected --reason "..." --approved-by <id> --approval-ticket <ticket>`
+
 In governance-light mode, design violations are warning-level and do not block continuation.
 
 ## Architect Governance Operations

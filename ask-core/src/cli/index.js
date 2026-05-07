@@ -83,6 +83,7 @@ Usage:
   ask design status|list
   ask design discover --last
   ask design validate --last
+  ask design promote <region-id> --to <stage> --reason <text> [--approved-by <id>] [--approval-ticket <id>]
   ask governance status|explain
   ask next
   ask resume-packet show

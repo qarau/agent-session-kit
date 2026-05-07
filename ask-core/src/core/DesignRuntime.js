@@ -82,8 +82,48 @@ function defaultMetrics() {
   };
 }
 
+const DESIGN_STAGES = ['exploratory', 'emerging', 'guided', 'standardized', 'protected'];
+
+function normalizeDesignStage(value) {
+  const normalized = normalize(value).toLowerCase();
+  if (DESIGN_STAGES.includes(normalized)) {
+    return normalized;
+  }
+  if (normalized === 'standard' || normalized === 'stable') {
+    return 'standardized';
+  }
+  if (normalized === 'guarded') {
+    return 'protected';
+  }
+  return 'exploratory';
+}
+
+function stageRank(value) {
+  const index = DESIGN_STAGES.indexOf(normalizeDesignStage(value));
+  return index < 0 ? 0 : index;
+}
+
+function canPromote(fromStage, toStage) {
+  return stageRank(toStage) === stageRank(fromStage) + 1;
+}
+
+function summarizeStageCounts(visualMap = {}) {
+  const counts = {
+    exploratory: 0,
+    emerging: 0,
+    guided: 0,
+    standardized: 0,
+    protected: 0,
+  };
+  for (const region of Object.values(visualMap)) {
+    const stage = normalizeDesignStage(region?.status);
+    counts[stage] = (counts[stage] || 0) + 1;
+  }
+  return counts;
+}
+
 function isProtectedRegion(region = {}) {
-  const status = normalize(region.status).toLowerCase();
+  const status = normalizeDesignStage(region.status);
   if (status === 'protected' || status === 'standardized') {
     return true;
   }
@@ -153,13 +193,162 @@ export class DesignRuntime {
       componentPatternCount: Object.keys(patterns).length,
       modalContractCount: Object.keys(modalContracts).length,
       visualRegionCount: Object.keys(visualMap).length,
+      stageCounts: summarizeStageCounts(visualMap),
       visualRegions: Object.entries(visualMap).map(([id, region]) => ({
         id,
-        status: normalize(region?.status) || 'exploratory',
+        status: normalizeDesignStage(region?.status),
         protectedRules: Array.isArray(region?.protectedRules) ? region.protectedRules.length : 0,
         filePatterns: Array.isArray(region?.files) ? region.files.length : 0,
       })),
       metrics,
+    };
+  }
+
+  validatePromotionGovernance({ fromStage, toStage, reason, approvedBy, approvalTicket, policy = {} }) {
+    const normalizedReason = normalize(reason);
+    const normalizedApprovedBy = normalize(approvedBy);
+    const normalizedApprovalTicket = normalize(approvalTicket);
+    const requireReason = policy?.design?.require_promotion_reason !== false;
+    const reasonMinLength = toNumber(policy?.design?.promotion_reason_min_length, 10);
+    if (requireReason && normalizedReason.length < reasonMinLength) {
+      return {
+        ok: false,
+        code: 'invalid-promotion-reason',
+        message: `promotion reason must be at least ${String(reasonMinLength)} characters`,
+      };
+    }
+
+    const target = normalizeDesignStage(toStage);
+    const needsStandardizedApproval = target === 'standardized' && policy?.design?.require_approval_for_standardized === true;
+    const needsStandardizedTicket = target === 'standardized' && policy?.design?.require_approval_ticket_for_standardized === true;
+    const needsProtectedApproval = target === 'protected' && policy?.design?.require_approval_for_protected === true;
+    const needsProtectedTicket = target === 'protected' && policy?.design?.require_approval_ticket_for_protected === true;
+
+    if ((needsStandardizedApproval || needsProtectedApproval) && !normalizedApprovedBy) {
+      return {
+        ok: false,
+        code: 'missing-promotion-approval',
+        message: `promotion from ${normalizeDesignStage(fromStage)} to ${target} requires --approved-by`,
+      };
+    }
+    if ((needsStandardizedTicket || needsProtectedTicket) && !normalizedApprovalTicket) {
+      return {
+        ok: false,
+        code: 'missing-promotion-approval-ticket',
+        message: `promotion from ${normalizeDesignStage(fromStage)} to ${target} requires --approval-ticket`,
+      };
+    }
+    return {
+      ok: true,
+      reason: normalizedReason,
+      approvedBy: normalizedApprovedBy,
+      approvalTicket: normalizedApprovalTicket,
+    };
+  }
+
+  async promoteRegion({ regionId, toStage, reason, approvedBy, approvalTicket, policy = {} }) {
+    const id = normalize(regionId);
+    if (!id) {
+      return {
+        ok: false,
+        code: 'missing-region-id',
+        message: 'region id is required',
+      };
+    }
+    const targetStage = normalizeDesignStage(toStage);
+    if (!DESIGN_STAGES.includes(targetStage)) {
+      return {
+        ok: false,
+        code: 'invalid-target-stage',
+        message: `target stage must be one of ${DESIGN_STAGES.join(', ')}`,
+      };
+    }
+
+    const visualMap = await this.readVisualRegressionMap();
+    const region = visualMap[id];
+    if (!region) {
+      return {
+        ok: false,
+        code: 'region-not-found',
+        message: `design region not found: ${id}`,
+      };
+    }
+    const fromStage = normalizeDesignStage(region.status);
+    if (fromStage === targetStage) {
+      return {
+        ok: false,
+        code: 'noop-promotion',
+        message: `design region ${id} is already in stage ${targetStage}`,
+      };
+    }
+    if (!canPromote(fromStage, targetStage)) {
+      return {
+        ok: false,
+        code: 'invalid-stage-transition',
+        message: `invalid lifecycle transition ${fromStage} -> ${targetStage}; promotions must be sequential`,
+      };
+    }
+
+    const governance = this.validatePromotionGovernance({
+      fromStage,
+      toStage: targetStage,
+      reason,
+      approvedBy,
+      approvalTicket,
+      policy,
+    });
+    if (!governance.ok) {
+      return governance;
+    }
+
+    const promotedAt = nowIso();
+    visualMap[id] = {
+      ...region,
+      status: targetStage,
+      lifecycle: {
+        ...(hasOwnObject(region.lifecycle) ? region.lifecycle : {}),
+        promotedFrom: fromStage,
+        promotedTo: targetStage,
+        promotedAt,
+        promotedBy: governance.approvedBy,
+        approvalTicket: governance.approvalTicket,
+        reason: governance.reason,
+      },
+    };
+    await this.store.writeJson(this.paths.visualRegressionMap(), visualMap);
+
+    const patterns = await this.readComponentPatterns();
+    if (patterns[id] && hasOwnObject(patterns[id])) {
+      patterns[id] = {
+        ...patterns[id],
+        status: targetStage,
+        promotedAt,
+      };
+      await this.store.writeJson(this.paths.componentPatterns(), patterns);
+    }
+
+    await this.appendHistory({
+      type: 'DesignPatternPromoted',
+      ts: promotedAt,
+      regionId: id,
+      from: fromStage,
+      to: targetStage,
+      reason: governance.reason,
+      approvedBy: governance.approvedBy,
+      approvalTicket: governance.approvalTicket,
+    });
+    return {
+      ok: true,
+      summary: {
+        regionId: id,
+        from: fromStage,
+        to: targetStage,
+      },
+      stageCounts: summarizeStageCounts(visualMap),
+      region: {
+        id,
+        ...visualMap[id],
+      },
     };
   }
 
@@ -256,7 +445,7 @@ export class DesignRuntime {
       })
       .map(([id, region]) => ({
         id,
-        status: normalize(region?.status) || 'exploratory',
+        status: normalizeDesignStage(region?.status),
         protectedRules: Array.isArray(region?.protectedRules) ? [...region.protectedRules] : [],
       }));
   }
@@ -416,4 +605,3 @@ export class DesignRuntime {
     };
   }
 }
-
