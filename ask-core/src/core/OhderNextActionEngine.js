@@ -19,6 +19,20 @@ function architectureScore(architect = {}) {
   return toNumber(architect?.architectureScore?.overallScore, 0);
 }
 
+function compactEntropy(entropy = null) {
+  if (!entropy || typeof entropy !== 'object' || Array.isArray(entropy)) {
+    return null;
+  }
+  return {
+    entropyScore: toNumber(entropy.entropyScore, 0),
+    trend: normalize(entropy.trend),
+    couplingTrend: normalize(entropy.couplingTrend),
+    replayabilityTrend: normalize(entropy.replayabilityTrend),
+    architectureScoreDelta: toNumber(entropy.architectureScoreDelta, 0),
+    refactorPressure: normalize(entropy.refactorPressure),
+  };
+}
+
 function baseDecision(action, reason, architect = {}, patch = {}) {
   return {
     type: 'ohder-action',
@@ -34,7 +48,7 @@ function baseDecision(action, reason, architect = {}, patch = {}) {
 }
 
 export class OhderNextActionEngine {
-  decide({ state = {}, architect = {}, refactorGovernance = {}, tasks = {}, policy = {} } = {}) {
+  decide({ state = {}, architect = {}, refactorGovernance = {}, entropy = null, tasks = {}, policy = {} } = {}) {
     if (hasEntries(tasks.active) || hasEntries(tasks.ready)) {
       return null;
     }
@@ -62,6 +76,34 @@ export class OhderNextActionEngine {
       );
     }
 
+    const entropyPressure = normalizeLower(entropy?.refactorPressure);
+    const entropyTrend = normalizeLower(entropy?.trend);
+    if (entropyPressure === 'high' || entropyTrend === 'regressing') {
+      const reason = entropyTrend === 'regressing'
+        ? 'OHDER entropy trend is regressing'
+        : 'OHDER entropy refactor pressure is high';
+      return baseDecision(
+        'create-refactor-slice',
+        reason,
+        architect,
+        {
+          entropy: compactEntropy(entropy),
+          recommendedCommand: 'ask task create <refactor-task-id>',
+        }
+      );
+    }
+    if (entropyPressure === 'medium') {
+      return baseDecision(
+        'run-governance-validation',
+        'OHDER entropy refactor pressure requires governance validation',
+        architect,
+        {
+          entropy: compactEntropy(entropy),
+          recommendedCommand: 'ask governance status',
+        }
+      );
+    }
+
     const replayabilityRisk = normalizeLower(architect.replayabilityRisk);
     const score = architectureScore(architect);
     const minimumScore = toNumber(policy?.ohder_next_action?.minimum_architecture_score, 70);
@@ -85,7 +127,10 @@ export class OhderNextActionEngine {
     return baseDecision(
       'await-new-requirement',
       'architecture governance clear and no ready tasks available',
-      architect
+      architect,
+      {
+        entropy: compactEntropy(entropy),
+      }
     );
   }
 }

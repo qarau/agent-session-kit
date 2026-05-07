@@ -127,3 +127,71 @@ test('OHDER next action awaits new requirement when architecture is healthy', ()
   assert.equal(decision.source, 'ohder-next-action');
   assert.equal(decision.architectureScore, 99);
 });
+
+test('OHDER next action creates refactor slice for high entropy pressure', () => {
+  const decision = decide({
+    architect: {
+      status: 'warning',
+      blocking: false,
+      replayabilityRisk: 'low',
+      architectureScore: {
+        overallScore: 91,
+      },
+    },
+    entropy: {
+      refactorPressure: 'high',
+      trend: 'stable',
+      entropyScore: 0.42,
+    },
+  });
+
+  assert.equal(decision.action, 'create-refactor-slice');
+  assert.match(decision.reason, /entropy/i);
+  assert.equal(decision.entropy.refactorPressure, 'high');
+  assert.equal(decision.recommendedCommand, 'ask task create <refactor-task-id>');
+});
+
+test('OHDER next action creates refactor slice for regressing entropy trend', () => {
+  const decision = decide({
+    architect: {
+      status: 'passed',
+      blocking: false,
+      replayabilityRisk: 'low',
+      architectureScore: {
+        overallScore: 98,
+      },
+    },
+    entropy: {
+      refactorPressure: 'none',
+      trend: 'regressing',
+      entropyScore: 0.18,
+    },
+  });
+
+  assert.equal(decision.action, 'create-refactor-slice');
+  assert.match(decision.reason, /regressing/i);
+  assert.equal(decision.entropy.trend, 'regressing');
+});
+
+test('OHDER next action requests governance validation for medium entropy pressure', () => {
+  const decision = decide({
+    architect: {
+      status: 'warning',
+      blocking: false,
+      replayabilityRisk: 'low',
+      architectureScore: {
+        overallScore: 94,
+      },
+    },
+    entropy: {
+      refactorPressure: 'medium',
+      trend: 'stable',
+      entropyScore: 0.21,
+    },
+  });
+
+  assert.equal(decision.action, 'run-governance-validation');
+  assert.match(decision.reason, /entropy/i);
+  assert.equal(decision.entropy.refactorPressure, 'medium');
+  assert.equal(decision.recommendedCommand, 'ask governance status');
+});

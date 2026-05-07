@@ -68,6 +68,30 @@ function writeArchitectStatus(repoDir, patch = {}) {
   });
 }
 
+function writeDriftAnalytics(repoDir, patch = {}) {
+  writeJson(path.join(repoDir, '.ask', 'runtime', 'drift-analytics.json'), {
+    windowSize: 2,
+    architecture: {
+      entropyTrend: 'stable',
+      couplingTrend: 'stable',
+      replayabilityTrend: 'stable',
+      driftScore: 0,
+    },
+    behavior: {
+      replayConfidenceTrend: 'stable',
+      protectedViolationTrend: 'stable',
+      hardViolationTrend: 'stable',
+      driftScore: 0,
+    },
+    overall: {
+      trend: 'stable',
+      driftScore: 0,
+    },
+    updatedAt: new Date().toISOString(),
+    ...patch,
+  });
+}
+
 function readEvents(repoDir) {
   const eventsPath = path.join(repoDir, '.ask', 'runtime', 'events.ndjson');
   if (!fs.existsSync(eventsPath)) {
@@ -147,6 +171,44 @@ test('ask next returns OHDER block action when no task is available', () => {
   assert.equal(events[0].payload.architectureScore, 61);
   assert.equal(events[0].payload.blocking, true);
   assert.equal(events[0].payload.recommendedCommand, 'ask architect status');
+});
+
+test('ask next returns entropy refactor action and event summary when entropy trend regresses', () => {
+  const repoDir = setupRepo();
+  writeArchitectStatus(repoDir, {
+    status: 'passed',
+    blocking: false,
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 98,
+    },
+  });
+  writeDriftAnalytics(repoDir, {
+    architecture: {
+      entropyTrend: 'increasing',
+      couplingTrend: 'increasing',
+      replayabilityTrend: 'stable',
+      driftScore: 0.6667,
+    },
+    overall: {
+      trend: 'regressing',
+      driftScore: 0.3334,
+    },
+  });
+
+  const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.next.type, 'ohder-action');
+  assert.equal(payload.next.action, 'create-refactor-slice');
+  assert.equal(payload.entropy.trend, 'regressing');
+  assert.equal(payload.entropy.refactorPressure, 'high');
+
+  const events = readEvents(repoDir).filter(event => event.type === 'OhderNextActionRecommended');
+  assert.equal(events.length, 1);
+  assert.equal(events[0].payload.action, 'create-refactor-slice');
+  assert.equal(events[0].payload.entropy.trend, 'regressing');
+  assert.equal(events[0].payload.entropy.refactorPressure, 'high');
 });
 
 test('ask next returns OHDER await-new-requirement action when architecture is healthy', () => {
