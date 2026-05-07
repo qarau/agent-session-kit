@@ -115,4 +115,21 @@ governance_contract:
   enforce_flow_runtime: true
   enforce_projection_runtime: true
   strict_cross_runtime_validation: false
+
+slice_close:
+  enabled: true
+  run_pre_push_check: true
+  retry_commit_once: true
+  full_suite_required_lanes: release,integrator,protected
+  full_suite_command: npm
+  full_suite_args: test
+  commit_subject_template: chore(slice): close {taskId}
+
+slice_commit:
+  enabled: true
+  footer_key: ASK-Slice
+  exempt_footer_key: ASK-Exempt
+  allowed_exemptions: release,meta
+  exempt_allowed_path_prefixes: docs/releases/,docs/session/
+  exempt_allowed_exact_files: CHANGELOG.md,README.md,package.json,package-lock.json,pnpm-lock.yaml,yarn.lock
 `;

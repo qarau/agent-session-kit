@@ -85,6 +85,25 @@ export function validateTaskComplete({ taskId, task }) {
   return { ok: true };
 }
 
+export function validateTaskReopen({ taskId, task }) {
+  const resolvedTaskId = normalize(taskId);
+  if (!resolvedTaskId) {
+    return fail('missing-task-id', 'task id is required');
+  }
+  if (!task) {
+    return fail('task-not-found', `task not found: ${resolvedTaskId}`, { taskId: resolvedTaskId });
+  }
+  if (task.status !== 'completed' && task.status !== 'blocked') {
+    return fail('invalid-task-transition', `cannot reopen task from ${task.status}`, {
+      taskId: resolvedTaskId,
+      from: task.status,
+      allowedFrom: ['completed', 'blocked'],
+      to: 'in-progress',
+    });
+  }
+  return { ok: true };
+}
+
 export function validateTaskDepends({ taskId, dependencyTaskId, task, dependencyTask }) {
   const resolvedTaskId = normalize(taskId);
   const resolvedDependencyTaskId = normalize(dependencyTaskId);

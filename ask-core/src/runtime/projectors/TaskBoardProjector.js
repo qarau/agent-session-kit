@@ -73,6 +73,13 @@ export class TaskBoardProjector {
       });
     }
 
+    if (type === 'TaskReopened') {
+      return withTask(state, taskId, {
+        ...base,
+        status: 'in-progress',
+      });
+    }
+
     if (type === 'TaskBlocked') {
       return withTask(state, taskId, {
         ...base,

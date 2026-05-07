@@ -14,7 +14,7 @@ function getArgValue(args, name) {
 }
 
 function printUsage() {
-  console.log('Usage: ask task create|assign|start|complete|depends|status');
+  console.log('Usage: ask task create|assign|start|complete|reopen|depends|status');
 }
 
 function printResult(result) {
@@ -61,6 +61,14 @@ export async function runTask(subcommand, args = []) {
   if (subcommand === 'complete') {
     const taskId = args[0] ?? '';
     const result = await runtime.complete(taskId);
+    printResult(result);
+    return;
+  }
+
+  if (subcommand === 'reopen') {
+    const taskId = args[0] ?? '';
+    const reason = getArgValue(args, '--reason');
+    const result = await runtime.reopen(taskId, reason);
     printResult(result);
     return;
   }

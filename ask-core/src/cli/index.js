@@ -50,7 +50,7 @@ Usage:
   ask can-commit
   ask pre-commit-check
   ask pre-push-check
-  ask task create|assign|start|complete|depends|status
+  ask task create|assign|start|complete|reopen|depends|status
   ask evidence attach
   ask evidence checks record|status
   ask verify pass|fail
@@ -73,6 +73,7 @@ Usage:
   ask project-state
   ask intent preview
   ask slice preview [--command <bin>] [--command-arg <arg>] [--operation <name>] [--allowed-command <cmd>]
+  ask slice close <taskId>
   ask validate-last
   ask architect status
   ask architect exempt list|add --law-id <id> --reason <text> --approved-by <id> [--operation <name>] [--session-id <id>] [--expires-at <iso>]

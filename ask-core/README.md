@@ -22,12 +22,15 @@ Lifecycle policy gates:
 - Default allowed states: `active`, `paused`.
 - Default rejected states: `blocked`, `closed`, `created`.
 
-Pre-commit contract:
+Pre-commit/pre-push contract:
 - `ask pre-commit-check` returns deterministic parity checks for work context, docs freshness, preflight, and can-commit.
+- `ask pre-push-check` also enforces slice commit governance (`ASK-Slice` footer or explicit `ASK-Exempt` release/meta footer).
 
 Governance and operations:
 - `ask next`
 - `ask governance status|explain`
+- `ask task create|assign|start|complete|reopen|depends|status`
+- `ask slice preview|close`
 - `ask architect exempt add|list`
 - `ask flow list|promote|status|validate --last|discover --last`
 - `ask design list|status|discover --last|validate --last|promote`

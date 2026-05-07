@@ -96,6 +96,25 @@ Escalate when trend is `regressing` across multiple windows.
    - `node ask-core/bin/ask.js evidence checks record --tests-passed true|false --docs-fresh true|false --checks "<csv>" --source "<id>"`
 3. Re-run checks until gates pass.
 
+Pre-push traceability gate:
+
+- Normal commits must include exactly one footer: `ASK-Slice: <taskId>`.
+- Non-slice commits must include exactly one exemption footer: `ASK-Exempt: release` or `ASK-Exempt: meta`.
+- Exemption commits must stay within release/meta file scope.
+
+## Slice Close Playbook (Auto Complete + Auto Commit)
+
+1. Ensure task is `in-progress` and evidence gates are healthy.
+2. Run `node ask-core/bin/ask.js slice close <taskId>`.
+3. Runtime flow:
+   - auto verification pass
+   - auto task completion
+   - auto commit with `ASK-Slice: <taskId>`
+   - auto `pre-push-check`
+4. Failure semantics:
+   - commit failure: task auto-reopens to `in-progress`
+   - pre-push failure after commit: task remains `completed` and session blocks pending remediation
+
 ## Incident Playbook: Governance Block
 
 When session is blocked:

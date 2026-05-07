@@ -91,6 +91,29 @@ These keys decide whether governance triggers automated retry slices or hard blo
 
 This section defines the cross-runtime governance contract shared by ASK, Architect, and Flow runtimes.
 
+## `slice_close`
+
+- `enabled`
+- `run_pre_push_check`
+- `retry_commit_once`
+- `full_suite_required_lanes`
+- `full_suite_command`
+- `full_suite_args`
+- `commit_subject_template`
+
+This section governs `ask slice close <taskId>` auto-close behavior (auto verification, auto completion, commit creation, and post-commit push gate validation).
+
+## `slice_commit`
+
+- `enabled`
+- `footer_key`
+- `exempt_footer_key`
+- `allowed_exemptions`
+- `exempt_allowed_path_prefixes`
+- `exempt_allowed_exact_files`
+
+This section governs pre-push commit traceability: each outgoing commit must carry a single slice footer (`ASK-Slice: <taskId>`) or an explicit release/meta exemption footer.
+
 ## OHDER Law Pack
 
 `ohder-law-pack.json` contains:

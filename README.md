@@ -140,7 +140,8 @@ Policy and commit readiness:
 
 Task, workflow, and continuity:
 
-- `ask task create|assign|start|complete|depends|status`
+- `ask task create|assign|start|complete|reopen|depends|status`
+- `ask slice preview|close`
 - `ask workflow recommend|start|artifact|complete|fail`
 - `ask flow list|status|discover --last|validate --last|promote ...`
 - `ask design list|status|discover --last|validate --last|promote ...`
@@ -174,7 +175,8 @@ Codex-specific controls:
 3. `ask context verify`
 4. Implement work and track runtime artifacts
 5. `ask preflight` and `ask can-commit`
-6. Commit and push with hooks enforcing final gates
+6. Close each slice with `ask slice close <taskId>` (auto verify + auto complete + auto commit + pre-push-check)
+7. Push with hooks enforcing final gates
 
 ## Runtime State and Source Control
 

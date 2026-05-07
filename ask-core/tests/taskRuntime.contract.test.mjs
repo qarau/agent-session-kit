@@ -153,3 +153,25 @@ test('complete is rejected unless task is in-progress', () => {
   assert.equal(payload.code, 'invalid-task-transition');
   assert.equal(before, after);
 });
+
+test('task reopen transitions completed task back to in-progress', () => {
+  const repoDir = setupRepo();
+
+  runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-4', '--title', 'Rollback readiness'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'task', 'start', 'task-4'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'task', 'complete', 'task-4'], { cwd: repoDir });
+
+  const reopened = runOrThrow(process.execPath, [askBinPath, 'task', 'reopen', 'task-4', '--reason', 'rollback'], {
+    cwd: repoDir,
+  });
+  const reopenedPayload = JSON.parse(reopened.stdout);
+  assert.equal(reopenedPayload.ok, true);
+  assert.equal(reopenedPayload.task.status, 'in-progress');
+
+  const status = runOrThrow(process.execPath, [askBinPath, 'task', 'status', 'task-4'], { cwd: repoDir });
+  const statusPayload = JSON.parse(status.stdout);
+  assert.equal(statusPayload.task.status, 'in-progress');
+
+  const eventTypes = readEvents(repoDir).map(event => event.type);
+  assert.ok(eventTypes.includes('TaskReopened'));
+});
