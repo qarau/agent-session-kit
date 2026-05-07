@@ -206,3 +206,93 @@ test('Architect runtime applies OHDER laws and emits governance-ready status pay
   assert.equal(payload.lawViolations.length > 0, true);
   assert.equal(typeof payload.lawOutcome, 'string');
 });
+
+test('Architect runtime emits deterministic architecture score and persists it', async () => {
+  const repoDir = setupRepo();
+  const scaffolder = new Scaffolder(repoDir);
+  await scaffolder.init();
+  const runtime = new ArchitectRuntime(repoDir);
+
+  const healthy = await runtime.assess({
+    state: {
+      sessionId: 'sess_score_healthy',
+      continuityValid: true,
+      checkpointMatchesExecution: true,
+    },
+    slice: {
+      id: 'slice_score_healthy',
+      execution: {
+        operation: 'score-healthy',
+      },
+    },
+    execution: {
+      ok: true,
+      exitCode: 0,
+      status: 'completed',
+      touchedFiles: ['src/a.js'],
+    },
+    validation: {
+      status: 'passed',
+      testsRun: ['unit'],
+    },
+    policy: {
+      architect: {
+        enabled: true,
+        block_on_violation: true,
+        max_entropy_delta: 3,
+        max_coupling_delta: 2,
+        require_replayability: true,
+      },
+    },
+  });
+
+  assert.equal(typeof healthy.architectureScore.overallScore, 'number');
+  assert.equal(typeof healthy.architectureScore.grade, 'string');
+  assert.equal(typeof healthy.architectureScore.categories.ssotIntegrity, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.replayability, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.layerDiscipline, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.durability, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.testability, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.security, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.observability, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.replaceability, 'number');
+
+  const degraded = await runtime.assess({
+    state: {
+      sessionId: 'sess_score_degraded',
+      continuityValid: false,
+      checkpointMatchesExecution: false,
+    },
+    slice: {
+      id: 'slice_score_degraded',
+      execution: {
+        operation: 'score-degraded',
+      },
+    },
+    execution: {
+      ok: false,
+      exitCode: 1,
+      status: 'failed',
+      touchedFiles: ['src/a.js', 'src/b.js', 'src/c.js', 'src/d.js', 'lib/e.js', 'lib/f.js', 'ui/g.js', 'api/h.js'],
+    },
+    validation: {
+      status: 'failed',
+      testsRun: [],
+    },
+    policy: {
+      architect: {
+        enabled: true,
+        block_on_violation: true,
+        max_entropy_delta: 1,
+        max_coupling_delta: 1,
+        require_replayability: true,
+      },
+    },
+  });
+
+  assert.equal(degraded.architectureScore.overallScore < healthy.architectureScore.overallScore, true);
+  assert.equal(degraded.architectureScore.categories.replayability < healthy.architectureScore.categories.replayability, true);
+
+  const persisted = await runtime.readStatus();
+  assert.deepEqual(persisted.architectureScore, degraded.architectureScore);
+});

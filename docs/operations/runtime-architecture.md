@@ -61,6 +61,8 @@ The loop publishes operator-facing governance outputs:
 - `ask design status`: latest design/visual governance evaluation
 - `ask next`: task graph + runtime-driven next action
 
+`ask architect status` includes an `architectureScore` payload with weighted categories for SSoT integrity, replayability, layer discipline, durability, testability, security, observability, and replaceability. The score is operational telemetry for trend visibility; hard-law blocking decisions still take precedence.
+
 ## Drift Analytics Model
 
 Drift analytics aggregates loop history into trend windows:
