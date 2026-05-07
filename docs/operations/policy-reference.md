@@ -103,6 +103,8 @@ This section defines the cross-runtime governance contract shared by ASK, Archit
 
 This section governs `ask slice close <taskId>` auto-close behavior (auto verification, auto completion, commit creation, and post-commit push gate validation).
 
+Slice close also runs OHDER architect governance before auto verification, task completion, and commit creation. A blocking OHDER result returns `slice-close-ohder-blocked`, leaves the task `in-progress`, and creates no commit.
+
 ## `slice_commit`
 
 - `enabled`
@@ -127,6 +129,10 @@ Law classes:
 - `lawClass: "hard"` defaults to `block` when violated.
 - `lawClass: "soft"` defaults to `warn` when violated.
 - explicit `outcome` still overrides the law-class default.
+
+Hard laws are architectural safety boundaries and should be used for replayability, projection authority, SSoT integrity, security boundary, layer isolation, event-only synchronization, and durability integrity. Soft laws are quality and survivability signals such as SRP drift, duplication, weak observability, testability issues, speculative abstraction, replaceability leakage, and complexity growth.
+
+Architect status includes `architectureScore`, which reports `overallScore`, `grade`, weighted categories, and weights. Use it for trend visibility and refactor prioritization; do not use it to bypass hard-law blocks.
 
 Current exemption CLI:
 

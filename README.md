@@ -4,7 +4,7 @@ Governed Autonomous Software Development
 
 ## Runtime Status
 
-Current release line: `v5.0.0`
+Current release line: `v5.0.1`
 
 ASK Forge is a Developer-Agent Runtime for governing long-running implementation sessions before code reaches remote CI. It enforces session and policy checks at commit/push boundaries and keeps runtime state reconstructable through an event ledger.
 
@@ -15,7 +15,7 @@ ASK is implemented in `ask-core/` and integrated through git hooks and session a
 `v5.0.0` is the release where ASK moves from "runtime checks around coding" to a governed autonomous delivery loop.
 
 - plans can be ingested into runtime-governed slices (`ask plan ingest`) instead of staying as static docs
-- slice execution has an explicit governed close contract (`ask slice close`) with verify/complete/commit/push validation gates
+- slice execution has an explicit governed close contract (`ask slice close`) with OHDER architecture governance, verify/complete/commit/push validation gates
 - push lineage is enforced through `ASK-Slice` or `ASK-Exempt` metadata checks at pre-push
 - Codex runtime controls, architect/flow/design governance runtimes, and ASK Forge branding make the autonomous governance model explicit
 - delivery and coordination runtime surfaces (feature/release/promote/rollout + route/claim/agent/child-session) move ASK from policy helper to end-to-end governed execution control plane
@@ -28,7 +28,7 @@ ASK 4.x established a runtime-first governance layer (`ask-core`) with hook-enfo
 ASK Forge 5.0.0 extends this into governed autonomous software development by adding:
 
 - plan ingestion runtime (`ask plan ingest|validate|batch show`) that materializes deterministic governed slices from planning artifacts
-- governed slice close flow (`ask slice close <taskId>`) for auto verify + auto complete + auto commit + pre-push validation
+- governed slice close flow (`ask slice close <taskId>`) for OHDER validation + auto verify + auto complete + auto commit + pre-push validation
 - architect governance runtime (`ask architect ...`) integrated with OHDER law-pack decisions and exemption controls
 - flow and design governance runtimes (`ask flow ...`, `ask design ...`) for behavior continuity and visual drift control
 - coordination runtime (`ask route ...`, `ask claim ...`, `ask child-session ...`, `ask agent ...`) for governed multi-agent execution routing
@@ -73,7 +73,7 @@ Core runtime layers active in v5:
 
 - ASK runtime: session lifecycle, task/slice orchestration, continuation state
 - Projection runtime: event replay, snapshot hydration, continuity proofs
-- Architect runtime: OHDER governance law evaluation + exemptions
+- Architect runtime: OHDER governance law evaluation, hard/soft law taxonomy, architecture scoring, and exemptions
 - Flow runtime: protected/hard-flow continuity governance
 - Design runtime: visual continuity and drift governance
 - Ingestion runtime: plan-to-slice materialization and batch traceability
@@ -210,8 +210,35 @@ Codex-specific controls:
 3. `ask context verify`
 4. Implement work and track runtime artifacts
 5. `ask preflight` and `ask can-commit`
-6. Close each slice with `ask slice close <taskId>` (auto verify + auto complete + auto commit + pre-push-check)
+6. Close each slice with `ask slice close <taskId>` (OHDER governance + auto verify + auto complete + auto commit + pre-push-check)
 7. Push with hooks enforcing final gates
+
+## OHDER Slice-Close Governance
+
+`ask slice close <taskId>` now runs OHDER architect governance before ASK marks the task verified, completed, or committed.
+
+Close order:
+
+1. Session/context preflight
+2. Required full-suite checks for protected lanes
+3. Can-commit evidence gate
+4. Dirty-index guard
+5. OHDER architect assessment
+6. ASK verification
+7. Task completion
+8. `ASK-Slice` commit
+9. Pre-push governance check
+
+If OHDER reports a blocking hard-law violation, slice close returns `slice-close-ohder-blocked`, keeps the task `in-progress`, emits architectural replayability events, and creates no commit.
+
+Inspect OHDER state with:
+
+```bash
+node ask-core/bin/ask.js architect status
+node ask-core/bin/ask.js governance explain
+```
+
+Architect status includes an `architectureScore` with weighted categories for SSoT integrity, replayability, layer discipline, durability, testability, security, observability, and replaceability. The score is telemetry; hard-law blocking still takes precedence.
 
 ## Runtime State and Source Control
 
@@ -227,7 +254,7 @@ The shift is intentional: v5 moves from "governed runtime checks" to "governed a
 Key changes from v4:
 
 - Added governed plan ingestion (`ask plan ingest|validate|batch show`)
-- Added governed slice close path (`ask slice close <taskId>`)
+- Added governed slice close path (`ask slice close <taskId>`) with OHDER architecture validation before auto-complete and auto-commit
 - Added explicit architect/flow/design governance runtime surfaces (`ask architect ...`, `ask flow ...`, `ask design ...`)
 - Added coordination and delivery governance runtimes (`ask route|claim|child-session|agent ...`, `ask feature|release|promote|rollout|rollback ...`)
 - Enforced pre-push lineage metadata (`ASK-Slice` / `ASK-Exempt`)

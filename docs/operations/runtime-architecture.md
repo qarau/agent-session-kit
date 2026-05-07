@@ -2,7 +2,7 @@
 
 ## Runtime Stack
 
-ASK 4 runtime behavior is split across four cooperating concerns:
+ASK Forge runtime behavior is split across cooperating concerns:
 
 - ASK runtime: orchestration, session lifecycle, execution loop, checkpointing
 - Projection runtime: event replay, snapshot hydration, continuity integrity
@@ -62,6 +62,30 @@ The loop publishes operator-facing governance outputs:
 - `ask next`: task graph + runtime-driven next action
 
 `ask architect status` includes an `architectureScore` payload with weighted categories for SSoT integrity, replayability, layer discipline, durability, testability, security, observability, and replaceability. The score is operational telemetry for trend visibility; hard-law blocking decisions still take precedence.
+
+## Slice-Close OHDER Gate
+
+`ask slice close <taskId>` runs Architect/OHDER governance after evidence gates pass and before ASK verifies, completes, or commits the task.
+
+The close lifecycle is:
+
+1. session/context preflight
+2. lane-required full suite
+3. can-commit evidence gate
+4. dirty-index guard
+5. OHDER architect assessment
+6. ASK verification record
+7. task completion
+8. `ASK-Slice` commit
+9. pre-push governance check
+
+If OHDER returns `blocking: true`, slice close returns `slice-close-ohder-blocked`, leaves the task `in-progress`, writes architecture replayability events, and does not create a commit.
+
+Slice-close OHDER events:
+
+- `ArchitectValidationCompleted`
+- `ReplayabilityValidated`
+- `ArchitectureViolationDetected`
 
 ## Drift Analytics Model
 
