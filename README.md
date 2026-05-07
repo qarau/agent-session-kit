@@ -1,22 +1,26 @@
-# Agent Session Kit
+# ASK Forge
 
-## ASK 4.0 Runtime Status
+Governed Autonomous Software Development
+
+## Runtime Status
 
 Current release line: `v4.0.1`
+Planned next release: `v5.0.0` (major, runtime governance expansion + brand evolution)
 
-Agent Session Kit (ASK) is a Developer-Agent Runtime for governing long-running implementation sessions before code reaches remote CI. It enforces session and policy checks at commit/push boundaries and keeps runtime state reconstructable through an event ledger.
+ASK Forge is a Developer-Agent Runtime for governing long-running implementation sessions before code reaches remote CI. It enforces session and policy checks at commit/push boundaries and keeps runtime state reconstructable through an event ledger.
 
 ASK is implemented in `ask-core/` and integrated through git hooks and session adapter wrappers.
 
-## What Changed in 4.0 (from 3.0)
+## What Changed in 4.x
 
 ASK 3.0 was primarily a session governance toolkit packaged with installer and helper utilities around the runtime.  
 ASK 4.0 is becoming a runtime-first execution layer: `ask-core` is the product center, hook-enforced policy gates are the stable contract, and orchestration intelligence lives in governed CLI/runtime flows.
 The `ask codex` command family is a core part of this shift, moving Codex execution from ad-hoc usage to policy-governed launch, direct-exception control, and context-budget management.
+The `ask plan` ingestion surface extends this by turning planning artifacts into governed slice backlogs that `ask next` can execute deterministically.
 
 For developers, this means less tooling sprawl, clearer enforcement boundaries, and a more explicit operating model for long-running AI-assisted delivery.
 
-## What ASK Is
+## What ASK Forge Is
 
 ASK is a runtime discipline layer for AI-assisted software delivery. It gives teams:
 
@@ -141,6 +145,9 @@ Policy and commit readiness:
 Task, workflow, and continuity:
 
 - `ask task create|assign|start|complete|reopen|depends|status`
+- `ask plan ingest --task <taskId> --run-id <runId> [--path <file>] [--force-new-batch] [--dry-run]`
+- `ask plan validate --task <taskId> --run-id <runId> [--path <file>] [--force-new-batch]`
+- `ask plan batch show <planBatchId>`
 - `ask slice preview|close`
 - `ask workflow recommend|start|artifact|complete|fail`
 - `ask flow list|status|discover --last|validate --last|promote ...`
@@ -187,7 +194,7 @@ Codex-specific controls:
 ## v3 to v4 Migration Notes
 
 v4 keeps core runtime governance and hook enforcement, but repository packaging changed.
-The change above is intentional: v4 shifts from “tool bundle + helpers” toward “runtime core + enforcement contract,” and the migration steps below reflect that operating model.
+The change above is intentional: v4 shifts from "tool bundle + helpers" toward "runtime core + enforcement contract," and the migration steps below reflect that operating model.
 
 Key changes from v3:
 
@@ -221,3 +228,4 @@ npm run ask:pre-push-check
 - `CONTRIBUTING.md`
 - `CODE_OF_CONDUCT.md`
 - `SECURITY.md`
+

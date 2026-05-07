@@ -1,6 +1,6 @@
-# ask-core
+# ASK Forge Core
 
-Standalone runtime core for ASK.
+Governed Autonomous Software Development runtime core for ASK Forge.
 
 Current lifecycle command set:
 - `ask session start`
@@ -30,6 +30,7 @@ Governance and operations:
 - `ask next`
 - `ask governance status|explain`
 - `ask task create|assign|start|complete|reopen|depends|status`
+- `ask plan ingest|validate|batch show`
 - `ask slice preview|close`
 - `ask architect exempt add|list`
 - `ask flow list|promote|status|validate --last|discover --last`

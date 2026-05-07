@@ -627,6 +627,11 @@ export class Scaffolder {
         await this.store.writeJson(snapshotPath, fallback);
       }
       await this.store.writeJson(this.paths.taskRegistry(), { tasks: {} });
+      await this.store.writeJson(this.paths.planBatchRegistry(), {
+        schemaVersion: 1,
+        batches: {},
+        artifactHashes: {},
+      });
     } else {
       await this.store.ensureText(this.paths.historyLog(), '');
       await this.store.ensureText(this.paths.runtimeEvents(), '');
@@ -661,6 +666,11 @@ export class Scaffolder {
         await this.ensureJson(snapshotPath, fallback);
       }
       await this.ensureJson(this.paths.taskRegistry(), { tasks: {} });
+      await this.ensureJson(this.paths.planBatchRegistry(), {
+        schemaVersion: 1,
+        batches: {},
+        artifactHashes: {},
+      });
     }
 
     await this.store.ensureText(this.paths.currentStatus(), '# Current Status\n');

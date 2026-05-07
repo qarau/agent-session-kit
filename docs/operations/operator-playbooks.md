@@ -115,6 +115,17 @@ Pre-push traceability gate:
    - commit failure: task auto-reopens to `in-progress`
    - pre-push failure after commit: task remains `completed` and session blocks pending remediation
 
+## Plan Ingestion Playbook
+
+1. Attach a planning artifact through workflow runtime:
+   - `node ask-core/bin/ask.js workflow artifact <taskId> --run-id <runId> --type plan --path <json-path>`
+2. Validate plan ingest contract:
+   - `node ask-core/bin/ask.js plan validate --task <taskId> --run-id <runId>`
+3. Materialize governed slices:
+   - `node ask-core/bin/ask.js plan ingest --task <taskId> --run-id <runId>`
+4. Execute through normal governance:
+   - `node ask-core/bin/ask.js next`
+
 ## Incident Playbook: Governance Block
 
 When session is blocked:

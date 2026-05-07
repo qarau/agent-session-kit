@@ -242,6 +242,10 @@ export class AskPaths {
     return path.join(this.tasksDir(), 'task-board.json');
   }
 
+  planBatchRegistry() {
+    return path.join(this.tasksDir(), 'plan-batches.json');
+  }
+
   productFlowDoc() {
     return path.join(this.flowsDir(), 'product-flow.md');
   }

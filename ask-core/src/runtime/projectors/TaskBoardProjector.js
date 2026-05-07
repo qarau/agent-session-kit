@@ -9,6 +9,9 @@ function createTaskBase(taskId, event, previous) {
     status: previous?.status ?? 'created',
     title: String(previous?.title ?? ''),
     description: String(previous?.description ?? ''),
+    origin: previous?.origin && typeof previous.origin === 'object' ? { ...previous.origin } : null,
+    acceptanceCriteria: Array.isArray(previous?.acceptanceCriteria) ? [...previous.acceptanceCriteria] : [],
+    queueClassHint: String(previous?.queueClassHint ?? ''),
     owner: String(previous?.owner ?? ''),
     dependencies: Array.isArray(previous?.dependencies) ? [...previous.dependencies] : [],
     createdAt: previous?.createdAt || String(event.ts ?? ''),
@@ -44,11 +47,20 @@ export class TaskBoardProjector {
     const type = String(event.type ?? '');
 
     if (type === 'TaskCreated') {
+      const origin = event.payload?.origin && typeof event.payload.origin === 'object'
+        ? { ...event.payload.origin }
+        : base.origin;
+      const acceptanceCriteria = Array.isArray(event.payload?.acceptanceCriteria)
+        ? event.payload.acceptanceCriteria.map(value => String(value ?? '').trim()).filter(Boolean)
+        : base.acceptanceCriteria;
       return withTask(state, taskId, {
         ...base,
         status: 'created',
         title: String(event.payload?.title ?? base.title),
         description: String(event.payload?.description ?? base.description),
+        origin,
+        acceptanceCriteria,
+        queueClassHint: String(event.payload?.queueClassHint ?? base.queueClassHint),
       });
     }
 

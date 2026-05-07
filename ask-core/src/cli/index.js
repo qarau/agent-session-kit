@@ -38,6 +38,7 @@ import { runNext } from './commands/next.js';
 import { runFlow } from './commands/flow.js';
 import { runGovernance } from './commands/governance.js';
 import { runDesign } from './commands/design.js';
+import { runPlan } from './commands/plan.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -86,6 +87,7 @@ Usage:
   ask design validate --last
   ask design promote <region-id> --to <stage> --reason <text> [--approved-by <id>] [--approval-ticket <id>]
   ask governance status|explain
+  ask plan ingest|validate|batch show
   ask next
   ask resume-packet show
   ask metrics show [--history <n>]
@@ -281,6 +283,11 @@ export async function runCli(args) {
 
   if (command === 'governance') {
     await runGovernance(subcommand);
+    return;
+  }
+
+  if (command === 'plan') {
+    await runPlan(subcommand, rest);
     return;
   }
 
