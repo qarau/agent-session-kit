@@ -168,6 +168,30 @@ test('slice close requires full-suite on integrator lane and records pass', () =
   assert.equal(payload.fullSuite.status, 0);
 });
 
+test('slice close rejects pre-staged work before completing the task', () => {
+  const repoDir = setupRepo();
+  prepareGovernedSession(repoDir);
+  createInProgressTask(repoDir, 'slice-005');
+
+  fs.mkdirSync(path.join(repoDir, 'notes'), { recursive: true });
+  fs.writeFileSync(path.join(repoDir, 'notes', 'unrelated.md'), 'unrelated staged work\n', 'utf8');
+  runOrThrow('git', ['add', 'notes/unrelated.md'], { cwd: repoDir });
+
+  fs.mkdirSync(path.join(repoDir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(repoDir, 'src', 'slice-005.js'), 'export const slice005 = true;\n', 'utf8');
+
+  const closeResult = run(process.execPath, [askBinPath, 'slice', 'close', 'slice-005'], { cwd: repoDir });
+  assert.equal(closeResult.status, 1, closeResult.stdout + closeResult.stderr);
+  const payload = JSON.parse(closeResult.stdout);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.code, 'slice-close-dirty-index');
+  assert.deepEqual(payload.stagedFiles, ['notes/unrelated.md']);
+  assert.equal(readTaskStatus(repoDir, 'slice-005'), 'in-progress');
+
+  const staged = runOrThrow('git', ['diff', '--cached', '--name-only'], { cwd: repoDir }).stdout.trim();
+  assert.equal(staged, 'notes/unrelated.md');
+});
+
 test('slice close keeps task completed when commit succeeds but pre-push fails', () => {
   const repoDir = setupRepo();
   prepareGovernedSession(repoDir);

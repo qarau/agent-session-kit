@@ -217,7 +217,38 @@ export class SliceCloseRuntime {
     return normalize(policy?.slice_commit?.footer_key) || 'ASK-Slice';
   }
 
+  getStagedFiles() {
+    const staged = this.runGit(['diff', '--cached', '--name-only', '--diff-filter=ACMRT'], true);
+    return staged.stdout ? staged.stdout.split('\n').map(normalize).filter(Boolean) : [];
+  }
+
+  evaluatePreStagedGuard(policy = {}) {
+    if (toBoolean(policy?.slice_close?.allow_pre_staged_changes, false)) {
+      return {
+        ok: true,
+        stagedFiles: [],
+      };
+    }
+
+    const stagedFiles = this.getStagedFiles();
+    if (stagedFiles.length > 0) {
+      return fail('slice-close-dirty-index', 'slice close requires an empty git index before auto staging', {
+        stagedFiles,
+      });
+    }
+
+    return {
+      ok: true,
+      stagedFiles,
+    };
+  }
+
   commitWithSliceFooter(taskId, policy, task) {
+    const indexGuard = this.evaluatePreStagedGuard(policy);
+    if (!indexGuard.ok) {
+      return indexGuard;
+    }
+
     const stage = this.runGit(['add', '-A'], true);
     if (!stage.ok) {
       return fail('git-add-failed', 'failed to stage workspace changes before commit', {
@@ -225,8 +256,7 @@ export class SliceCloseRuntime {
       });
     }
 
-    const staged = this.runGit(['diff', '--cached', '--name-only', '--diff-filter=ACMRT'], true);
-    const stagedFiles = staged.stdout ? staged.stdout.split('\n').map(normalize).filter(Boolean) : [];
+    const stagedFiles = this.getStagedFiles();
     if (stagedFiles.length === 0) {
       return fail('no-staged-changes', 'no staged changes to commit for slice close');
     }
@@ -332,6 +362,11 @@ export class SliceCloseRuntime {
       return fail('slice-close-can-commit-failed', 'slice close can-commit checks failed', {
         missing: canCommit.missing,
       });
+    }
+
+    const indexGuard = this.evaluatePreStagedGuard(policy);
+    if (!indexGuard.ok) {
+      return indexGuard;
     }
 
     const summary = resolveSummary({
