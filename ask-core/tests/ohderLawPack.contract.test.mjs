@@ -67,6 +67,100 @@ test('OHDER law pack evaluates violations and exemptions with deterministic outc
   assert.equal(exempted.exempted.length, 1);
 });
 
+test('OHDER law pack maps hard and soft laws to default outcomes', async () => {
+  const repoDir = setupRepo();
+  const scaffolder = new Scaffolder(repoDir);
+  await scaffolder.init();
+  const engine = new OhderLawPackEngine(repoDir);
+
+  const lawPack = {
+    version: 1,
+    defaultOutcomes: {
+      critical: 'warn',
+      high: 'warn',
+      medium: 'warn',
+      low: 'warn',
+    },
+    laws: [
+      {
+        id: 'hard-projection-authority',
+        lawClass: 'hard',
+        severity: 'low',
+        enabled: true,
+        metric: 'projection_authority',
+        operator: '==',
+        value: 'valid',
+      },
+      {
+        id: 'soft-observability',
+        lawClass: 'soft',
+        severity: 'critical',
+        enabled: true,
+        metric: 'observability',
+        operator: '==',
+        value: 'strong',
+      },
+      {
+        id: 'override-soft',
+        lawClass: 'soft',
+        outcome: 'retry',
+        enabled: true,
+        metric: 'duplication',
+        operator: '==',
+        value: 'low',
+      },
+    ],
+    exemptions: [
+      {
+        lawId: 'hard-projection-authority',
+        operation: 'exempted-operation',
+        reason: 'approved temporary hard-law exemption',
+        approvedBy: 'architecture-council',
+      },
+    ],
+  };
+
+  const defaultEvaluation = engine.evaluate(lawPack, {
+    operation: 'default-operation',
+    projection_authority: 'invalid',
+    observability: 'weak',
+    duplication: 'high',
+  });
+  assert.equal(defaultEvaluation.blocking, true);
+  assert.equal(defaultEvaluation.outcome, 'block');
+  assert.equal(defaultEvaluation.violations.find(item => item.id === 'hard-projection-authority').lawClass, 'hard');
+  assert.equal(defaultEvaluation.violations.find(item => item.id === 'soft-observability').outcome, 'warn');
+  assert.equal(defaultEvaluation.violations.find(item => item.id === 'soft-observability').lawClass, 'soft');
+  assert.equal(defaultEvaluation.violations.find(item => item.id === 'override-soft').outcome, 'retry');
+
+  const exempted = engine.evaluate(lawPack, {
+    operation: 'exempted-operation',
+    projection_authority: 'invalid',
+    observability: 'weak',
+    duplication: 'low',
+  });
+  assert.equal(exempted.blocking, false);
+  assert.equal(exempted.outcome, 'warn');
+  assert.equal(exempted.exempted[0].id, 'hard-projection-authority');
+});
+
+test('scaffolded OHDER laws declare hard or soft law class', async () => {
+  const repoDir = setupRepo();
+  const scaffolder = new Scaffolder(repoDir);
+  await scaffolder.init();
+  const store = new FileStore();
+  const paths = new AskPaths(repoDir);
+  const lawPack = await store.readJson(paths.ohderLawPack(), {});
+  const laws = Array.isArray(lawPack.laws) ? lawPack.laws : [];
+
+  assert.equal(laws.length > 0, true);
+  assert.equal(laws.every(law => ['hard', 'soft'].includes(law.lawClass)), true);
+  assert.equal(laws.find(law => law.id === 'ohder-replayability-integrity').lawClass, 'hard');
+  assert.equal(laws.find(law => law.id === 'ohder-validation-integrity').lawClass, 'hard');
+  assert.equal(laws.find(law => law.id === 'ohder-entropy-budget').lawClass, 'soft');
+  assert.equal(laws.find(law => law.id === 'ohder-coupling-budget').lawClass, 'soft');
+});
+
 test('Architect runtime applies OHDER laws and emits governance-ready status payload', async () => {
   const repoDir = setupRepo();
   const scaffolder = new Scaffolder(repoDir);
@@ -111,4 +205,94 @@ test('Architect runtime applies OHDER laws and emits governance-ready status pay
   assert.equal(Array.isArray(payload.lawViolations), true);
   assert.equal(payload.lawViolations.length > 0, true);
   assert.equal(typeof payload.lawOutcome, 'string');
+});
+
+test('Architect runtime emits deterministic architecture score and persists it', async () => {
+  const repoDir = setupRepo();
+  const scaffolder = new Scaffolder(repoDir);
+  await scaffolder.init();
+  const runtime = new ArchitectRuntime(repoDir);
+
+  const healthy = await runtime.assess({
+    state: {
+      sessionId: 'sess_score_healthy',
+      continuityValid: true,
+      checkpointMatchesExecution: true,
+    },
+    slice: {
+      id: 'slice_score_healthy',
+      execution: {
+        operation: 'score-healthy',
+      },
+    },
+    execution: {
+      ok: true,
+      exitCode: 0,
+      status: 'completed',
+      touchedFiles: ['src/a.js'],
+    },
+    validation: {
+      status: 'passed',
+      testsRun: ['unit'],
+    },
+    policy: {
+      architect: {
+        enabled: true,
+        block_on_violation: true,
+        max_entropy_delta: 3,
+        max_coupling_delta: 2,
+        require_replayability: true,
+      },
+    },
+  });
+
+  assert.equal(typeof healthy.architectureScore.overallScore, 'number');
+  assert.equal(typeof healthy.architectureScore.grade, 'string');
+  assert.equal(typeof healthy.architectureScore.categories.ssotIntegrity, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.replayability, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.layerDiscipline, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.durability, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.testability, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.security, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.observability, 'number');
+  assert.equal(typeof healthy.architectureScore.categories.replaceability, 'number');
+
+  const degraded = await runtime.assess({
+    state: {
+      sessionId: 'sess_score_degraded',
+      continuityValid: false,
+      checkpointMatchesExecution: false,
+    },
+    slice: {
+      id: 'slice_score_degraded',
+      execution: {
+        operation: 'score-degraded',
+      },
+    },
+    execution: {
+      ok: false,
+      exitCode: 1,
+      status: 'failed',
+      touchedFiles: ['src/a.js', 'src/b.js', 'src/c.js', 'src/d.js', 'lib/e.js', 'lib/f.js', 'ui/g.js', 'api/h.js'],
+    },
+    validation: {
+      status: 'failed',
+      testsRun: [],
+    },
+    policy: {
+      architect: {
+        enabled: true,
+        block_on_violation: true,
+        max_entropy_delta: 1,
+        max_coupling_delta: 1,
+        require_replayability: true,
+      },
+    },
+  });
+
+  assert.equal(degraded.architectureScore.overallScore < healthy.architectureScore.overallScore, true);
+  assert.equal(degraded.architectureScore.categories.replayability < healthy.architectureScore.categories.replayability, true);
+
+  const persisted = await runtime.readStatus();
+  assert.deepEqual(persisted.architectureScore, degraded.architectureScore);
 });

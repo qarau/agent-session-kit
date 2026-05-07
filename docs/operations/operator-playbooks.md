@@ -63,6 +63,13 @@ In governance-light mode, design violations are warning-level and do not block c
 Inspect architect status:
 
 - `node ask-core/bin/ask.js architect status`
+- `node ask-core/bin/ask.js governance explain`
+
+Review the `architectureScore` fields:
+
+- `overallScore`
+- `grade`
+- category scores for SSoT integrity, replayability, layer discipline, durability, testability, security, observability, and replaceability
 
 Manage temporary exemptions:
 
@@ -107,13 +114,27 @@ Pre-push traceability gate:
 1. Ensure task is `in-progress` and evidence gates are healthy.
 2. Run `node ask-core/bin/ask.js slice close <taskId>`.
 3. Runtime flow:
+   - session/context preflight
+   - required full suite for protected lanes
+   - can-commit evidence gate
+   - dirty-index guard
+   - OHDER architect governance
    - auto verification pass
    - auto task completion
    - auto commit with `ASK-Slice: <taskId>`
    - auto `pre-push-check`
 4. Failure semantics:
+   - OHDER block: task remains `in-progress`, no commit is created, inspect `ask architect status`
    - commit failure: task auto-reopens to `in-progress`
    - pre-push failure after commit: task remains `completed` and session blocks pending remediation
+
+When OHDER blocks slice close:
+
+1. Read the returned `architect.findings` and `architect.lawViolations`.
+2. Run `node ask-core/bin/ask.js architect status`.
+3. Run `node ask-core/bin/ask.js governance explain`.
+4. Fix the architecture issue, reduce the slice scope, or add a short-lived exemption only when approved.
+5. Re-run validation and `ask slice close <taskId>`.
 
 ## Plan Ingestion Playbook
 
@@ -136,6 +157,7 @@ When session is blocked:
 4. Resolve root cause:
    - dirty worktree gating
    - failed architect laws
+   - slice-close OHDER block
    - hard-flow behavior replay regressions
    - refactor revalidation failure
 5. Resume:

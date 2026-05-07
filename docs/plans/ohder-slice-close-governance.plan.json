@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ohder",
+  "planTitle": "OHDER Slice Close Governance",
+  "slices": [
+    {
+      "sliceId": "slice-close-ohder-gate",
+      "title": "Run OHDER assessment during slice close",
+      "description": "Make ask slice close run ArchitectRuntime/OHDER assessment before auto verification, task completion, commit, and pre-push validation.",
+      "acceptanceCriteria": [
+        "A slice-close contract test proves a blocking OHDER architect violation fails with code slice-close-ohder-blocked.",
+        "The blocked task remains in-progress and no slice commit is created.",
+        "Successful slice-close responses include the architect/OHDER assessment payload.",
+        "Existing clean slice-close behavior remains unchanged when OHDER passes."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "slice-close-architecture-events",
+      "title": "Emit architectural replayability events from slice close",
+      "description": "Record OHDER slice-close outcomes in the runtime ledger so architectural validation is replayable outside ask continue.",
+      "dependsOn": [
+        "slice-close-ohder-gate"
+      ],
+      "acceptanceCriteria": [
+        "Slice close emits ArchitectValidationCompleted after OHDER assessment.",
+        "Slice close emits ReplayabilityValidated when replayability is acceptable.",
+        "Slice close emits ArchitectureViolationDetected events when OHDER law violations exist.",
+        "Failure paths still keep the task in-progress before commit."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-hard-soft-law-taxonomy",
+      "title": "Add explicit hard and soft OHDER law taxonomy",
+      "description": "Teach the OHDER law pack to distinguish hard laws that block from soft laws that warn while preserving explicit outcome overrides and exemptions.",
+      "dependsOn": [
+        "slice-close-architecture-events"
+      ],
+      "acceptanceCriteria": [
+        "Law-pack tests prove lawClass hard blocks by default.",
+        "Law-pack tests prove lawClass soft warns by default.",
+        "Explicit law outcome overrides still work.",
+        "Existing exemption behavior still works.",
+        "Default scaffolded OHDER laws declare the appropriate lawClass."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "architecture-score-baseline",
+      "title": "Add baseline architecture score output",
+      "description": "Add deterministic architecture scoring to ArchitectRuntime so OHDER status exposes weighted health beyond pass/fail law outcomes.",
+      "dependsOn": [
+        "ohder-hard-soft-law-taxonomy"
+      ],
+      "acceptanceCriteria": [
+        "ArchitectRuntime.assess returns architectureScore with overallScore, grade, and weighted categories.",
+        "Hard or blocking violations reduce the score more than soft warnings.",
+        "Entropy, coupling, and replayability risk affect score deterministically.",
+        "Architecture score is persisted in architect status."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-slice-close-docs",
+      "title": "Document OHDER slice-close governance",
+      "description": "Update README and operations docs so operators understand the new slice-close OHDER gate, hard/soft laws, architecture score, and exemption path.",
+      "dependsOn": [
+        "architecture-score-baseline"
+      ],
+      "acceptanceCriteria": [
+        "README states ask slice close runs OHDER before auto-complete and auto-commit.",
+        "Operations docs explain hard laws, soft laws, blocking behavior, and architecture score output.",
+        "Operator playbooks explain how to diagnose slice-close OHDER blocks.",
+        "Full test suite and ASK pre-push check pass after docs update."
+      ],
+      "queueClass": "reviewer"
+    }
+  ]
+}

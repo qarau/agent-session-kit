@@ -9,10 +9,14 @@ import { SessionRuntime } from './SessionRuntime.js';
 import { WorkContextEngine } from './WorkContextEngine.js';
 import { PolicyEngine } from './PolicyEngine.js';
 import { PrePushCheckEngine } from './PrePushCheckEngine.js';
+import { RuntimeStateEngine } from './RuntimeStateEngine.js';
+import { ArchitectRuntime } from './ArchitectRuntime.js';
 import { evaluateCanCommitGate, evaluatePreflightGate } from './sessionPolicyGates.js';
 import { normalizeBranchEnforcementMode, resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js';
 import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
+import { EventLedger } from '../runtime/EventLedger.js';
+import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -82,8 +86,12 @@ export class SliceCloseRuntime {
     this.contextEngine = new WorkContextEngine(cwd);
     this.policyEngine = new PolicyEngine(cwd);
     this.prePushCheckEngine = new PrePushCheckEngine(cwd);
+    this.stateEngine = new RuntimeStateEngine(cwd);
+    this.architectRuntime = new ArchitectRuntime(cwd);
     this.paths = new AskPaths(cwd);
     this.store = new FileStore();
+    this.ledger = new EventLedger(cwd);
+    this.projectionEngine = new RuntimeProjectionEngine(cwd);
   }
 
   runGit(args, allowFailure = false) {
@@ -243,6 +251,119 @@ export class SliceCloseRuntime {
     };
   }
 
+  getWorkspaceChangedFiles() {
+    const status = this.runGit(['status', '--porcelain'], true);
+    if (!status.ok && !status.stdout) {
+      return [];
+    }
+    return status.stdout
+      .split('\n')
+      .map(line => line.trimEnd())
+      .filter(Boolean)
+      .map(line => line.slice(3).trim())
+      .map(filePath => filePath.split(' -> ').at(-1))
+      .map(filePath => normalize(filePath).replace(/\\/gu, '/'))
+      .filter(Boolean)
+      .filter(filePath => !filePath.startsWith('.ask/'));
+  }
+
+  resolveOhderValidation(fullSuiteResult, evidence = {}) {
+    const checks = Array.isArray(evidence.checks) ? evidence.checks.map(normalize).filter(Boolean) : [];
+    const testsRun = [];
+    if (fullSuiteResult.required && fullSuiteResult.command) {
+      testsRun.push(`${fullSuiteResult.command} ${Array.isArray(fullSuiteResult.args) ? fullSuiteResult.args.join(' ') : ''}`.trim());
+    }
+    testsRun.push(...checks);
+    return {
+      status: 'passed',
+      testsRun: Array.from(new Set(testsRun)),
+    };
+  }
+
+  async assessOhderBeforeClose(taskId, task, policy, fullSuiteResult, evidence) {
+    const state = await this.stateEngine.hydrate(policy);
+    const touchedFiles = this.getWorkspaceChangedFiles();
+    const execution = {
+      ...(state.latestExecution || {}),
+      ok: true,
+      status: 'completed',
+      exitCode: 0,
+      touchedFiles,
+      operation: `slice-close:${taskId}`,
+      failOpenApplied: false,
+    };
+    const validation = {
+      ...(state.latestValidation || {}),
+      ...this.resolveOhderValidation(fullSuiteResult, evidence),
+    };
+    const slice = {
+      id: taskId,
+      title: normalize(task?.title),
+      execution: {
+        operation: `slice-close:${taskId}`,
+      },
+    };
+    return this.architectRuntime.assess({
+      state,
+      slice,
+      execution,
+      validation,
+      policy,
+    });
+  }
+
+  async emitRuntimeEvent(type, session, taskId, payload = {}) {
+    await this.ledger.append({
+      type,
+      sessionId: normalize(session?.sessionId),
+      taskId: normalize(taskId),
+      actor: normalize(session?.actorId) || 'local',
+      payload,
+      meta: {
+        source: 'slice-close-runtime',
+        schemaVersion: 1,
+      },
+    });
+    await this.projectionEngine.projectIncremental();
+  }
+
+  buildArchitectEventPayload(taskId, architect) {
+    return {
+      taskId,
+      sliceId: taskId,
+      status: normalize(architect?.status),
+      blocking: architect?.blocking === true,
+      lawOutcome: normalize(architect?.lawOutcome),
+      lawViolations: Array.isArray(architect?.lawViolations) ? architect.lawViolations : [],
+      entropyDelta: Number(architect?.entropyDelta ?? 0) || 0,
+      couplingDelta: Number(architect?.couplingDelta ?? 0) || 0,
+      replayabilityRisk: normalize(architect?.replayabilityRisk),
+    };
+  }
+
+  async emitArchitectReplayabilityEvents(session, taskId, architect) {
+    const payload = this.buildArchitectEventPayload(taskId, architect);
+    await this.emitRuntimeEvent('ArchitectValidationCompleted', session, taskId, payload);
+
+    for (const violation of payload.lawViolations) {
+      await this.emitRuntimeEvent('ArchitectureViolationDetected', session, taskId, {
+        ...payload,
+        violation,
+        law: normalize(violation?.id),
+        severity: normalize(violation?.severity),
+        reason: normalize(violation?.message),
+      });
+    }
+
+    const replayabilityRisk = normalize(architect?.replayabilityRisk).toLowerCase();
+    if (architect?.blocking !== true && ['low', 'medium'].includes(replayabilityRisk)) {
+      await this.emitRuntimeEvent('ReplayabilityValidated', session, taskId, {
+        ...payload,
+        valid: true,
+      });
+    }
+  }
+
   commitWithSliceFooter(taskId, policy, task) {
     const indexGuard = this.evaluatePreStagedGuard(policy);
     if (!indexGuard.ok) {
@@ -369,6 +490,15 @@ export class SliceCloseRuntime {
       return indexGuard;
     }
 
+    const architect = await this.assessOhderBeforeClose(resolvedTaskId, task, policy, fullSuiteResult, evidence);
+    await this.emitArchitectReplayabilityEvents(session, resolvedTaskId, architect);
+    if (architect.blocking === true) {
+      return fail('slice-close-ohder-blocked', 'OHDER architect governance blocked slice close', {
+        taskId: resolvedTaskId,
+        architect,
+      });
+    }
+
     const summary = resolveSummary({
       taskId: resolvedTaskId,
       lanes: laneInputs.lanes,
@@ -427,6 +557,7 @@ export class SliceCloseRuntime {
         task: completed.task,
         commit: committed.commit,
         prePush,
+        architect,
         lanes: laneInputs.lanes,
         fullSuite: fullSuiteResult,
       };
@@ -437,6 +568,7 @@ export class SliceCloseRuntime {
       taskId: resolvedTaskId,
       task: completed.task,
       commit: committed.commit,
+      architect,
       lanes: laneInputs.lanes,
       fullSuite: fullSuiteResult,
     };

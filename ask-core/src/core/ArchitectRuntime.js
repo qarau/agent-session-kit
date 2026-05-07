@@ -1,6 +1,7 @@
 import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
 import { OhderLawPackEngine } from './OhderLawPackEngine.js';
+import { ArchitectureScoreEngine } from './ArchitectureScoreEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -36,6 +37,7 @@ export class ArchitectRuntime {
     this.paths = new AskPaths(cwd);
     this.store = new FileStore();
     this.lawPackEngine = new OhderLawPackEngine(cwd);
+    this.scoreEngine = new ArchitectureScoreEngine();
   }
 
   entropyDelta(execution = {}, validation = {}) {
@@ -104,6 +106,7 @@ export class ArchitectRuntime {
         couplingDelta: 0,
         replayabilityRisk: 'unknown',
         findings: [],
+        architectureScore: this.scoreEngine.score(),
         recommendedAction: 'continue',
         updatedAt: nowIso(),
       };
@@ -185,6 +188,12 @@ export class ArchitectRuntime {
         : status === 'warning'
           ? 'continue'
           : 'continue';
+    const architectureScore = this.scoreEngine.score({
+      entropyDelta,
+      couplingDelta,
+      replayabilityRisk,
+      lawEvaluation,
+    });
     const payload = {
       status,
       blocking,
@@ -198,6 +207,7 @@ export class ArchitectRuntime {
       lawOutcome: lawEvaluation.outcome,
       lawViolations: lawEvaluation.violations,
       lawExemptions: lawEvaluation.exempted,
+      architectureScore,
       recommendedAction,
       updatedAt: nowIso(),
     };
@@ -217,6 +227,7 @@ export class ArchitectRuntime {
       lawOutcome: '',
       lawViolations: [],
       lawExemptions: [],
+      architectureScore: this.scoreEngine.score(),
       recommendedAction: '',
       updatedAt: '',
     });

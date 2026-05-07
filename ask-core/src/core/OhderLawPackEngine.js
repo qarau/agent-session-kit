@@ -85,6 +85,14 @@ function mapSeverityToOutcome(defaultOutcomes = {}, severity = '') {
   return normalizeLower(defaultOutcomes?.[normalizedSeverity] || 'warn');
 }
 
+function normalizeLawClass(value) {
+  const normalized = normalizeLower(value);
+  if (normalized === 'hard' || normalized === 'soft') {
+    return normalized;
+  }
+  return '';
+}
+
 function isExemptionActive(exemption = {}) {
   const expiresAt = normalize(exemption.expiresAt);
   if (!expiresAt) {
@@ -189,6 +197,13 @@ export class OhderLawPackEngine {
     if (direct) {
       return direct;
     }
+    const lawClass = normalizeLawClass(law.lawClass);
+    if (lawClass === 'hard') {
+      return 'block';
+    }
+    if (lawClass === 'soft') {
+      return 'warn';
+    }
     return mapSeverityToOutcome(lawPack.defaultOutcomes || {}, law.severity);
   }
 
@@ -228,6 +243,7 @@ export class OhderLawPackEngine {
     return {
       id: lawId,
       name: normalize(law.name || lawId),
+      lawClass: normalizeLawClass(law.lawClass),
       severity: normalizeLower(law.severity || 'medium'),
       metric,
       operator,

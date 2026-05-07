@@ -476,6 +476,7 @@ function defaultOhderLawPack() {
       {
         id: 'ohder-replayability-integrity',
         name: 'Replayability Integrity',
+        lawClass: 'hard',
         enabled: true,
         severity: 'critical',
         metric: 'replayability_risk',
@@ -487,6 +488,7 @@ function defaultOhderLawPack() {
       {
         id: 'ohder-entropy-budget',
         name: 'Entropy Budget',
+        lawClass: 'soft',
         enabled: true,
         severity: 'high',
         metric: 'entropy_delta',
@@ -498,6 +500,7 @@ function defaultOhderLawPack() {
       {
         id: 'ohder-coupling-budget',
         name: 'Coupling Budget',
+        lawClass: 'soft',
         enabled: true,
         severity: 'high',
         metric: 'coupling_delta',
@@ -509,6 +512,7 @@ function defaultOhderLawPack() {
       {
         id: 'ohder-validation-integrity',
         name: 'Validation Integrity',
+        lawClass: 'hard',
         enabled: true,
         severity: 'critical',
         metric: 'validation_status',
