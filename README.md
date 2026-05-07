@@ -10,6 +10,16 @@ ASK Forge is a Developer-Agent Runtime for governing long-running implementation
 
 ASK is implemented in `ask-core/` and integrated through git hooks and session adapter wrappers.
 
+## Best Use of ASK Forge
+
+ASK Forge works best as the governance layer in a three-part autonomous development model:
+
+- **ASK Forge = Governance Constitution**: defines the rules, lifecycle gates, slice contracts, policy checks, OHDER architecture validation, and replayable evidence trail.
+- **Codex = Implementation Engine**: reads the governed plan and performs code, test, documentation, and refactor work inside the enforced ASK lifecycle.
+- **Superpowers = Workflow Discipline**: supplies structured methods for brainstorming, planning, test-driven development, debugging, verification, and branch completion.
+
+In this model, ASK does not replace Codex or Superpowers. ASK governs the software delivery lifecycle so Codex can implement with clear boundaries and Superpowers can provide repeatable development practices.
+
 ## Why 5.0.0 Is Special
 
 `v5.0.0` is the release where ASK moves from "runtime checks around coding" to a governed autonomous delivery loop.
