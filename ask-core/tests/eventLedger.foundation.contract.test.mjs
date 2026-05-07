@@ -224,6 +224,42 @@ test('SequenceStore next increments deterministically', async () => {
   assert.equal(sequence.nextSeq, 3);
 });
 
+test('SequenceStore next allocates unique contiguous values under concurrency', async () => {
+  const repoDir = setupRepo();
+  runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
+
+  const sequences = new SequenceStore(repoDir);
+  const values = await Promise.all(Array.from({ length: 20 }, () => sequences.next()));
+  const sorted = [...values].sort((left, right) => left - right);
+
+  assert.equal(new Set(values).size, 20);
+  assert.deepEqual(sorted, Array.from({ length: 20 }, (_value, index) => index + 1));
+
+  const sequencePath = path.join(repoDir, '.ask', 'runtime', 'sequence.json');
+  const sequence = JSON.parse(fs.readFileSync(sequencePath, 'utf8'));
+  assert.equal(sequence.nextSeq, 21);
+});
+
+test('SequenceStore next fails deterministically when lock cannot be acquired', async () => {
+  const repoDir = setupRepo();
+  runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
+
+  const lockPath = path.join(repoDir, '.ask', 'runtime', 'sequence.lock');
+  fs.writeFileSync(lockPath, 'held\n', 'utf8');
+
+  const sequences = new SequenceStore(repoDir, {
+    lockTimeoutMs: 25,
+    lockRetryMs: 5,
+  });
+
+  await assert.rejects(
+    () => sequences.next(),
+    error => error?.code === 'sequence-lock-timeout'
+  );
+
+  fs.rmSync(lockPath, { force: true });
+});
+
 test('EventLedger append writes ordered envelope records', async () => {
   const repoDir = setupRepo();
   runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
