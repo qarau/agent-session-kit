@@ -9,6 +9,8 @@ import { SessionRuntime } from './SessionRuntime.js';
 import { WorkContextEngine } from './WorkContextEngine.js';
 import { PolicyEngine } from './PolicyEngine.js';
 import { PrePushCheckEngine } from './PrePushCheckEngine.js';
+import { RuntimeStateEngine } from './RuntimeStateEngine.js';
+import { ArchitectRuntime } from './ArchitectRuntime.js';
 import { evaluateCanCommitGate, evaluatePreflightGate } from './sessionPolicyGates.js';
 import { normalizeBranchEnforcementMode, resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js';
 import { AskPaths } from '../fs/AskPaths.js';
@@ -82,6 +84,8 @@ export class SliceCloseRuntime {
     this.contextEngine = new WorkContextEngine(cwd);
     this.policyEngine = new PolicyEngine(cwd);
     this.prePushCheckEngine = new PrePushCheckEngine(cwd);
+    this.stateEngine = new RuntimeStateEngine(cwd);
+    this.architectRuntime = new ArchitectRuntime(cwd);
     this.paths = new AskPaths(cwd);
     this.store = new FileStore();
   }
@@ -243,6 +247,67 @@ export class SliceCloseRuntime {
     };
   }
 
+  getWorkspaceChangedFiles() {
+    const status = this.runGit(['status', '--porcelain'], true);
+    if (!status.ok && !status.stdout) {
+      return [];
+    }
+    return status.stdout
+      .split('\n')
+      .map(line => line.trimEnd())
+      .filter(Boolean)
+      .map(line => line.slice(3).trim())
+      .map(filePath => filePath.split(' -> ').at(-1))
+      .map(filePath => normalize(filePath).replace(/\\/gu, '/'))
+      .filter(Boolean)
+      .filter(filePath => !filePath.startsWith('.ask/'));
+  }
+
+  resolveOhderValidation(fullSuiteResult, evidence = {}) {
+    const checks = Array.isArray(evidence.checks) ? evidence.checks.map(normalize).filter(Boolean) : [];
+    const testsRun = [];
+    if (fullSuiteResult.required && fullSuiteResult.command) {
+      testsRun.push(`${fullSuiteResult.command} ${Array.isArray(fullSuiteResult.args) ? fullSuiteResult.args.join(' ') : ''}`.trim());
+    }
+    testsRun.push(...checks);
+    return {
+      status: 'passed',
+      testsRun: Array.from(new Set(testsRun)),
+    };
+  }
+
+  async assessOhderBeforeClose(taskId, task, policy, fullSuiteResult, evidence) {
+    const state = await this.stateEngine.hydrate(policy);
+    const touchedFiles = this.getWorkspaceChangedFiles();
+    const execution = {
+      ...(state.latestExecution || {}),
+      ok: true,
+      status: 'completed',
+      exitCode: 0,
+      touchedFiles,
+      operation: `slice-close:${taskId}`,
+      failOpenApplied: false,
+    };
+    const validation = {
+      ...(state.latestValidation || {}),
+      ...this.resolveOhderValidation(fullSuiteResult, evidence),
+    };
+    const slice = {
+      id: taskId,
+      title: normalize(task?.title),
+      execution: {
+        operation: `slice-close:${taskId}`,
+      },
+    };
+    return this.architectRuntime.assess({
+      state,
+      slice,
+      execution,
+      validation,
+      policy,
+    });
+  }
+
   commitWithSliceFooter(taskId, policy, task) {
     const indexGuard = this.evaluatePreStagedGuard(policy);
     if (!indexGuard.ok) {
@@ -369,6 +434,14 @@ export class SliceCloseRuntime {
       return indexGuard;
     }
 
+    const architect = await this.assessOhderBeforeClose(resolvedTaskId, task, policy, fullSuiteResult, evidence);
+    if (architect.blocking === true) {
+      return fail('slice-close-ohder-blocked', 'OHDER architect governance blocked slice close', {
+        taskId: resolvedTaskId,
+        architect,
+      });
+    }
+
     const summary = resolveSummary({
       taskId: resolvedTaskId,
       lanes: laneInputs.lanes,
@@ -427,6 +500,7 @@ export class SliceCloseRuntime {
         task: completed.task,
         commit: committed.commit,
         prePush,
+        architect,
         lanes: laneInputs.lanes,
         fullSuite: fullSuiteResult,
       };
@@ -437,6 +511,7 @@ export class SliceCloseRuntime {
       taskId: resolvedTaskId,
       task: completed.task,
       commit: committed.commit,
+      architect,
       lanes: laneInputs.lanes,
       fullSuite: fullSuiteResult,
     };

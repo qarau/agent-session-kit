@@ -110,6 +110,32 @@ function setFastFullSuiteCommand(repoDir, commandSnippet = 'process.exit(0)') {
   fs.writeFileSync(policyPath, updated, 'utf8');
 }
 
+function writeBlockingOhderLawPack(repoDir) {
+  writeJson(path.join(repoDir, '.ask', 'policy', 'ohder-law-pack.json'), {
+    version: 1,
+    defaultOutcomes: {
+      critical: 'block',
+      high: 'retry',
+      medium: 'warn',
+      low: 'warn',
+    },
+    laws: [
+      {
+        id: 'test-slice-close-block',
+        name: 'Test Slice Close Block',
+        enabled: true,
+        severity: 'critical',
+        metric: 'operation',
+        operator: '==',
+        value: 'never-allowed-operation',
+        outcome: 'block',
+        message: 'test law blocks slice close',
+      },
+    ],
+    exemptions: [],
+  });
+}
+
 test('slice close auto-completes auto-commits and passes pre-push checks', () => {
   const repoDir = setupRepo();
   prepareGovernedSession(repoDir);
@@ -125,6 +151,8 @@ test('slice close auto-completes auto-commits and passes pre-push checks', () =>
   assert.equal(payload.task.status, 'completed');
   assert.equal(payload.prePush.passed, true);
   assert.equal(typeof payload.commit.sha, 'string');
+  assert.equal(payload.architect.blocking, false);
+  assert.equal(typeof payload.architect.status, 'string');
 
   const commitMessage = runOrThrow('git', ['log', '-1', '--pretty=%B'], { cwd: repoDir }).stdout;
   assert.match(commitMessage, /ASK-Slice:\s*slice-001/i);
@@ -166,6 +194,7 @@ test('slice close requires full-suite on integrator lane and records pass', () =
   assert.equal(payload.fullSuite.required, true);
   assert.equal(payload.fullSuite.command, 'node');
   assert.equal(payload.fullSuite.status, 0);
+  assert.equal(payload.architect.blocking, false);
 });
 
 test('slice close rejects pre-staged work before completing the task', () => {
@@ -190,6 +219,29 @@ test('slice close rejects pre-staged work before completing the task', () => {
 
   const staged = runOrThrow('git', ['diff', '--cached', '--name-only'], { cwd: repoDir }).stdout.trim();
   assert.equal(staged, 'notes/unrelated.md');
+});
+
+test('slice close blocks before completing task when OHDER assessment blocks', () => {
+  const repoDir = setupRepo();
+  prepareGovernedSession(repoDir);
+  createInProgressTask(repoDir, 'slice-006');
+  writeBlockingOhderLawPack(repoDir);
+
+  fs.mkdirSync(path.join(repoDir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(repoDir, 'src', 'slice-006.js'), 'export const slice006 = true;\n', 'utf8');
+  const headBefore = runOrThrow('git', ['rev-parse', 'HEAD'], { cwd: repoDir }).stdout.trim();
+
+  const closeResult = run(process.execPath, [askBinPath, 'slice', 'close', 'slice-006'], { cwd: repoDir });
+  assert.equal(closeResult.status, 1, closeResult.stdout + closeResult.stderr);
+  const payload = JSON.parse(closeResult.stdout);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.code, 'slice-close-ohder-blocked');
+  assert.equal(payload.architect.blocking, true);
+  assert.equal(payload.architect.lawViolations.length, 1);
+  assert.equal(readTaskStatus(repoDir, 'slice-006'), 'in-progress');
+
+  const headAfter = runOrThrow('git', ['rev-parse', 'HEAD'], { cwd: repoDir }).stdout.trim();
+  assert.equal(headAfter, headBefore);
 });
 
 test('slice close keeps task completed when commit succeeds but pre-push fails', () => {
