@@ -1,7 +1,7 @@
 {
   "name": "agent-session-kit",
   "private": true,
-  "version": "5.0.0",
+  "version": "5.0.1",
   "type": "module",
   "license": "MIT",
   "engines": {
