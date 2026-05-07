@@ -10,12 +10,26 @@ ASK Forge is a Developer-Agent Runtime for governing long-running implementation
 
 ASK is implemented in `ask-core/` and integrated through git hooks and session adapter wrappers.
 
-## What Changed in 4.x
+## Why 5.0.0 Is Special
 
-ASK 3.0 was primarily a session governance toolkit packaged with installer and helper utilities around the runtime.  
-ASK 4.0 is becoming a runtime-first execution layer: `ask-core` is the product center, hook-enforced policy gates are the stable contract, and orchestration intelligence lives in governed CLI/runtime flows.
-The `ask codex` command family is a core part of this shift, moving Codex execution from ad-hoc usage to policy-governed launch, direct-exception control, and context-budget management.
-The `ask plan` ingestion surface extends this by turning planning artifacts into governed slice backlogs that `ask next` can execute deterministically.
+`v5.0.0` is the release where ASK moves from "runtime checks around coding" to a governed autonomous delivery loop.
+
+- plans can be ingested into runtime-governed slices (`ask plan ingest`) instead of staying as static docs
+- slice execution has an explicit governed close contract (`ask slice close`) with verify/complete/commit/push validation gates
+- push lineage is enforced through `ASK-Slice` or `ASK-Exempt` metadata checks at pre-push
+- Codex runtime controls and ASK Forge branding make the autonomous governance model explicit
+
+In short: 4.x proved runtime governance works; 5.0.0 turns that governance into an operational execution system.
+
+## What Changed in 5.0.0 (from 4.x)
+
+ASK 4.x established a runtime-first governance layer (`ask-core`) with hook-enforced policy gates and governed execution controls.
+ASK Forge 5.0.0 extends this into governed autonomous software development by adding:
+
+- plan ingestion runtime (`ask plan ingest|validate|batch show`) that materializes deterministic governed slices from planning artifacts
+- governed slice close flow (`ask slice close <taskId>`) for auto verify + auto complete + auto commit + pre-push validation
+- stronger pre-push slice traceability (`ASK-Slice` / `ASK-Exempt`) for auditable execution lineage
+- brand evolution to **ASK Forge** with the explicit autonomous-governance product direction
 
 For developers, this means less tooling sprawl, clearer enforcement boundaries, and a more explicit operating model for long-running AI-assisted delivery.
 
@@ -42,7 +56,7 @@ Developer outcomes:
 - faster resume/recovery for long-running sessions
 - clearer evidence trail for merge readiness
 
-## ASK 4 Architecture at a Glance
+## ASK Forge 5 Architecture at a Glance
 
 - `ask-core/`: runtime engine + CLI command surface
 - `.ask/`: runtime state directory generated at execution time
@@ -86,9 +100,9 @@ Operational runtime guidance lives in:
 - `docs/operations/policy-reference.md`
 - `docs/operations/operator-playbooks.md`
 
-## Adopt ASK in Another Repository (Vendor Copy + Hooks)
+## Adopt ASK Forge in Another Repository (Vendor Copy + Hooks)
 
-ASK 4 currently uses a vendor-copy model. Copy these assets into your target repository:
+ASK Forge 5 currently uses a vendor-copy model. Copy these assets into your target repository:
 
 - `ask-core/`
 - `.githooks/`
@@ -190,25 +204,26 @@ Codex-specific controls:
 - Volatile runtime logs and snapshots should remain excluded from version control.
 - Keep static policy/configuration files as needed by your team.
 
-## v3 to v4 Migration Notes
+## v4 to v5 Migration Notes
 
-v4 keeps core runtime governance and hook enforcement, but repository packaging changed.
-The change above is intentional: v4 shifts from "tool bundle + helpers" toward "runtime core + enforcement contract," and the migration steps below reflect that operating model.
+v5 keeps v4 runtime governance and hook enforcement, then adds governed ingestion-to-slice execution flow.
+The shift is intentional: v5 moves from "governed runtime checks" to "governed autonomous execution lifecycle."
 
-Key changes from v3:
+Key changes from v4:
 
-- Removed bundled installer path (`install-session-kit.mjs`)
-- Removed legacy `kit/` helper surface (`resumeSession`, `nextTask`, archive helpers, lock helpers)
-- Removed v3 release-doc and autonomy wrapper surfaces from this repo
-- Retained and strengthened `ask-core` runtime + hook adapter enforcement
+- Added governed plan ingestion (`ask plan ingest|validate|batch show`)
+- Added governed slice close path (`ask slice close <taskId>`)
+- Enforced pre-push lineage metadata (`ASK-Slice` / `ASK-Exempt`)
+- Expanded Codex runtime controls (`ask codex ...`) as first-class governed surfaces
+- Repositioned product identity to ASK Forge (Governed Autonomous Software Development)
 
-Migration checklist for v3 users:
+Migration checklist for v4 users:
 
-1. Stop relying on `install-session-kit.mjs` and `kit/` scripts.
-2. Vendor-copy the v4 assets listed in "Adopt ASK in Another Repository".
+1. Vendor-copy the v5 assets listed in "Adopt ASK Forge in Another Repository".
+2. Run `ask plan validate` and `ask plan ingest` for governed plan-to-slice execution.
 3. Run `node scripts/session/installHooks.mjs` in each target repo.
 4. Validate `core.hooksPath` is `.githooks`.
-5. Verify your team workflow against `ask preflight`, `ask can-commit`, and hook gate behavior.
+5. Verify workflow with `ask preflight`, `ask can-commit`, `ask slice close`, and pre-push lineage gates.
 
 ## Local Development
 
