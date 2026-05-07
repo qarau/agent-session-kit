@@ -17,7 +17,8 @@ ASK is implemented in `ask-core/` and integrated through git hooks and session a
 - plans can be ingested into runtime-governed slices (`ask plan ingest`) instead of staying as static docs
 - slice execution has an explicit governed close contract (`ask slice close`) with verify/complete/commit/push validation gates
 - push lineage is enforced through `ASK-Slice` or `ASK-Exempt` metadata checks at pre-push
-- Codex runtime controls and ASK Forge branding make the autonomous governance model explicit
+- Codex runtime controls, architect/flow/design governance runtimes, and ASK Forge branding make the autonomous governance model explicit
+- delivery and coordination runtime surfaces (feature/release/promote/rollout + route/claim/agent/child-session) move ASK from policy helper to end-to-end governed execution control plane
 
 In short: 4.x proved runtime governance works; 5.0.0 turns that governance into an operational execution system.
 
@@ -28,6 +29,10 @@ ASK Forge 5.0.0 extends this into governed autonomous software development by ad
 
 - plan ingestion runtime (`ask plan ingest|validate|batch show`) that materializes deterministic governed slices from planning artifacts
 - governed slice close flow (`ask slice close <taskId>`) for auto verify + auto complete + auto commit + pre-push validation
+- architect governance runtime (`ask architect ...`) integrated with OHDER law-pack decisions and exemption controls
+- flow and design governance runtimes (`ask flow ...`, `ask design ...`) for behavior continuity and visual drift control
+- coordination runtime (`ask route ...`, `ask claim ...`, `ask child-session ...`, `ask agent ...`) for governed multi-agent execution routing
+- delivery runtime (`ask feature ...`, `ask release ...`, `ask promote ...`, `ask rollout ...`, `ask rollback ...`) for release-lifecycle governance
 - stronger pre-push slice traceability (`ASK-Slice` / `ASK-Exempt`) for auditable execution lineage
 - brand evolution to **ASK Forge** with the explicit autonomous-governance product direction
 
@@ -63,6 +68,16 @@ Developer outcomes:
 - `.githooks/pre-commit` and `.githooks/pre-push`: enforcement entrypoints
 - `scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`: wrapper adapters called by hooks
 - `scripts/session/installHooks.mjs`: hook activation helper (`core.hooksPath=.githooks`)
+
+Core runtime layers active in v5:
+
+- ASK runtime: session lifecycle, task/slice orchestration, continuation state
+- Projection runtime: event replay, snapshot hydration, continuity proofs
+- Architect runtime: OHDER governance law evaluation + exemptions
+- Flow runtime: protected/hard-flow continuity governance
+- Design runtime: visual continuity and drift governance
+- Ingestion runtime: plan-to-slice materialization and batch traceability
+- Delivery runtime: feature/release/promotion/rollout governance
 
 ## Prerequisites
 
@@ -213,6 +228,8 @@ Key changes from v4:
 
 - Added governed plan ingestion (`ask plan ingest|validate|batch show`)
 - Added governed slice close path (`ask slice close <taskId>`)
+- Added explicit architect/flow/design governance runtime surfaces (`ask architect ...`, `ask flow ...`, `ask design ...`)
+- Added coordination and delivery governance runtimes (`ask route|claim|child-session|agent ...`, `ask feature|release|promote|rollout|rollback ...`)
 - Enforced pre-push lineage metadata (`ASK-Slice` / `ASK-Exempt`)
 - Expanded Codex runtime controls (`ask codex ...`) as first-class governed surfaces
 - Repositioned product identity to ASK Forge (Governed Autonomous Software Development)
