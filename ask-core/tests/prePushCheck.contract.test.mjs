@@ -102,6 +102,7 @@ test('pre-push-check passes in healthy pre-push state', () => {
     'work-context',
     'docs-freshness',
     'codex-governance-parity',
+    'slice-commit-governance',
     'release-docs',
     'session-preflight',
     'session-can-commit',
@@ -130,6 +131,7 @@ test('pre-push-check fails with deterministic missing entries', () => {
     'work-context',
     'docs-freshness',
     'codex-governance-parity',
+    'slice-commit-governance',
     'release-docs',
     'session-preflight',
     'session-can-commit',
@@ -146,7 +148,7 @@ test('pre-push-check in project mode skips release-docs check', () => {
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.passed, true);
   assert.deepEqual(payload.missing, []);
-  assert.deepEqual(payload.checks, ['work-context', 'docs-freshness', 'codex-governance-parity', 'session-preflight', 'session-can-commit']);
+  assert.deepEqual(payload.checks, ['work-context', 'docs-freshness', 'codex-governance-parity', 'slice-commit-governance', 'session-preflight', 'session-can-commit']);
 });
 
 test('pre-push-check fails when codex governance parity evidence is missing', () => {
@@ -164,4 +166,20 @@ test('pre-push-check fails when codex governance parity evidence is missing', ()
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.passed, false);
   assert.match(JSON.stringify(payload.missing), /governed codex launch evidence required/i);
+});
+
+test('pre-push-check fails when outgoing commit is missing ASK-Slice footer', () => {
+  const repoDir = setupRepo('ask-runtime');
+  makeHealthyPrePushState(repoDir);
+
+  fs.mkdirSync(path.join(repoDir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(repoDir, 'src', 'feature.js'), 'export const feature = 1;\n', 'utf8');
+  runOrThrow('git', ['add', '.'], { cwd: repoDir });
+  runOrThrow('git', ['commit', '-m', 'feat: missing slice footer'], { cwd: repoDir });
+
+  const result = run(process.execPath, [askBinPath, 'pre-push-check'], { cwd: repoDir });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.passed, false);
+  assert.match(JSON.stringify(payload.missing), /missing ASK-Slice footer/i);
 });

@@ -46,6 +46,7 @@ function isTaskChangeEvent(type) {
     'TaskAssigned',
     'TaskStarted',
     'TaskCompleted',
+    'TaskReopened',
     'TaskBlocked',
   ].includes(type);
 }

@@ -1,5 +1,6 @@
 import { EventLedger } from './EventLedger.js';
 import { RuntimeSnapshotStore } from './RuntimeSnapshotStore.js';
+import crypto from 'node:crypto';
 import { SessionProjector } from './projectors/SessionProjector.js';
 import { TaskBoardProjector } from './projectors/TaskBoardProjector.js';
 import { VerificationProjector } from './projectors/VerificationProjector.js';
@@ -26,6 +27,67 @@ function toNumber(value, fallback = 0) {
 
 function sortEvents(events = []) {
   return [...events].sort((left, right) => toNumber(left.seq, 0) - toNumber(right.seq, 0));
+}
+
+function stableStringify(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(entry => stableStringify(entry)).join(',')}]`;
+  }
+  if (value && typeof value === 'object') {
+    const keys = Object.keys(value).sort();
+    return `{${keys.map(key => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function hashString(value) {
+  return `sha256:${crypto.createHash('sha256').update(String(value), 'utf8').digest('hex')}`;
+}
+
+function buildSequenceIntegrity(events = [], projectionCursor = 0) {
+  if (events.length < 1) {
+    return {
+      contiguous: true,
+      monotonic: true,
+      hasDuplicates: false,
+      hasGaps: false,
+      cursorIntegrity: projectionCursor === 0 ? 'valid' : 'ahead',
+    };
+  }
+
+  let monotonic = true;
+  let hasDuplicates = false;
+  let hasGaps = false;
+  const seen = new Set();
+  let previous = Number.NEGATIVE_INFINITY;
+
+  for (let index = 0; index < events.length; index += 1) {
+    const seq = toNumber(events[index]?.seq, 0);
+    if (seen.has(seq)) {
+      hasDuplicates = true;
+    }
+    if (seq <= previous) {
+      monotonic = false;
+    }
+    if (index > 0 && seq !== previous + 1) {
+      hasGaps = true;
+    }
+    previous = seq;
+    seen.add(seq);
+  }
+
+  const lastSeq = toNumber(events[events.length - 1]?.seq, 0);
+  const cursorIntegrity = projectionCursor > lastSeq
+    ? 'ahead'
+    : (projectionCursor < lastSeq ? 'behind' : 'valid');
+
+  return {
+    contiguous: !hasGaps && monotonic,
+    monotonic,
+    hasDuplicates,
+    hasGaps,
+    cursorIntegrity,
+  };
 }
 
 export class RuntimeProjectionEngine {
@@ -104,6 +166,41 @@ export class RuntimeProjectionEngine {
       states = this.applyEvent(states, event);
     }
     return states;
+  }
+
+  async writeReplayProof({ mode, events = [], states = {}, projectionCursor = 0 }) {
+    const firstSeq = events.length > 0 ? toNumber(events[0]?.seq, 0) : 0;
+    const lastSeq = events.length > 0 ? toNumber(events[events.length - 1]?.seq, 0) : 0;
+    const eventDigestInput = events.map(event => ({
+      seq: toNumber(event?.seq, 0),
+      type: String(event?.type ?? ''),
+      sessionId: String(event?.sessionId ?? ''),
+      taskId: String(event?.taskId ?? ''),
+      payload: event?.payload ?? {},
+      meta: event?.meta ?? {},
+    }));
+    const replayHash = hashString(stableStringify(eventDigestInput));
+    const snapshotHash = hashString(stableStringify(states));
+    const sequenceIntegrity = buildSequenceIntegrity(events, projectionCursor);
+
+    await this.snapshots.writeReplayProof({
+      schemaVersion: 1,
+      mode,
+      eventCount: events.length,
+      firstSeq,
+      lastSeq,
+      projectionCursor,
+      replayHash,
+      snapshotHash,
+      sequenceIntegrity,
+      generatedAt: new Date().toISOString(),
+    });
+
+    return {
+      replayHash,
+      snapshotHash,
+      sequenceIntegrity,
+    };
   }
 
   async writeStates(states, lastSeq, reason = '') {
@@ -209,11 +306,20 @@ export class RuntimeProjectionEngine {
     const nextStates = this.applyEvents(this.initialStates(), sorted);
     const lastSeq = sorted.length > 0 ? toNumber(sorted[sorted.length - 1].seq, 0) : 0;
     await this.writeStates(nextStates, lastSeq, 'full-replay');
+    const proof = await this.writeReplayProof({
+      mode: 'full-replay',
+      events: sorted,
+      states: nextStates,
+      projectionCursor: lastSeq,
+    });
 
     return {
       mode: 'full-replay',
       eventsProcessed: sorted.length,
       lastSeq,
+      replayHash: proof.replayHash,
+      snapshotHash: proof.snapshotHash,
+      sequenceIntegrity: proof.sequenceIntegrity,
     };
   }
 
@@ -239,10 +345,19 @@ export class RuntimeProjectionEngine {
     const nextStates = this.applyEvents(baseStates, pending);
     const lastSeq = toNumber(pending[pending.length - 1].seq, lastAppliedSeq);
     await this.writeStates(nextStates, lastSeq, 'incremental');
+    const proof = await this.writeReplayProof({
+      mode: 'incremental',
+      events: sorted,
+      states: nextStates,
+      projectionCursor: lastSeq,
+    });
     return {
       mode: 'incremental',
       eventsProcessed: pending.length,
       lastSeq,
+      replayHash: proof.replayHash,
+      snapshotHash: proof.snapshotHash,
+      sequenceIntegrity: proof.sequenceIntegrity,
     };
   }
 }

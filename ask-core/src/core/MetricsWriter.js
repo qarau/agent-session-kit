@@ -22,12 +22,62 @@ export class MetricsWriter {
       blockedCount: 0,
       policyOverrideCount: 0,
       loopsRun: 0,
+      architectureDriftScore: 0,
+      behaviorDriftScore: 0,
+      driftTrend: 'stable',
+      driftWindowSize: 0,
       updatedAt: '',
     });
   }
 
   async write(payload) {
     await this.store.writeJson(this.paths.runtimeMetrics(), payload);
+    return payload;
+  }
+
+  async appendHistory(entry) {
+    await this.store.appendLine(this.paths.runtimeMetricsHistory(), JSON.stringify(entry));
+    return entry;
+  }
+
+  async readHistory() {
+    const lines = await this.store.readLines(this.paths.runtimeMetricsHistory(), []);
+    return lines
+      .map(line => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+  }
+
+  async readDriftAnalytics() {
+    return this.store.readJson(this.paths.runtimeDriftAnalytics(), {
+      windowSize: 0,
+      architecture: {
+        entropyTrend: 'stable',
+        couplingTrend: 'stable',
+        replayabilityTrend: 'stable',
+        driftScore: 0,
+      },
+      behavior: {
+        replayConfidenceTrend: 'stable',
+        protectedViolationTrend: 'stable',
+        hardViolationTrend: 'stable',
+        driftScore: 0,
+      },
+      overall: {
+        trend: 'stable',
+        driftScore: 0,
+      },
+      updatedAt: '',
+    });
+  }
+
+  async writeDriftAnalytics(payload) {
+    await this.store.writeJson(this.paths.runtimeDriftAnalytics(), payload);
     return payload;
   }
 }

@@ -1,8 +1,8 @@
 {
-  "expectedBranch": "main",
-  "expectedRepoPathSuffix": "",
-  "enforceRepoPathSuffix": false,
-  "governanceMode": "project",
-  "strictTasksDoc": false,
-  "bypassEnvVar": "SESSION_CONTEXT_BYPASS"
+    "expectedBranch":  "release-v4.0.0-sync-local",
+    "expectedRepoPathSuffix":  "",
+    "enforceRepoPathSuffix":  false,
+    "governanceMode":  "project",
+    "strictTasksDoc":  false,
+    "bypassEnvVar":  "SESSION_CONTEXT_BYPASS"
 }

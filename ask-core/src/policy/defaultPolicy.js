@@ -1,4 +1,5 @@
-export const defaultPolicyYaml = `version: 1
+export const defaultPolicyYaml = `schema_version: 2
+version: 2
 
 session:
   require_resume_before_edit: true
@@ -57,8 +58,78 @@ validation:
   require_test_evidence: true
   allow_inconclusive_pass: false
 
+architect:
+  enabled: true
+  block_on_violation: true
+  max_entropy_delta: 3
+  max_coupling_delta: 2
+  require_replayability: true
+
+refactor_governance:
+  enabled: true
+  trigger_on_architect_failed: true
+  trigger_on_flow_replay_failed: true
+  auto_retry_on_trigger: true
+  block_on_revalidation_failure: false
+
+flow:
+  enabled: true
+  discovery_enabled: true
+  block_on_hard_flow_violation: true
+  block_on_protected_flow_violation: false
+  require_flow_map_for_hard_flow: false
+  behavior_replay_enabled: true
+  min_behavior_replay_confidence: 0.65
+  min_protected_replay_confidence: 0.75
+  min_hard_flow_replay_confidence: 0.85
+  require_promotion_reason: true
+  promotion_reason_min_length: 10
+  require_approval_for_protected: true
+  require_approval_ticket_for_protected: false
+  require_approval_for_hard_flow: true
+  require_approval_ticket_for_hard_flow: true
+
+design:
+  enabled: true
+  discovery_enabled: true
+  warn_only: true
+  block_on_protected_violation: false
+  require_promotion_reason: true
+  promotion_reason_min_length: 10
+  require_approval_for_standardized: true
+  require_approval_ticket_for_standardized: false
+  require_approval_for_protected: true
+  require_approval_ticket_for_protected: true
+
 context_recovery:
   target_max_percent: 10
   warning_percent: 20
   danger_percent: 35
+
+metrics:
+  drift_window_size: 10
+
+governance_contract:
+  policy_schema_version: 2
+  enforce_architect_runtime: true
+  enforce_flow_runtime: true
+  enforce_projection_runtime: true
+  strict_cross_runtime_validation: false
+
+slice_close:
+  enabled: true
+  run_pre_push_check: true
+  retry_commit_once: true
+  full_suite_required_lanes: release,integrator,protected
+  full_suite_command: npm
+  full_suite_args: test
+  commit_subject_template: chore(slice): close {taskId}
+
+slice_commit:
+  enabled: true
+  footer_key: ASK-Slice
+  exempt_footer_key: ASK-Exempt
+  allowed_exemptions: release,meta
+  exempt_allowed_path_prefixes: docs/releases/,docs/session/
+  exempt_allowed_exact_files: CHANGELOG.md,README.md,package.json,package-lock.json,pnpm-lock.yaml,yarn.lock
 `;

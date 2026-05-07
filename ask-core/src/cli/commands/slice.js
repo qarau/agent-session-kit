@@ -1,13 +1,26 @@
 import { buildPreviewIntent, buildPreviewSlice, hydrateRuntimePreview } from './runtimePreviewSupport.js';
+import { SliceCloseRuntime } from '../../core/SliceCloseRuntime.js';
 
 function printUsage() {
   console.log('Usage: ask slice preview [--command <bin>] [--command-arg <arg>] [--operation <name>] [--allowed-command <cmd>]');
+  console.log('       ask slice close <taskId>');
 }
 
 export async function runSlice(subcommand, args = []) {
   const action = String(subcommand || 'preview');
-  if (!['preview'].includes(action)) {
+  if (!['preview', 'close'].includes(action)) {
     printUsage();
+    return;
+  }
+
+  if (action === 'close') {
+    const taskId = args[0] ?? '';
+    const runtime = new SliceCloseRuntime(process.cwd());
+    const payload = await runtime.run(taskId);
+    console.log(JSON.stringify(payload, null, 2));
+    if (!payload.ok) {
+      process.exitCode = 1;
+    }
     return;
   }
 

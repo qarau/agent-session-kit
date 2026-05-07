@@ -13,7 +13,7 @@ export class ResumePacketWriter {
     this.estimator = new ContextRecoveryCostEstimator();
   }
 
-  async write({ state, intent, slice, execution, validation, nextAction, policy = {} }) {
+  async write({ state, intent, slice, execution, validation, architect, flow, nextAction, policy = {} }) {
     const contextRecoveryCost = this.estimator.estimate({
       execution,
       validation,
@@ -30,6 +30,8 @@ export class ResumePacketWriter {
       lastCompleted: normalize(slice?.title),
       latestExecution: execution || {},
       latestValidation: validation || {},
+      latestArchitect: architect || {},
+      latestFlow: flow || {},
       nextAction: normalize(nextAction || state?.nextRecommendedAction),
       riskNotes: [],
       contextRecoveryCost,

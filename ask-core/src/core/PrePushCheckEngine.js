@@ -44,6 +44,16 @@ function normalizeGovernanceMode(value) {
   return '';
 }
 
+function parseList(value, fallback = []) {
+  if (Array.isArray(value)) {
+    return value.map(entry => normalize(entry).toLowerCase()).filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    return value.split(',').map(entry => normalize(entry).toLowerCase()).filter(Boolean);
+  }
+  return [...fallback];
+}
+
 export class PrePushCheckEngine {
   constructor(cwd) {
     this.cwd = cwd;
@@ -159,6 +169,154 @@ export class PrePushCheckEngine {
       .filter(Boolean);
   }
 
+  getOutgoingCommits() {
+    const upstream = this.runGit(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'], true);
+    if (!upstream) {
+      const headExists = this.runGit(['rev-parse', '--verify', 'HEAD'], true);
+      if (!headExists) {
+        return [];
+      }
+      return this.parseFileList(this.runGit(['rev-list', '--reverse', '--max-count=1', 'HEAD'], true));
+    }
+    return this.parseFileList(this.runGit(['rev-list', '--reverse', `${upstream}..HEAD`], true));
+  }
+
+  getCommitMessage(commitSha) {
+    return this.runGit(['log', '-1', '--pretty=%B', commitSha], true);
+  }
+
+  getCommitFiles(commitSha) {
+    const raw = this.runGit(['show', '--name-only', '--pretty=format:', commitSha], true);
+    return this.parseFileList(raw);
+  }
+
+  parseSliceCommitFooters(message, sliceFooterKey, exemptFooterKey) {
+    const text = String(message ?? '');
+    const slicePattern = new RegExp(`^\\s*${sliceFooterKey}:\\s*(\\S+)\\s*$`, 'gmi');
+    const exemptPattern = new RegExp(`^\\s*${exemptFooterKey}:\\s*(\\S+)\\s*$`, 'gmi');
+    const sliceIds = [];
+    const exemptKinds = [];
+
+    for (const match of text.matchAll(slicePattern)) {
+      sliceIds.push(normalize(match[1]));
+    }
+    for (const match of text.matchAll(exemptPattern)) {
+      exemptKinds.push(normalize(match[1]).toLowerCase());
+    }
+
+    return { sliceIds, exemptKinds };
+  }
+
+  isExemptionScopeValid(files, allowedPrefixes, allowedExactFiles) {
+    if (!Array.isArray(files) || files.length === 0) {
+      return false;
+    }
+    for (const file of files) {
+      const normalized = normalize(file).toLowerCase();
+      if (!normalized) {
+        continue;
+      }
+      if (allowedExactFiles.has(normalized)) {
+        continue;
+      }
+      if (allowedPrefixes.some(prefix => normalized.startsWith(prefix))) {
+        continue;
+      }
+      return false;
+    }
+    return true;
+  }
+
+  evaluateSliceCommitGovernance(policy = {}) {
+    const section = policy.slice_commit ?? {};
+    const enabled = section.enabled !== false;
+    if (!enabled) {
+      return { missing: [], checkedCommits: [] };
+    }
+
+    const sliceFooterKey = normalize(section.footer_key) || 'ASK-Slice';
+    const exemptFooterKey = normalize(section.exempt_footer_key) || 'ASK-Exempt';
+    const allowedExemptions = new Set(parseList(section.allowed_exemptions, ['release', 'meta']));
+    const allowedExemptPrefixes = parseList(section.exempt_allowed_path_prefixes, [
+      'docs/releases/',
+      'docs/session/',
+    ]);
+    const allowedExemptExactFiles = new Set(
+      parseList(section.exempt_allowed_exact_files, [
+        'CHANGELOG.md',
+        'README.md',
+        'package.json',
+        'package-lock.json',
+        'pnpm-lock.yaml',
+        'yarn.lock',
+      ])
+    );
+
+    const commits = this.getOutgoingCommits();
+    const missing = [];
+    const seenSliceIds = new Map();
+    const checkedCommits = [];
+
+    for (const sha of commits) {
+      const message = this.getCommitMessage(sha);
+      const files = this.getCommitFiles(sha);
+      const { sliceIds, exemptKinds } = this.parseSliceCommitFooters(message, sliceFooterKey, exemptFooterKey);
+      checkedCommits.push({
+        sha,
+        sliceIds,
+        exemptKinds,
+        files,
+      });
+
+      if (sliceIds.length > 1) {
+        missing.push(`commit ${sha} has multiple ${sliceFooterKey} footers`);
+        continue;
+      }
+
+      if (sliceIds.length > 0 && exemptKinds.length > 0) {
+        missing.push(`commit ${sha} cannot include both ${sliceFooterKey} and ${exemptFooterKey}`);
+        continue;
+      }
+
+      if (sliceIds.length === 1) {
+        const sliceId = sliceIds[0];
+        if (!sliceId) {
+          missing.push(`commit ${sha} has invalid ${sliceFooterKey} value`);
+          continue;
+        }
+        if (seenSliceIds.has(sliceId)) {
+          missing.push(`slice id ${sliceId} appears in multiple outgoing commits`);
+          continue;
+        }
+        seenSliceIds.set(sliceId, sha);
+        continue;
+      }
+
+      if (exemptKinds.length > 1) {
+        missing.push(`commit ${sha} has multiple ${exemptFooterKey} footers`);
+        continue;
+      }
+      if (exemptKinds.length === 1) {
+        const kind = exemptKinds[0];
+        if (!allowedExemptions.has(kind)) {
+          missing.push(`commit ${sha} has invalid ${exemptFooterKey} value: ${kind}`);
+          continue;
+        }
+        if (!this.isExemptionScopeValid(files, allowedExemptPrefixes, allowedExemptExactFiles)) {
+          missing.push(`commit ${sha} exemption ${kind} has non-release/meta file changes`);
+        }
+        continue;
+      }
+
+      missing.push(`commit ${sha} missing ${sliceFooterKey} footer or ${exemptFooterKey} exemption`);
+    }
+
+    return {
+      missing,
+      checkedCommits,
+    };
+  }
+
   isTasksStrict(config) {
     if (process.env.SESSION_TASKS_STRICT === '1') {
       return true;
@@ -223,7 +381,7 @@ export class PrePushCheckEngine {
   }
 
   async run() {
-    const checks = ['work-context', 'docs-freshness', 'codex-governance-parity'];
+    const checks = ['work-context', 'docs-freshness', 'codex-governance-parity', 'slice-commit-governance'];
     const missing = [];
     const config = this.resolveEffectiveContextConfig(this.readConfig());
     const governanceMode = this.resolveGovernanceMode(config);
@@ -249,6 +407,9 @@ export class PrePushCheckEngine {
     });
     missing.push(...codexParity.missing);
 
+    const sliceCommitGovernance = this.evaluateSliceCommitGovernance(policy);
+    missing.push(...sliceCommitGovernance.missing);
+
     if (governanceMode === GOVERNANCE_MODE_MAINTAINER) {
       checks.push('release-docs');
       if (!this.evaluateReleaseDocs(branchName, branchEnforcementMode)) {
@@ -264,6 +425,9 @@ export class PrePushCheckEngine {
       passed: missing.length === 0,
       missing: Array.from(new Set(missing)),
       checks,
+      commitGovernance: {
+        checkedCommits: sliceCommitGovernance.checkedCommits,
+      },
     };
   }
 }

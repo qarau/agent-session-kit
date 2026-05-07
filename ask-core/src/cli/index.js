@@ -33,6 +33,12 @@ import { runSlice } from './commands/slice.js';
 import { runValidateLast } from './commands/validate-last.js';
 import { runResumePacket } from './commands/resume-packet.js';
 import { runMetrics } from './commands/metrics.js';
+import { runArchitect } from './commands/architect.js';
+import { runNext } from './commands/next.js';
+import { runFlow } from './commands/flow.js';
+import { runGovernance } from './commands/governance.js';
+import { runDesign } from './commands/design.js';
+import { runPlan } from './commands/plan.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -45,7 +51,7 @@ Usage:
   ask can-commit
   ask pre-commit-check
   ask pre-push-check
-  ask task create|assign|start|depends|status
+  ask task create|assign|start|complete|reopen|depends|status
   ask evidence attach
   ask evidence checks record|status
   ask verify pass|fail
@@ -58,7 +64,7 @@ Usage:
   ask claim acquire|release|lock|status
   ask child-session spawn|status
   ask agent register|status|dispatch
-  ask policy classify|apply|status
+  ask policy classify|apply|status|schema|migrate
   ask feature create|link-task|status
   ask release create|link-feature|status
   ask promote require|pass|advance|status
@@ -68,9 +74,23 @@ Usage:
   ask project-state
   ask intent preview
   ask slice preview [--command <bin>] [--command-arg <arg>] [--operation <name>] [--allowed-command <cmd>]
+  ask slice close <taskId>
   ask validate-last
+  ask architect status
+  ask architect exempt list|add --law-id <id> --reason <text> --approved-by <id> [--operation <name>] [--session-id <id>] [--expires-at <iso>]
+  ask flow status|list
+  ask flow discover --last
+  ask flow validate --last
+  ask flow promote <flow-id> --to <stage> --reason <text> [--approved-by <id>] [--approval-ticket <id>]
+  ask design status|list
+  ask design discover --last
+  ask design validate --last
+  ask design promote <region-id> --to <stage> --reason <text> [--approved-by <id>] [--approval-ticket <id>]
+  ask governance status|explain
+  ask plan ingest|validate|batch show
+  ask next
   ask resume-packet show
-  ask metrics show
+  ask metrics show [--history <n>]
   ask replay
   ask handoff create
   ask codex [launch] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--allow-fail-open] [--fail-open-reason <text>] [--approved-by <id>] [--approval-ticket <id>] [--touched-file <path>] [-- <args...>]
@@ -241,13 +261,43 @@ export async function runCli(args) {
     return;
   }
 
+  if (command === 'architect') {
+    await runArchitect(subcommand, rest);
+    return;
+  }
+
+  if (command === 'flow') {
+    await runFlow(subcommand, rest);
+    return;
+  }
+
+  if (command === 'design') {
+    await runDesign(subcommand, rest);
+    return;
+  }
+
+  if (command === 'next') {
+    await runNext();
+    return;
+  }
+
+  if (command === 'governance') {
+    await runGovernance(subcommand);
+    return;
+  }
+
+  if (command === 'plan') {
+    await runPlan(subcommand, rest);
+    return;
+  }
+
   if (command === 'resume-packet') {
     await runResumePacket(subcommand);
     return;
   }
 
   if (command === 'metrics') {
-    await runMetrics(subcommand);
+    await runMetrics(subcommand, rest);
     return;
   }
 

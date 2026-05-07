@@ -1,4 +1,5 @@
 import { ExecutionPolicyRuntime } from '../../core/ExecutionPolicyRuntime.js';
+import { PolicyEngine } from '../../core/PolicyEngine.js';
 
 function getArgValue(args, name) {
   for (let index = 0; index < args.length; index += 1) {
@@ -14,7 +15,7 @@ function getArgValue(args, name) {
 }
 
 function printUsage() {
-  console.log('Usage: ask policy classify|apply|status');
+  console.log('Usage: ask policy classify|apply|status|schema|migrate');
 }
 
 function printResult(payload) {
@@ -26,6 +27,7 @@ function printResult(payload) {
 
 export async function runPolicy(subcommand, args = []) {
   const runtime = new ExecutionPolicyRuntime(process.cwd());
+  const policyEngine = new PolicyEngine(process.cwd());
 
   if (subcommand === 'classify') {
     const taskId = args[0] ?? '';
@@ -46,6 +48,32 @@ export async function runPolicy(subcommand, args = []) {
   if (subcommand === 'status') {
     const taskId = args[0] ?? '';
     const payload = await runtime.status(taskId);
+    printResult(payload);
+    return;
+  }
+
+  if (subcommand === 'schema') {
+    const policy = await policyEngine.load();
+    const schema = policy.__schema ?? {};
+    printResult({
+      ok: true,
+      schema,
+    });
+    return;
+  }
+
+  if (subcommand === 'migrate') {
+    const dryRun = args.includes('--dry-run');
+    if (dryRun) {
+      const schema = await policyEngine.inspect();
+      printResult({
+        ok: true,
+        dryRun: true,
+        schema,
+      });
+      return;
+    }
+    const payload = await policyEngine.migrateInPlace();
     printResult(payload);
     return;
   }

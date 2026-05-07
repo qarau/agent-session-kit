@@ -4,8 +4,10 @@ import { EventLedger } from '../runtime/EventLedger.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 import {
   validateTaskAssign,
+  validateTaskComplete,
   validateTaskCreate,
   validateTaskDepends,
+  validateTaskReopen,
   validateTaskStart,
 } from '../runtime/invariants/taskInvariants.js';
 
@@ -124,6 +126,48 @@ export class TaskRuntime {
       'TaskStarted',
       resolvedTaskId,
       {},
+      { source: 'task-runtime' }
+    );
+    return { ok: true, task: updated };
+  }
+
+  async complete(taskId) {
+    const resolvedTaskId = normalize(taskId);
+    const task = await this.getTask(resolvedTaskId);
+    const decision = validateTaskComplete({
+      taskId: resolvedTaskId,
+      task,
+    });
+    if (!decision.ok) {
+      return decision;
+    }
+
+    const updated = await this.appendTaskEvent(
+      'TaskCompleted',
+      resolvedTaskId,
+      {},
+      { source: 'task-runtime' }
+    );
+    return { ok: true, task: updated };
+  }
+
+  async reopen(taskId, reason = '') {
+    const resolvedTaskId = normalize(taskId);
+    const task = await this.getTask(resolvedTaskId);
+    const decision = validateTaskReopen({
+      taskId: resolvedTaskId,
+      task,
+    });
+    if (!decision.ok) {
+      return decision;
+    }
+
+    const updated = await this.appendTaskEvent(
+      'TaskReopened',
+      resolvedTaskId,
+      {
+        reason: normalize(reason),
+      },
       { source: 'task-runtime' }
     );
     return { ok: true, task: updated };
