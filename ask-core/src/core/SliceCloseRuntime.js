@@ -17,6 +17,9 @@ import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
 import { EventLedger } from '../runtime/EventLedger.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
+import { MetricsWriter } from './MetricsWriter.js';
+import { RuntimeDriftAnalyticsEngine } from './RuntimeDriftAnalyticsEngine.js';
+import { OhderEntropySnapshotEngine } from './OhderEntropySnapshotEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -34,6 +37,11 @@ function toBoolean(value, fallback = false) {
     return false;
   }
   return fallback;
+}
+
+function toNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function parseList(value, fallback = [], lower = true) {
@@ -92,6 +100,9 @@ export class SliceCloseRuntime {
     this.store = new FileStore();
     this.ledger = new EventLedger(cwd);
     this.projectionEngine = new RuntimeProjectionEngine(cwd);
+    this.metricsWriter = new MetricsWriter(cwd);
+    this.driftAnalyticsEngine = new RuntimeDriftAnalyticsEngine();
+    this.entropySnapshotEngine = new OhderEntropySnapshotEngine();
   }
 
   runGit(args, allowFailure = false) {
@@ -364,6 +375,88 @@ export class SliceCloseRuntime {
     }
   }
 
+  async captureEntropyImpact(session, taskId, architect, policy = {}) {
+    const previousAnalytics = await this.metricsWriter.readDriftAnalytics();
+    const previousHistory = await this.metricsWriter.readHistory();
+    const previousEntry = previousHistory.at(-1);
+    const previousArchitect = previousEntry
+      ? {
+        architectureScore: {
+          overallScore: toNumber(previousEntry.architectureScore, 0),
+        },
+      }
+      : null;
+    const entropy = this.entropySnapshotEngine.snapshot({
+      architect,
+      previousArchitect,
+      driftAnalytics: previousAnalytics,
+      policy,
+    });
+    const historyEntry = {
+      ts: entropy.measuredAt,
+      source: 'slice-close',
+      taskId,
+      sliceId: taskId,
+      validationStatus: 'passed',
+      recoveryStatus: '',
+      entropyDelta: toNumber(architect?.entropyDelta, 0),
+      couplingDelta: toNumber(architect?.couplingDelta, 0),
+      replayabilityRisk: normalize(architect?.replayabilityRisk),
+      architectureScore: toNumber(architect?.architectureScore?.overallScore, 0),
+      architectureScoreDelta: entropy.architectureScoreDelta,
+      entropyScore: entropy.entropyScore,
+      entropyTrend: entropy.trend,
+      refactorPressure: entropy.refactorPressure,
+      behaviorReplayConfidence: 1,
+      protectedFlowViolations: 0,
+      hardFlowViolations: 0,
+    };
+    await this.metricsWriter.appendHistory(historyEntry);
+    const history = await this.metricsWriter.readHistory();
+    const driftWindowSize = Math.max(1, Math.floor(toNumber(policy?.metrics?.drift_window_size, 10)));
+    const analytics = this.driftAnalyticsEngine.compute(history, {
+      windowSize: driftWindowSize,
+    });
+    const metrics = await this.metricsWriter.read();
+    const nextMetrics = {
+      ...metrics,
+      architectureDriftScore: toNumber(analytics?.architecture?.driftScore, 0),
+      behaviorDriftScore: toNumber(analytics?.behavior?.driftScore, 0),
+      driftTrend: normalize(analytics?.overall?.trend) || 'stable',
+      driftWindowSize: toNumber(analytics?.windowSize, 0),
+      latestEntropy: entropy,
+      updatedAt: nowIso(),
+    };
+    await this.metricsWriter.write(nextMetrics);
+    await this.metricsWriter.writeDriftAnalytics(analytics);
+
+    await this.emitRuntimeEvent('EntropyImpactMeasured', session, taskId, {
+      taskId,
+      sliceId: taskId,
+      entropy,
+      history: historyEntry,
+    });
+
+    const previousTrend = normalize(previousAnalytics?.overall?.trend) || 'stable';
+    const nextTrend = normalize(analytics?.overall?.trend) || 'stable';
+    if (previousTrend !== nextTrend || previousHistory.length < 1) {
+      await this.emitRuntimeEvent('EntropyTrendChanged', session, taskId, {
+        taskId,
+        sliceId: taskId,
+        previousTrend,
+        trend: nextTrend,
+        entropy,
+      });
+    }
+
+    return {
+      entropy,
+      history: historyEntry,
+      driftAnalytics: analytics,
+      metrics: nextMetrics,
+    };
+  }
+
   commitWithSliceFooter(taskId, policy, task) {
     const indexGuard = this.evaluatePreStagedGuard(policy);
     if (!indexGuard.ok) {
@@ -498,6 +591,7 @@ export class SliceCloseRuntime {
         architect,
       });
     }
+    const entropy = await this.captureEntropyImpact(session, resolvedTaskId, architect, policy);
 
     const summary = resolveSummary({
       taskId: resolvedTaskId,
@@ -558,6 +652,7 @@ export class SliceCloseRuntime {
         commit: committed.commit,
         prePush,
         architect,
+        entropy,
         lanes: laneInputs.lanes,
         fullSuite: fullSuiteResult,
       };
@@ -569,6 +664,7 @@ export class SliceCloseRuntime {
       task: completed.task,
       commit: committed.commit,
       architect,
+      entropy,
       lanes: laneInputs.lanes,
       fullSuite: fullSuiteResult,
     };
