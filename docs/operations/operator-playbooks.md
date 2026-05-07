@@ -9,7 +9,20 @@
 2. Confirm governance state:
    - `node ask-core/bin/ask.js governance status`
    - `node ask-core/bin/ask.js next`
-3. Start the next task from `ask next`.
+3. Start the next task from `ask next`, or follow the OHDER-driven next action when no task is available.
+
+## OHDER-Driven Next Action Playbook
+
+`ask next` selects tasks first. If it returns `next.type: "ohder-action"`, do not start unrelated feature work until the recommendation is handled.
+
+Action responses:
+
+- `resolve-architecture-block`: run `node ask-core/bin/ask.js architect status` and `node ask-core/bin/ask.js governance explain`, then fix the blocking law violation or use an approved short-lived exemption.
+- `create-refactor-slice`: create or ingest a focused refactor slice that reduces entropy/coupling or restores replayability before continuing feature work.
+- `run-governance-validation`: run `node ask-core/bin/ask.js governance status`, `node ask-core/bin/ask.js architect status`, and relevant tests before asking for the next task again.
+- `await-new-requirement`: architecture governance is clear; add or ingest the next product requirement.
+
+OHDER-driven next actions are advisory task-selection outputs. They emit `OhderNextActionRecommended` for replayability but do not mutate the task board.
 
 ## Executing a Governed Loop
 

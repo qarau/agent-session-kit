@@ -221,7 +221,21 @@ Codex-specific controls:
 4. Implement work and track runtime artifacts
 5. `ask preflight` and `ask can-commit`
 6. Close each slice with `ask slice close <taskId>` (OHDER governance + auto verify + auto complete + auto commit + pre-push-check)
-7. Push with hooks enforcing final gates
+7. Use `ask next` between slices to select the next task or OHDER-driven next action
+8. Push with hooks enforcing final gates
+
+## OHDER-Driven Next Actions
+
+`ask next` is task-first: in-progress tasks and dependency-ready created tasks always take precedence. When no task is available, ASK asks OHDER what architecture governance requires next and returns `next.type: "ohder-action"` instead of stale runtime text.
+
+OHDER-driven next actions:
+
+- `resolve-architecture-block`: an architect hard-law or blocking status must be resolved before normal continuation.
+- `create-refactor-slice`: refactor governance requires a focused architecture repair slice before more feature work.
+- `run-governance-validation`: replayability risk, low architecture score, or a blocked governance decision requires validation before choosing new work.
+- `await-new-requirement`: architecture governance is clear and ASK is ready for a new requirement.
+
+Each OHDER fallback recommendation emits `OhderNextActionRecommended` into the runtime ledger. The command does not mutate task state when it recommends an OHDER action.
 
 ## OHDER Slice-Close Governance
 

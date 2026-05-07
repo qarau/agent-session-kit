@@ -63,6 +63,19 @@ The loop publishes operator-facing governance outputs:
 
 `ask architect status` includes an `architectureScore` payload with weighted categories for SSoT integrity, replayability, layer discipline, durability, testability, security, observability, and replaceability. The score is operational telemetry for trend visibility; hard-law blocking decisions still take precedence.
 
+## OHDER-Driven Next Actions
+
+`ask next` now maps the last decision step of the 16-step loop to an operator action. The command remains task-first: active and dependency-ready tasks are selected before OHDER fallback logic runs.
+
+When no task is available, `ask next` evaluates architect status, replayability risk, architecture score, refactor governance, and the latest governance decision. It may return:
+
+- `resolve-architecture-block`: step 16 decides `block` because OHDER reports a blocking architecture state.
+- `create-refactor-slice`: step 11 triggered refactor governance and the operator should create or ingest a repair slice.
+- `run-governance-validation`: steps 9-12 need refreshed governance validation before more work is selected.
+- `await-new-requirement`: steps 13-16 are clear and the runtime is ready for a new requirement.
+
+OHDER fallback recommendations emit `OhderNextActionRecommended` with action, reason, architect status, architecture score, blocking flag, and recommended command. The event makes architecture-driven next actions replayable without creating or changing tasks.
+
 ## Slice-Close OHDER Gate
 
 `ask slice close <taskId>` runs Architect/OHDER governance after evidence gates pass and before ASK verifies, completes, or commits the task.
