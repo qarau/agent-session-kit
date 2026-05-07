@@ -48,7 +48,17 @@ function setupRepo() {
   runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-1', '--title', 'Integration target'], { cwd: repoDir });
+  runOrThrow('git', ['add', '.'], { cwd: repoDir });
+  runOrThrow('git', ['commit', '-m', 'baseline'], { cwd: repoDir });
   return repoDir;
+}
+
+function commitRepoFile(repoDir, relativePath, content) {
+  const filePath = path.join(repoDir, relativePath);
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, 'utf8');
+  runOrThrow('git', ['add', relativePath], { cwd: repoDir });
+  runOrThrow('git', ['commit', '-m', `test: add ${relativePath}`], { cwd: repoDir });
 }
 
 function readEvents(repoDir) {
@@ -107,6 +117,26 @@ test('integration plan run status emits expected events and snapshots', () => {
   assert.ok(eventTypes.includes('IntegrationPlanCreated'));
   assert.ok(eventTypes.includes('IntegrationRunStarted'));
   assert.ok(eventTypes.includes('IntegrationRunPassed'));
+});
+
+test('integration run executes command inside a checked-out repository worktree', () => {
+  const repoDir = setupRepo();
+  commitRepoFile(repoDir, 'src/integration-marker.txt', 'worktree-content\n');
+
+  const command = [
+    'node',
+    '-e',
+    JSON.stringify("require('node:fs').readFileSync('src/integration-marker.txt', 'utf8').includes('worktree-content') || process.exit(1)"),
+  ].join(' ');
+
+  const runResult = runOrThrow(
+    process.execPath,
+    [askBinPath, 'integration', 'run', 'task-1', '--run-id', 'repo-content', '--command', command],
+    { cwd: repoDir }
+  );
+  const payload = JSON.parse(runResult.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.run.status, 'passed');
 });
 
 test('auto integration emits pass fail outcomes and evidence attachment', () => {

@@ -1,6 +1,6 @@
 {
   "name": "ask-core",
-  "version": "4.0.1",
+  "version": "5.0.1",
   "type": "module",
   "description": "Platform-agnostic developer-agent runtime",
   "bin": {

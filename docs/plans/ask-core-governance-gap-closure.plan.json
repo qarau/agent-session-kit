@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "gap",
+  "planTitle": "ASK Core Governance Gap Closure",
+  "slices": [
+    {
+      "sliceId": "prepush-first-push",
+      "title": "Fix first-push slice commit governance",
+      "description": "Ensure pre-push governance checks every outgoing commit on branches with no upstream, not only HEAD.",
+      "acceptanceCriteria": [
+        "A pre-push contract test covers a no-upstream branch with multiple outgoing commits.",
+        "An earlier commit missing ASK-Slice or ASK-Exempt fails pre-push even when HEAD is exempt.",
+        "Existing upstream-based pre-push behavior remains unchanged."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "sequence-locking",
+      "title": "Make runtime sequence allocation concurrency-safe",
+      "description": "Serialize SequenceStore.next() so concurrent ASK runtimes cannot allocate duplicate event sequence numbers.",
+      "dependsOn": [
+        "prepush-first-push"
+      ],
+      "acceptanceCriteria": [
+        "A concurrent SequenceStore contract test returns unique contiguous values.",
+        "Sequence state persists the correct nextSeq after concurrent allocation.",
+        "Lock acquisition has bounded retry behavior and deterministic failure."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "integration-worktree",
+      "title": "Run integration commands in a real git worktree",
+      "description": "Replace empty integration runtime directories with actual git worktrees so integration commands validate repository content.",
+      "dependsOn": [
+        "sequence-locking"
+      ],
+      "acceptanceCriteria": [
+        "A contract test proves integration commands can read repo files in the provisioned workspace.",
+        "Integration workspace cleanup uses git worktree cleanup semantics.",
+        "Integration status and merge-readiness projections remain deterministic."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "plan-ingest-durability",
+      "title": "Make plan ingestion durable and recoverable",
+      "description": "Record batch state before materialization events and complete or fail the batch deterministically.",
+      "dependsOn": [
+        "integration-worktree"
+      ],
+      "acceptanceCriteria": [
+        "Plan ingest records pending batch state before materialization events.",
+        "Interrupted or failed ingestion leaves diagnosable batch state.",
+        "Duplicate detection accounts for pending, completed, and failed batches."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "slice-close-scope",
+      "title": "Prevent slice close from committing unrelated work",
+      "description": "Fail closed or scope staging so ask slice close does not sweep unrelated dirty files into one ASK-Slice commit.",
+      "dependsOn": [
+        "plan-ingest-durability"
+      ],
+      "acceptanceCriteria": [
+        "A slice-close contract test covers pre-existing unrelated dirty files.",
+        "Slice close does not complete the task before the dirty-worktree guard passes.",
+        "Existing clean-worktree slice close behavior remains unchanged."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "version-metadata",
+      "title": "Align ASK Core package version metadata",
+      "description": "Update ask-core package metadata and release notes so v5.0.0 is reflected consistently.",
+      "dependsOn": [
+        "slice-close-scope"
+      ],
+      "acceptanceCriteria": [
+        "Root package version and ask-core package version both report 5.0.0.",
+        "v5.0.0 release notes clearly describe the runtime expansion.",
+        "Full test suite passes after metadata alignment."
+      ],
+      "queueClass": "reviewer"
+    }
+  ]
+}

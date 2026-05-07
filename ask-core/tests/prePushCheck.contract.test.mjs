@@ -183,3 +183,24 @@ test('pre-push-check fails when outgoing commit is missing ASK-Slice footer', ()
   assert.equal(payload.passed, false);
   assert.match(JSON.stringify(payload.missing), /missing ASK-Slice footer/i);
 });
+
+test('pre-push-check scans all outgoing commits when branch has no upstream', () => {
+  const repoDir = setupRepo('ask-runtime');
+  makeHealthyPrePushState(repoDir);
+
+  fs.mkdirSync(path.join(repoDir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(repoDir, 'src', 'first-push-gap.js'), 'export const gap = true;\n', 'utf8');
+  runOrThrow('git', ['add', 'src/first-push-gap.js'], { cwd: repoDir });
+  runOrThrow('git', ['commit', '-m', 'feat: missing slice footer'], { cwd: repoDir });
+
+  fs.writeFileSync(path.join(repoDir, 'README.md'), '# metadata only\n', 'utf8');
+  runOrThrow('git', ['add', 'README.md'], { cwd: repoDir });
+  runOrThrow('git', ['commit', '-m', 'docs: metadata update', '-m', 'ASK-Exempt: meta'], { cwd: repoDir });
+
+  const result = run(process.execPath, [askBinPath, 'pre-push-check'], { cwd: repoDir });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.passed, false);
+  assert.match(JSON.stringify(payload.missing), /missing ASK-Slice footer/i);
+  assert.equal(payload.commitGovernance.checkedCommits.length >= 2, true);
+});

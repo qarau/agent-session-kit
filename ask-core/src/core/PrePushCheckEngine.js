@@ -151,12 +151,72 @@ export class PrePushCheckEngine {
     return true;
   }
 
-  getOutgoingFiles() {
-    const upstream = this.runGit(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'], true);
-    if (!upstream) {
-      return this.parseFileList(this.runGit(['show', '--name-only', '--pretty=format:', 'HEAD'], true));
+  getConfiguredUpstream() {
+    return this.runGit(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'], true);
+  }
+
+  resolveNoUpstreamBase() {
+    const candidates = ['origin/main', 'main', 'origin/master', 'master'];
+    for (const candidate of candidates) {
+      const exists = this.runGit(['rev-parse', '--verify', `${candidate}^{commit}`], true);
+      if (!exists) {
+        continue;
+      }
+      const mergeBase = this.runGit(['merge-base', candidate, 'HEAD'], true);
+      if (mergeBase) {
+        return mergeBase;
+      }
     }
-    return this.parseFileList(this.runGit(['diff', '--name-only', '--diff-filter=ACMRT', `${upstream}..HEAD`], true));
+    return '';
+  }
+
+  getOutgoingRange() {
+    const upstream = this.getConfiguredUpstream();
+    if (upstream) {
+      return {
+        mode: 'upstream',
+        range: `${upstream}..HEAD`,
+      };
+    }
+
+    const headExists = this.runGit(['rev-parse', '--verify', 'HEAD'], true);
+    if (!headExists) {
+      return {
+        mode: 'empty',
+        range: '',
+      };
+    }
+
+    const base = this.resolveNoUpstreamBase();
+    if (base) {
+      return {
+        mode: 'base',
+        range: `${base}..HEAD`,
+      };
+    }
+
+    return {
+      mode: 'all-head',
+      range: 'HEAD',
+    };
+  }
+
+  getOutgoingFiles() {
+    const outgoing = this.getOutgoingRange();
+    if (outgoing.mode === 'empty') {
+      return [];
+    }
+    if (outgoing.mode === 'all-head') {
+      const commits = this.getOutgoingCommits();
+      const files = new Set();
+      for (const commit of commits) {
+        for (const file of this.getCommitFiles(commit)) {
+          files.add(file);
+        }
+      }
+      return Array.from(files).sort();
+    }
+    return this.parseFileList(this.runGit(['diff', '--name-only', '--diff-filter=ACMRT', outgoing.range], true));
   }
 
   parseFileList(raw) {
@@ -170,15 +230,14 @@ export class PrePushCheckEngine {
   }
 
   getOutgoingCommits() {
-    const upstream = this.runGit(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'], true);
-    if (!upstream) {
-      const headExists = this.runGit(['rev-parse', '--verify', 'HEAD'], true);
-      if (!headExists) {
-        return [];
-      }
-      return this.parseFileList(this.runGit(['rev-list', '--reverse', '--max-count=1', 'HEAD'], true));
+    const outgoing = this.getOutgoingRange();
+    if (outgoing.mode === 'empty') {
+      return [];
     }
-    return this.parseFileList(this.runGit(['rev-list', '--reverse', `${upstream}..HEAD`], true));
+    if (outgoing.mode === 'all-head') {
+      return this.parseFileList(this.runGit(['rev-list', '--reverse', 'HEAD'], true));
+    }
+    return this.parseFileList(this.runGit(['rev-list', '--reverse', outgoing.range], true));
   }
 
   getCommitMessage(commitSha) {

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { PlanIngestRuntime } from '../src/core/PlanIngestRuntime.js';
 
 const thisFilePath = fileURLToPath(import.meta.url);
 const testsDir = path.dirname(thisFilePath);
@@ -290,4 +291,45 @@ test('plan ingest fails atomically for unknown dependency targets', () => {
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.code, 'E_PLAN_DEPENDENCY_UNKNOWN');
   assert.equal(before, after);
+});
+
+test('plan ingest records failed batch state when materialization is interrupted', async () => {
+  const repoDir = setupRepo();
+  attachPlanArtifact(repoDir, 'run-plan-6', 'plan-6.json', basePlan());
+
+  const runtime = new PlanIngestRuntime(repoDir);
+  const originalAppendRuntimeEvent = runtime.appendRuntimeEvent.bind(runtime);
+  let appendCount = 0;
+  runtime.appendRuntimeEvent = async (...args) => {
+    appendCount += 1;
+    if (appendCount === 2) {
+      throw new Error('simulated ingest interruption');
+    }
+    return originalAppendRuntimeEvent(...args);
+  };
+
+  const result = await runtime.ingest('task-plan', 'run-plan-6');
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'E_PLAN_INGEST_FAILED');
+  assert.equal(typeof result.planBatchId, 'string');
+
+  const batch = await runtime.batchShow(result.planBatchId);
+  assert.equal(batch.ok, true);
+  assert.equal(batch.batch.status, 'failed');
+  assert.equal(batch.batch.failure.code, 'E_PLAN_INGEST_FAILED');
+  assert.equal(batch.batch.artifactHash, result.artifactHash);
+
+  const duplicate = run(process.execPath, [
+    askBinPath,
+    'plan',
+    'ingest',
+    '--task',
+    'task-plan',
+    '--run-id',
+    'run-plan-6',
+  ], { cwd: repoDir });
+  assert.equal(duplicate.status, 1, duplicate.stdout + duplicate.stderr);
+  const duplicatePayload = JSON.parse(duplicate.stdout);
+  assert.equal(duplicatePayload.code, 'E_PLAN_DUPLICATE_INGEST');
+  assert.deepEqual(duplicatePayload.existingBatches, [result.planBatchId]);
 });
