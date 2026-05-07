@@ -42,12 +42,24 @@ export class AskPaths {
     return path.join(this.root, 'tasks');
   }
 
+  flowsDir() {
+    return path.join(this.root, 'flows');
+  }
+
+  designDir() {
+    return path.join(this.root, 'design');
+  }
+
   worktreesDir() {
     return path.join(this.root, 'worktrees');
   }
 
   runtimePolicy() {
     return path.join(this.policyDir(), 'runtime-policy.yaml');
+  }
+
+  ohderLawPack() {
+    return path.join(this.policyDir(), 'ohder-law-pack.json');
   }
 
   activeSession() {
@@ -112,6 +124,38 @@ export class AskPaths {
 
   runtimeMetrics() {
     return path.join(this.runtimeDir(), 'metrics.json');
+  }
+
+  runtimeMetricsHistory() {
+    return path.join(this.runtimeDir(), 'metrics-history.ndjson');
+  }
+
+  runtimeDriftAnalytics() {
+    return path.join(this.runtimeDir(), 'drift-analytics.json');
+  }
+
+  architectStatus() {
+    return path.join(this.runtimeDir(), 'architect-status.json');
+  }
+
+  flowStatus() {
+    return path.join(this.runtimeDir(), 'flow-status.json');
+  }
+
+  designStatus() {
+    return path.join(this.runtimeDir(), 'design-status.json');
+  }
+
+  loopState() {
+    return path.join(this.runtimeDir(), 'loop-state.json');
+  }
+
+  governanceDecision() {
+    return path.join(this.runtimeDir(), 'governance-decision.json');
+  }
+
+  replayProof() {
+    return path.join(this.runtimeDir(), 'replay-proof.json');
   }
 
   sequenceRepairReport() {
@@ -196,5 +240,53 @@ export class AskPaths {
 
   taskRegistry() {
     return path.join(this.tasksDir(), 'task-board.json');
+  }
+
+  productFlowDoc() {
+    return path.join(this.flowsDir(), 'product-flow.md');
+  }
+
+  productFlowContract() {
+    return path.join(this.flowsDir(), 'product-flow.json');
+  }
+
+  flowHistory() {
+    return path.join(this.flowsDir(), 'flow-history.ndjson');
+  }
+
+  flowMap() {
+    return path.join(this.flowsDir(), 'flow-map.json');
+  }
+
+  flowMetrics() {
+    return path.join(this.flowsDir(), 'flow-metrics.json');
+  }
+
+  designSystemDoc() {
+    return path.join(this.designDir(), 'design-system.md');
+  }
+
+  designTokens() {
+    return path.join(this.designDir(), 'design-tokens.json');
+  }
+
+  componentPatterns() {
+    return path.join(this.designDir(), 'component-patterns.json');
+  }
+
+  modalContracts() {
+    return path.join(this.designDir(), 'modal-contracts.json');
+  }
+
+  visualRegressionMap() {
+    return path.join(this.designDir(), 'visual-regression-map.json');
+  }
+
+  designHistory() {
+    return path.join(this.designDir(), 'design-history.ndjson');
+  }
+
+  designMetrics() {
+    return path.join(this.designDir(), 'design-metrics.json');
   }
 }

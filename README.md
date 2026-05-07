@@ -74,6 +74,15 @@ Expected output:
 .githooks
 ```
 
+## Operations Docs
+
+Operational runtime guidance lives in:
+
+- `docs/operations/README.md`
+- `docs/operations/runtime-architecture.md`
+- `docs/operations/policy-reference.md`
+- `docs/operations/operator-playbooks.md`
+
 ## Adopt ASK in Another Repository (Vendor Copy + Hooks)
 
 ASK 4 currently uses a vendor-copy model. Copy these assets into your target repository:
@@ -131,8 +140,10 @@ Policy and commit readiness:
 
 Task, workflow, and continuity:
 
-- `ask task create|assign|start|depends|status`
+- `ask task create|assign|start|complete|depends|status`
 - `ask workflow recommend|start|artifact|complete|fail`
+- `ask flow list|status|discover --last|validate --last|promote ...`
+- `ask design list|status|discover --last|validate --last`
 - `ask continue`, `ask project-state`, `ask resume-packet show`, `ask metrics show`
 
 Coordination and routing:

@@ -146,6 +146,68 @@ export class RuntimeStateEngine {
     const latestExecution = this.readLatestByType(events, 'CodexExecutionCaptured');
     const latestCheckpoint = this.readLatestByType(events, 'CodexGovernedCheckpointCreated');
     const latestValidation = this.readLatestValidation(events);
+    const architectStatus = await this.store.readJson(this.paths.architectStatus(), {
+      status: 'unknown',
+      blocking: false,
+      findings: [],
+      lawPackVersion: 1,
+      lawOutcome: '',
+      lawViolations: [],
+      lawExemptions: [],
+      updatedAt: '',
+    });
+    const flowStatus = await this.store.readJson(this.paths.flowStatus(), {
+      status: 'unknown',
+      blocking: false,
+      impactedFlows: [],
+      protectedFlowViolations: [],
+      hardFlowViolations: [],
+      behaviorReplay: {
+        status: 'unknown',
+        confidence: 0,
+        impactedFlowCount: 0,
+        flowReplays: [],
+        regressionEvidence: [],
+      },
+      updatedAt: '',
+    });
+    const flowMetrics = await this.store.readJson(this.paths.flowMetrics(), {
+      validationRuns: 0,
+      flowRegressionRate: 0,
+      protectedFlowViolations: 0,
+      hardFlowViolations: 0,
+      behaviorDriftTrend: 'stable',
+      updatedAt: '',
+    });
+    const loopState = await this.store.readJson(this.paths.loopState(), {
+      loopId: '',
+      sessionId: '',
+      status: 'idle',
+      currentStep: {
+        index: 0,
+        name: '',
+        enteredAt: '',
+      },
+      history: [],
+      decision: '',
+      startedAt: '',
+      completedAt: '',
+      updatedAt: '',
+    });
+    const governanceDecision = await this.store.readJson(this.paths.governanceDecision(), {
+      loopId: '',
+      sessionId: '',
+      sliceId: '',
+      intentType: '',
+      decision: '',
+      reason: '',
+      recoveryStatus: '',
+      validationStatus: '',
+      architectStatus: '',
+      flowStatus: '',
+      blocking: false,
+      writtenAt: '',
+    });
     const latestTask = this.readLatestTask(taskBoard?.tasks || {});
     const failureStats = this.summarizeFailures(events, policy);
     const eventCount = events.length;
@@ -184,6 +246,13 @@ export class RuntimeStateEngine {
       latestExecution: latestExecution?.payload || null,
       latestCheckpoint: latestCheckpoint?.payload || null,
       latestValidation: latestValidation?.payload || null,
+      architect: architectStatus,
+      flow: {
+        ...flowStatus,
+        metrics: flowMetrics,
+      },
+      loop: loopState,
+      governanceDecision,
       dirtyWorktree,
       pendingTransitionExists,
       checkpointMatchesExecution,

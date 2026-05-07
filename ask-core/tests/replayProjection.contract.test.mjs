@@ -106,6 +106,9 @@ test('replay projects events by seq and writes snapshots', async () => {
 
   assert.equal(summary.eventsProcessed, 4);
   assert.equal(summary.lastSeq, 4);
+  assert.match(String(summary.replayHash), /^sha256:/i);
+  assert.match(String(summary.snapshotHash), /^sha256:/i);
+  assert.equal(summary.sequenceIntegrity.cursorIntegrity, 'valid');
 
   const sessionSnapshot = JSON.parse(
     fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'snapshots', 'session.json'), 'utf8')
@@ -116,12 +119,19 @@ test('replay projects events by seq and writes snapshots', async () => {
   const verificationSnapshot = JSON.parse(
     fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'snapshots', 'verification.json'), 'utf8')
   );
+  const replayProof = JSON.parse(
+    fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'replay-proof.json'), 'utf8')
+  );
 
   assert.equal(sessionSnapshot.sessionId, 'sess_001');
   assert.equal(sessionSnapshot.status, 'closed');
   assert.equal(sessionSnapshot.lastEventSeq, 2);
   assert.equal(taskSnapshot.tasks['task-1'].status, 'created');
   assert.equal(verificationSnapshot.tasks['task-1'].status, 'passed');
+  assert.equal(replayProof.mode, 'full-replay');
+  assert.equal(replayProof.eventCount, 4);
+  assert.equal(replayProof.lastSeq, 4);
+  assert.equal(replayProof.sequenceIntegrity.contiguous, true);
 });
 
 test('ask replay runs successfully and prints summary', () => {
@@ -177,6 +187,8 @@ test('projectIncremental processes only new events and advances projection curso
   const second = await engine.projectIncremental();
   assert.equal(second.eventsProcessed, 1, 'incremental projection should apply only newly appended events');
   assert.equal(second.lastSeq, 2);
+  assert.match(String(second.replayHash), /^sha256:/i);
+  assert.equal(second.sequenceIntegrity.cursorIntegrity, 'valid');
 
   cursor = JSON.parse(fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'projection-state.json'), 'utf8'));
   assert.equal(cursor.lastAppliedSeq, 2);
@@ -184,6 +196,12 @@ test('projectIncremental processes only new events and advances projection curso
   const sessionSnapshot = JSON.parse(
     fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'snapshots', 'session.json'), 'utf8')
   );
+  const replayProof = JSON.parse(
+    fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'replay-proof.json'), 'utf8')
+  );
   assert.equal(sessionSnapshot.status, 'paused');
   assert.equal(sessionSnapshot.lastEventSeq, 2);
+  assert.equal(replayProof.mode, 'incremental');
+  assert.equal(replayProof.lastSeq, 2);
+  assert.equal(replayProof.sequenceIntegrity.cursorIntegrity, 'valid');
 });

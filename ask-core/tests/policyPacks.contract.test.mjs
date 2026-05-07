@@ -150,3 +150,40 @@ test('policy snapshots are written deterministically for queue and pack decision
   assert.equal(policyPacks.tasks['task-1'].decisions.length, 2);
   assert.equal(policyPacks.tasks['task-1'].decisions[0].action, 'dispatch');
 });
+
+test('policy schema command reports runtime policy schema metadata', () => {
+  const repoDir = setupRepo();
+  const result = runOrThrow(process.execPath, [askBinPath, 'policy', 'schema'], { cwd: repoDir });
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.schema.toVersion, 2);
+});
+
+test('policy migrate upgrades legacy runtime policy file to current schema', () => {
+  const repoDir = setupRepo();
+  const policyPath = path.join(repoDir, '.ask', 'policy', 'runtime-policy.yaml');
+  fs.writeFileSync(
+    policyPath,
+    `version: 1
+
+autonomy:
+  max_slices: 2
+`,
+    'utf8'
+  );
+
+  const dryRun = runOrThrow(process.execPath, [askBinPath, 'policy', 'migrate', '--dry-run'], { cwd: repoDir });
+  const dryRunPayload = JSON.parse(dryRun.stdout);
+  assert.equal(dryRunPayload.ok, true);
+  assert.equal(dryRunPayload.dryRun, true);
+  assert.equal(dryRunPayload.schema.toVersion, 2);
+
+  const applied = runOrThrow(process.execPath, [askBinPath, 'policy', 'migrate'], { cwd: repoDir });
+  const appliedPayload = JSON.parse(applied.stdout);
+  assert.equal(appliedPayload.ok, true);
+  assert.equal(appliedPayload.schema.toVersion, 2);
+
+  const persisted = fs.readFileSync(policyPath, 'utf8');
+  assert.match(persisted, /schema_version:\s*2/i);
+  assert.match(persisted, /max_slices_per_run:\s*2/i);
+});

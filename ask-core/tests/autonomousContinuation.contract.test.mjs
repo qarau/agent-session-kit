@@ -100,8 +100,15 @@ test('ask continue --once runs one governed loop and writes resume/metrics artif
   assert.ok(eventTypes.includes('SliceCreated'));
   assert.ok(eventTypes.includes('ValidationStarted'));
   assert.ok(eventTypes.includes('ValidationPassed'));
+  assert.ok(eventTypes.includes('ArchitectValidationCompleted'));
+  assert.ok(eventTypes.includes('FlowValidationCompleted'));
+  assert.ok(eventTypes.includes('RefactorGovernanceEvaluated'));
+  assert.ok(eventTypes.includes('RefactorGovernanceRevalidated'));
+  assert.ok(eventTypes.includes('AutonomousLoopStepEntered'));
+  assert.ok(eventTypes.includes('GovernanceDecisionWritten'));
   assert.ok(eventTypes.includes('RuntimeMetricsCaptured'));
   assert.ok(eventTypes.includes('AutonomousLoopCompleted'));
+  assert.equal(payload.governanceDecision.decision.length > 0, true);
 
   const resumePacket = JSON.parse(fs.readFileSync(path.join(repoDir, '.ask', 'continuity', 'resume.json'), 'utf8'));
   assert.equal(resumePacket.sessionId, payload.resumePacket.sessionId);
@@ -109,6 +116,9 @@ test('ask continue --once runs one governed loop and writes resume/metrics artif
 
   const metrics = JSON.parse(fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'metrics.json'), 'utf8'));
   assert.equal(metrics.loopsRun >= 1, true);
+  assert.equal(typeof metrics.architectureDriftScore, 'number');
+  assert.equal(typeof metrics.behaviorDriftScore, 'number');
+  assert.equal(typeof metrics.driftTrend, 'string');
 });
 
 test('ask continue fails when session is not runnable', () => {
@@ -130,6 +140,10 @@ test('ask project-state returns unified runtime state payload', () => {
   assert.equal(typeof payload.status, 'string');
   assert.equal(typeof payload.continuityValid, 'boolean');
   assert.equal(typeof payload.nextRecommendedAction, 'string');
+  assert.equal(typeof payload.architect.status, 'string');
+  assert.equal(typeof payload.flow.status, 'string');
+  assert.equal(typeof payload.loop.status, 'string');
+  assert.equal(typeof payload.governanceDecision.decision, 'string');
 });
 
 test('runtime preview and continuity read commands return structured payloads', () => {
@@ -195,4 +209,49 @@ test('runtime preview and continuity read commands return structured payloads', 
   const metrics = runOrThrow(process.execPath, [askBinPath, 'metrics', 'show'], { cwd: repoDir });
   const metricsPayload = JSON.parse(metrics.stdout);
   assert.equal(metricsPayload.loopsRun >= 1, true);
+  assert.equal(typeof metricsPayload.driftAnalytics.overall.trend, 'string');
+
+  const metricsHistory = runOrThrow(process.execPath, [askBinPath, 'metrics', 'show', '--history', '2'], { cwd: repoDir });
+  const metricsHistoryPayload = JSON.parse(metricsHistory.stdout);
+  assert.equal(Array.isArray(metricsHistoryPayload.history), true);
+
+  const architect = runOrThrow(process.execPath, [askBinPath, 'architect', 'status'], { cwd: repoDir });
+  const architectPayload = JSON.parse(architect.stdout);
+  assert.equal(typeof architectPayload.status, 'string');
+
+  const flowStatus = runOrThrow(process.execPath, [askBinPath, 'flow', 'status'], { cwd: repoDir });
+  const flowStatusPayload = JSON.parse(flowStatus.stdout);
+  assert.equal(Array.isArray(flowStatusPayload.impactedFlows), true);
+
+  const flowValidate = runOrThrow(process.execPath, [askBinPath, 'flow', 'validate', '--last'], { cwd: repoDir });
+  const flowValidatePayload = JSON.parse(flowValidate.stdout);
+  assert.equal(typeof flowValidatePayload.ok, 'boolean');
+});
+
+test('ask continue blocks on hard-flow violations when impacted files lack flow evidence', () => {
+  const repoDir = setupRepo();
+  runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
+
+  const continuation = run(process.execPath, [
+    askBinPath,
+    'continue',
+    '--once',
+    '--command',
+    process.execPath,
+    '--command-arg',
+    '-e',
+    '--command-arg',
+    "const fs=require('node:fs');fs.mkdirSync('src',{recursive:true});fs.writeFileSync('src/todo.order.js','export const x=1\\n','utf8');process.exit(0)",
+    '--allowed-command',
+    'node -e "process.exit(0)"',
+    '--operation',
+    'hard-flow-governance-block',
+  ], { cwd: repoDir });
+
+  assert.equal(continuation.status, 1, continuation.stdout + continuation.stderr);
+  const payload = JSON.parse(continuation.stdout);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.code, 'autonomous-loop-blocked');
+  assert.equal(payload.flow.blocking, true);
+  assert.equal(payload.flow.hardFlowViolations.length > 0, true);
 });

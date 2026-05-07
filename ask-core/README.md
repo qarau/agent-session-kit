@@ -24,3 +24,13 @@ Lifecycle policy gates:
 
 Pre-commit contract:
 - `ask pre-commit-check` returns deterministic parity checks for work context, docs freshness, preflight, and can-commit.
+
+Governance and operations:
+- `ask next`
+- `ask governance status|explain`
+- `ask architect exempt add|list`
+- `ask flow list|promote|status|validate --last|discover --last`
+- `ask design list|status|discover --last|validate --last`
+- `ask metrics show [--history <n>]`
+
+Operator playbooks are documented in `../docs/operations/`.

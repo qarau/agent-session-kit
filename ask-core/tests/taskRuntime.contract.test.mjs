@@ -103,6 +103,25 @@ test('task CLI create assign start status flow projects runtime task snapshot', 
   assert.ok(eventTypes.includes('TaskStarted'));
 });
 
+test('task complete transitions in-progress task to completed', () => {
+  const repoDir = setupRepo();
+
+  runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-2', '--title', 'Finalize slice'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'task', 'start', 'task-2'], { cwd: repoDir });
+
+  const completed = runOrThrow(process.execPath, [askBinPath, 'task', 'complete', 'task-2'], { cwd: repoDir });
+  const completedPayload = JSON.parse(completed.stdout);
+  assert.equal(completedPayload.ok, true);
+  assert.equal(completedPayload.task.status, 'completed');
+
+  const statusOne = runOrThrow(process.execPath, [askBinPath, 'task', 'status', 'task-2'], { cwd: repoDir });
+  const statusPayload = JSON.parse(statusOne.stdout);
+  assert.equal(statusPayload.task.status, 'completed');
+
+  const eventTypes = readEvents(repoDir).map(event => event.type);
+  assert.ok(eventTypes.includes('TaskCompleted'));
+});
+
 test('invalid task transition is rejected before event append', () => {
   const repoDir = setupRepo();
 
@@ -115,6 +134,21 @@ test('invalid task transition is rejected before event append', () => {
 
   assert.equal(secondStart.status, 1, secondStart.stdout + secondStart.stderr);
   const payload = JSON.parse(secondStart.stdout);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.code, 'invalid-task-transition');
+  assert.equal(before, after);
+});
+
+test('complete is rejected unless task is in-progress', () => {
+  const repoDir = setupRepo();
+
+  runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-3', '--title', 'Wrong order'], { cwd: repoDir });
+  const before = readEvents(repoDir).length;
+  const complete = run(process.execPath, [askBinPath, 'task', 'complete', 'task-3'], { cwd: repoDir });
+  const after = readEvents(repoDir).length;
+
+  assert.equal(complete.status, 1, complete.stdout + complete.stderr);
+  const payload = JSON.parse(complete.stdout);
   assert.equal(payload.ok, false);
   assert.equal(payload.code, 'invalid-task-transition');
   assert.equal(before, after);

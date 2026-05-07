@@ -10,6 +10,27 @@ function defaultProjectionState() {
   };
 }
 
+function defaultReplayProof() {
+  return {
+    schemaVersion: 1,
+    mode: 'none',
+    eventCount: 0,
+    firstSeq: 0,
+    lastSeq: 0,
+    projectionCursor: 0,
+    replayHash: '',
+    snapshotHash: '',
+    sequenceIntegrity: {
+      contiguous: true,
+      monotonic: true,
+      hasDuplicates: false,
+      hasGaps: false,
+      cursorIntegrity: 'unknown',
+    },
+    generatedAt: '',
+  };
+}
+
 export class RuntimeSnapshotStore {
   constructor(cwd) {
     this.paths = new AskPaths(cwd);
@@ -174,5 +195,20 @@ export class RuntimeSnapshotStore {
     };
     await this.store.writeJson(this.paths.projectionState(), state);
     return state;
+  }
+
+  async readReplayProof() {
+    return this.store.readJson(this.paths.replayProof(), defaultReplayProof());
+  }
+
+  async writeReplayProof(payload = {}) {
+    const previous = await this.readReplayProof();
+    const next = {
+      ...previous,
+      ...payload,
+      generatedAt: payload.generatedAt || new Date().toISOString(),
+    };
+    await this.store.writeJson(this.paths.replayProof(), next);
+    return next;
   }
 }
