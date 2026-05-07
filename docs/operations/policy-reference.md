@@ -118,9 +118,15 @@ This section governs pre-push commit traceability: each outgoing commit must car
 
 `ohder-law-pack.json` contains:
 
-- `laws[]`: rule set (`id`, `metric`, `operator`, `value`, `severity`, optional `outcome`)
+- `laws[]`: rule set (`id`, `metric`, `operator`, `value`, `severity`, optional `lawClass`, optional `outcome`)
 - `defaultOutcomes`: severity-to-outcome map
 - `exemptions[]`: controlled overrides
+
+Law classes:
+
+- `lawClass: "hard"` defaults to `block` when violated.
+- `lawClass: "soft"` defaults to `warn` when violated.
+- explicit `outcome` still overrides the law-class default.
 
 Current exemption CLI:
 
