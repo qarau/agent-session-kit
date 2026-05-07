@@ -81,6 +81,15 @@ These keys decide whether governance triggers automated retry slices or hard blo
 
 - `drift_window_size`: rolling history window for drift analytics
 
+## `ohder_entropy`
+
+Entropy runtime currently uses deterministic defaults when this section is absent:
+
+- `minimum_architecture_score`: defaults to `70`; lower scores create high `refactorPressure`
+- `warning_score_drop`: defaults to `5`; score drops at or below this delta create medium `refactorPressure`
+
+Slice-close entropy capture writes `entropyScore`, `architectureScoreDelta`, `refactorPressure`, coupling/replayability trends, and source `slice-close` into metrics history. `ask next` uses this entropy summary when no task is active or ready.
+
 ## `governance_contract`
 
 - `policy_schema_version`

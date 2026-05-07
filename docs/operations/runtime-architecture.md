@@ -67,14 +67,24 @@ The loop publishes operator-facing governance outputs:
 
 `ask next` now maps the last decision step of the 16-step loop to an operator action. The command remains task-first: active and dependency-ready tasks are selected before OHDER fallback logic runs.
 
-When no task is available, `ask next` evaluates architect status, replayability risk, architecture score, refactor governance, and the latest governance decision. It may return:
+When no task is available, `ask next` evaluates architect status, replayability risk, architecture score, refactor governance, entropy trend, refactor pressure, and the latest governance decision. It may return:
 
 - `resolve-architecture-block`: step 16 decides `block` because OHDER reports a blocking architecture state.
 - `create-refactor-slice`: step 11 triggered refactor governance and the operator should create or ingest a repair slice.
 - `run-governance-validation`: steps 9-12 need refreshed governance validation before more work is selected.
 - `await-new-requirement`: steps 13-16 are clear and the runtime is ready for a new requirement.
 
-OHDER fallback recommendations emit `OhderNextActionRecommended` with action, reason, architect status, architecture score, blocking flag, and recommended command. The event makes architecture-driven next actions replayable without creating or changing tasks.
+OHDER fallback recommendations emit `OhderNextActionRecommended` with action, reason, architect status, architecture score, blocking flag, recommended command, and compact entropy summary. The event makes architecture-driven next actions replayable without creating or changing tasks.
+
+## OHDER Entropy Runtime
+
+The entropy runtime implements steps 10, 11, and 16 of the 16-step OHDER loop for slice-close work:
+
+- Step 10: `EntropyImpactMeasured` records `entropyScore`, `architectureScoreDelta`, `couplingDelta`, replayability risk, and `refactorPressure`.
+- Step 11: `refactorPressure` gives OHDER a trend-aware signal for refactor governance.
+- Step 16: `ask next` uses entropy trend to choose `create-refactor-slice`, `run-governance-validation`, or `await-new-requirement`.
+
+`ask slice close <taskId>` appends entropy history to `.ask/runtime/metrics-history.ndjson` and recomputes `.ask/runtime/drift-analytics.json`. This means slice-close governed work contributes to architectural memory even when the autonomous continuation loop is not running.
 
 ## Slice-Close OHDER Gate
 
@@ -99,6 +109,8 @@ Slice-close OHDER events:
 - `ArchitectValidationCompleted`
 - `ReplayabilityValidated`
 - `ArchitectureViolationDetected`
+- `EntropyImpactMeasured`
+- `EntropyTrendChanged`
 
 ## Drift Analytics Model
 
@@ -114,6 +126,8 @@ Drift analytics aggregates loop history into trend windows:
   - hard-flow violation trend
 - Overall trend:
   - `improving`, `stable`, or `regressing`
+
+Inspect trends with `ask metrics show --history <n>`.
 
 Tune window size with policy key:
 

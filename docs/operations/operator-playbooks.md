@@ -103,9 +103,21 @@ Watch:
 - `driftAnalytics.overall.trend`
 - `architectureDriftScore`
 - `behaviorDriftScore`
+- latest `history[].entropyScore`
+- latest `history[].refactorPressure`
+- latest `history[].architectureScoreDelta`
 - hard-flow/protected-flow violation trend
 
-Escalate when trend is `regressing` across multiple windows.
+Entropy events:
+
+- `EntropyImpactMeasured`: a slice-close OHDER assessment was converted into entropy history.
+- `EntropyTrendChanged`: the architecture trend changed or the first slice-close entropy record was created.
+
+Escalation rules:
+
+- If `refactorPressure` is `high`, create or ingest a focused refactor slice.
+- If `refactorPressure` is `medium`, run governance validation before selecting new feature work.
+- If `driftAnalytics.overall.trend` is `regressing` across multiple windows, stop feature expansion and reduce entropy first.
 
 ## Pre-Commit and Pre-Push Guard Failures
 

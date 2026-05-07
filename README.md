@@ -231,11 +231,28 @@ Codex-specific controls:
 OHDER-driven next actions:
 
 - `resolve-architecture-block`: an architect hard-law or blocking status must be resolved before normal continuation.
-- `create-refactor-slice`: refactor governance requires a focused architecture repair slice before more feature work.
-- `run-governance-validation`: replayability risk, low architecture score, or a blocked governance decision requires validation before choosing new work.
+- `create-refactor-slice`: refactor governance, high `refactorPressure`, or regressing entropy trend requires a focused architecture repair slice before more feature work.
+- `run-governance-validation`: replayability risk, medium `refactorPressure`, low architecture score, or a blocked governance decision requires validation before choosing new work.
 - `await-new-requirement`: architecture governance is clear and ASK is ready for a new requirement.
 
-Each OHDER fallback recommendation emits `OhderNextActionRecommended` into the runtime ledger. The command does not mutate task state when it recommends an OHDER action.
+Each OHDER fallback recommendation emits `OhderNextActionRecommended` into the runtime ledger with a compact entropy summary when entropy data is available. The command does not mutate task state when it recommends an OHDER action.
+
+## OHDER Entropy Runtime
+
+The OHDER Entropy Runtime tracks whether governed development is making the codebase healthier or more chaotic over time. `ask slice close <taskId>` records entropy after the OHDER architect assessment and before auto verification, completion, and commit.
+
+Slice-close entropy capture emits:
+
+- `EntropyImpactMeasured`
+- `EntropyTrendChanged`
+
+Entropy history is written to `.ask/runtime/metrics-history.ndjson` and surfaced through:
+
+```bash
+node ask-core/bin/ask.js metrics show --history 20
+```
+
+Key fields are `entropyScore`, `refactorPressure`, `architectureScoreDelta`, `couplingTrend`, and `replayabilityTrend`. `ask next` uses these signals when no task is ready: high pressure or regressing trend recommends `create-refactor-slice`; medium pressure recommends `run-governance-validation`; clear entropy allows `await-new-requirement`.
 
 ## OHDER Slice-Close Governance
 
