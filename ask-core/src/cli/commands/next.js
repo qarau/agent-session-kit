@@ -1,6 +1,9 @@
 import { PolicyEngine } from '../../core/PolicyEngine.js';
 import { RuntimeStateEngine } from '../../core/RuntimeStateEngine.js';
 import { TaskRuntime } from '../../core/TaskRuntime.js';
+import { ArchitectRuntime } from '../../core/ArchitectRuntime.js';
+import { RefactorGovernanceEngine } from '../../core/RefactorGovernanceEngine.js';
+import { OhderNextActionEngine } from '../../core/OhderNextActionEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -58,6 +61,9 @@ export async function runNext() {
   const policyEngine = new PolicyEngine(cwd);
   const stateEngine = new RuntimeStateEngine(cwd);
   const taskRuntime = new TaskRuntime(cwd);
+  const architectRuntime = new ArchitectRuntime(cwd);
+  const refactorGovernanceEngine = new RefactorGovernanceEngine();
+  const ohderNextActionEngine = new OhderNextActionEngine();
   const policy = await policyEngine.load();
   const state = await stateEngine.hydrate(policy);
   const taskStatus = await taskRuntime.status();
@@ -84,6 +90,7 @@ export async function runNext() {
 
   const currentTask = chooseCurrentTask(activeTasks);
   const readyTask = chooseReadyTask(readyTasks);
+  let ohderDecision = null;
   let next = {
     type: 'runtime-action',
     action: normalize(state.nextRecommendedAction) || 'select next task',
@@ -106,6 +113,28 @@ export async function runNext() {
       action: `continue ${currentTask.taskId}`,
       reason: 'in-progress task currently active',
     };
+  } else {
+    const architect = await architectRuntime.readStatus();
+    const refactorGovernance = refactorGovernanceEngine.evaluate({
+      architect,
+      policy,
+      slice: {
+        title: 'ask next',
+      },
+    });
+    ohderDecision = ohderNextActionEngine.decide({
+      state,
+      architect,
+      refactorGovernance,
+      tasks: {
+        active: activeTasks,
+        ready: readyTasks,
+      },
+      policy,
+    });
+    if (ohderDecision) {
+      next = ohderDecision;
+    }
   }
 
   const payload = {
@@ -123,6 +152,16 @@ export async function runNext() {
       ready: readyTasks,
       blockedByDependencies,
     },
+    ohder: ohderDecision
+      ? {
+        action: normalize(ohderDecision.action),
+        reason: normalize(ohderDecision.reason),
+        blocking: ohderDecision.blocking === true,
+        architectStatus: normalize(ohderDecision.architectStatus),
+        architectureScore: toNumber(ohderDecision.architectureScore, 0),
+        recommendedCommand: normalize(ohderDecision.recommendedCommand),
+      }
+      : null,
     next,
   };
   console.log(JSON.stringify(payload, null, 2));

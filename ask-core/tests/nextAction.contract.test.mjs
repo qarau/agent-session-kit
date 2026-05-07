@@ -50,8 +50,31 @@ function setupRepo() {
   return tempRoot;
 }
 
-test('ask next prioritizes dependency-ready created task', () => {
+function writeJson(filePath, payload) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
+}
+
+function writeArchitectStatus(repoDir, patch = {}) {
+  writeJson(path.join(repoDir, '.ask', 'runtime', 'architect-status.json'), {
+    status: 'passed',
+    blocking: false,
+    reason: 'architecture guardrails satisfied',
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 99,
+    },
+    ...patch,
+  });
+}
+
+test('ask next prioritizes dependency-ready created task over OHDER recommendations', () => {
   const repoDir = setupRepo();
+  writeArchitectStatus(repoDir, {
+    status: 'failed',
+    blocking: true,
+    reason: 'architecture block should not override ready task',
+  });
   runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-a', '--title', 'Task A'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-b', '--title', 'Task B'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'task', 'depends', 'task-b', 'task-a'], { cwd: repoDir });
@@ -66,23 +89,62 @@ test('ask next prioritizes dependency-ready created task', () => {
   assert.equal(Array.isArray(payload.tasks.ready), true);
 });
 
-test('ask next falls back to runtime action when no tasks exist', () => {
+test('ask next prioritizes in-progress task over OHDER recommendations', () => {
   const repoDir = setupRepo();
+  writeArchitectStatus(repoDir, {
+    status: 'failed',
+    blocking: true,
+    reason: 'architecture block should not override active task',
+  });
+  runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-active', '--title', 'Active task'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'task', 'start', 'task-active'], { cwd: repoDir });
+
   const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.ok, true);
-  assert.equal(payload.next.type, 'runtime-action');
-  assert.equal(typeof payload.runtime.nextRecommendedAction, 'string');
+  assert.equal(payload.next.type, 'task-continue');
+  assert.equal(payload.next.taskId, 'task-active');
 });
 
-test('ask next does not continue completed tasks', () => {
+test('ask next returns OHDER block action when no task is available', () => {
+  const repoDir = setupRepo();
+  writeArchitectStatus(repoDir, {
+    status: 'failed',
+    blocking: true,
+    reason: 'ProjectionAuthority violated',
+    architectureScore: {
+      overallScore: 61,
+    },
+  });
+
+  const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.next.type, 'ohder-action');
+  assert.equal(payload.next.action, 'resolve-architecture-block');
+  assert.equal(payload.next.blocking, true);
+  assert.equal(payload.ohder.action, 'resolve-architecture-block');
+  assert.equal(payload.ohder.architectureScore, 61);
+});
+
+test('ask next returns OHDER await-new-requirement action when architecture is healthy', () => {
   const repoDir = setupRepo();
   runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-done', '--title', 'Done task'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'task', 'start', 'task-done'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'task', 'complete', 'task-done'], { cwd: repoDir });
+  writeArchitectStatus(repoDir, {
+    status: 'passed',
+    blocking: false,
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 99,
+    },
+  });
 
   const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.ok, true);
-  assert.equal(payload.next.type, 'runtime-action');
+  assert.equal(payload.next.type, 'ohder-action');
+  assert.equal(payload.next.action, 'await-new-requirement');
+  assert.equal(payload.ohder.action, 'await-new-requirement');
 });
