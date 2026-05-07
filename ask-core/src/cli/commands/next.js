@@ -4,6 +4,8 @@ import { TaskRuntime } from '../../core/TaskRuntime.js';
 import { ArchitectRuntime } from '../../core/ArchitectRuntime.js';
 import { RefactorGovernanceEngine } from '../../core/RefactorGovernanceEngine.js';
 import { OhderNextActionEngine } from '../../core/OhderNextActionEngine.js';
+import { EventLedger } from '../../runtime/EventLedger.js';
+import { RuntimeProjectionEngine } from '../../runtime/RuntimeProjectionEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -64,6 +66,8 @@ export async function runNext() {
   const architectRuntime = new ArchitectRuntime(cwd);
   const refactorGovernanceEngine = new RefactorGovernanceEngine();
   const ohderNextActionEngine = new OhderNextActionEngine();
+  const ledger = new EventLedger(cwd);
+  const projectionEngine = new RuntimeProjectionEngine(cwd);
   const policy = await policyEngine.load();
   const state = await stateEngine.hydrate(policy);
   const taskStatus = await taskRuntime.status();
@@ -134,6 +138,24 @@ export async function runNext() {
     });
     if (ohderDecision) {
       next = ohderDecision;
+      await ledger.append({
+        type: 'OhderNextActionRecommended',
+        sessionId: normalize(state.sessionId),
+        actor: 'local',
+        payload: {
+          action: normalize(ohderDecision.action),
+          reason: normalize(ohderDecision.reason),
+          architectStatus: normalize(ohderDecision.architectStatus),
+          architectureScore: toNumber(ohderDecision.architectureScore, 0),
+          blocking: ohderDecision.blocking === true,
+          recommendedCommand: normalize(ohderDecision.recommendedCommand),
+        },
+        meta: {
+          source: 'ohder-next-action-runtime',
+          schemaVersion: 1,
+        },
+      });
+      await projectionEngine.projectIncremental();
     }
   }
 

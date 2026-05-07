@@ -68,6 +68,18 @@ function writeArchitectStatus(repoDir, patch = {}) {
   });
 }
 
+function readEvents(repoDir) {
+  const eventsPath = path.join(repoDir, '.ask', 'runtime', 'events.ndjson');
+  if (!fs.existsSync(eventsPath)) {
+    return [];
+  }
+  return fs.readFileSync(eventsPath, 'utf8')
+    .split(/\r?\n/u)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => JSON.parse(line));
+}
+
 test('ask next prioritizes dependency-ready created task over OHDER recommendations', () => {
   const repoDir = setupRepo();
   writeArchitectStatus(repoDir, {
@@ -87,6 +99,7 @@ test('ask next prioritizes dependency-ready created task over OHDER recommendati
   assert.equal(payload.next.type, 'task-start');
   assert.equal(payload.next.taskId, 'task-b');
   assert.equal(Array.isArray(payload.tasks.ready), true);
+  assert.equal(readEvents(repoDir).some(event => event.type === 'OhderNextActionRecommended'), false);
 });
 
 test('ask next prioritizes in-progress task over OHDER recommendations', () => {
@@ -125,6 +138,15 @@ test('ask next returns OHDER block action when no task is available', () => {
   assert.equal(payload.next.blocking, true);
   assert.equal(payload.ohder.action, 'resolve-architecture-block');
   assert.equal(payload.ohder.architectureScore, 61);
+
+  const events = readEvents(repoDir).filter(event => event.type === 'OhderNextActionRecommended');
+  assert.equal(events.length, 1);
+  assert.equal(events[0].payload.action, 'resolve-architecture-block');
+  assert.match(events[0].payload.reason, /ProjectionAuthority/u);
+  assert.equal(events[0].payload.architectStatus, 'failed');
+  assert.equal(events[0].payload.architectureScore, 61);
+  assert.equal(events[0].payload.blocking, true);
+  assert.equal(events[0].payload.recommendedCommand, 'ask architect status');
 });
 
 test('ask next returns OHDER await-new-requirement action when architecture is healthy', () => {
