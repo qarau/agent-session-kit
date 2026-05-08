@@ -30,6 +30,7 @@ export class SlicePlanner {
     const maxAttempts = toNumber(policy?.retry?.max_attempts_per_slice, 2);
     const nextAction = normalize(state?.nextRecommendedAction || intent?.reason || 'run next safe step');
     const touched = normalizeArray(state?.latestExecution?.touchedFiles || []);
+    const requirementAnalysis = options.requirementAnalysis || intent?.requirementAnalysis || {};
     const baseCriteria = [
       `Execution status is completed for operation ${operation}`,
     ];
@@ -50,6 +51,9 @@ export class SlicePlanner {
       acceptanceCriteria: baseCriteria,
       riskLevel: SliceRiskLevels.LOW,
       maxAttempts: maxAttempts > 0 ? maxAttempts : 2,
+      metadata: {
+        requirementAnalysis,
+      },
       execution: {
         command,
         args: commandArgs,

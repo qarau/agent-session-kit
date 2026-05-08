@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { IntentTypes } from './IntentTypes.js';
 import { IntentPolicyEvaluator } from './IntentPolicyEvaluator.js';
+import { RequirementAnalyzerEngine } from './RequirementAnalyzerEngine.js';
 
 function nowIso() {
   return new Date().toISOString();
@@ -13,9 +14,10 @@ function normalize(value) {
 export class IntentEngine {
   constructor() {
     this.policyEvaluator = new IntentPolicyEvaluator();
+    this.requirementAnalyzer = new RequirementAnalyzerEngine();
   }
 
-  createIntent(type, state, reason, confidence, requiresHuman = false) {
+  createIntent(type, state, reason, confidence, requiresHuman = false, requirementAnalysis = null) {
     return {
       id: `intent_${randomUUID()}`,
       type,
@@ -23,18 +25,21 @@ export class IntentEngine {
       reason: normalize(reason),
       confidence,
       requiresHuman,
+      requirementAnalysis: requirementAnalysis || this.requirementAnalyzer.analyze(state || {}),
       createdAt: nowIso(),
     };
   }
 
   select(state, policy = {}) {
+    const requirementAnalysis = this.requirementAnalyzer.analyze(state || {});
     if (!normalize(state?.sessionId) || ['idle', 'created', 'closed'].includes(normalize(state?.status))) {
       const intent = this.createIntent(
         IntentTypes.REQUEST_HUMAN_INPUT,
         state,
         'No runnable active session detected',
         1,
-        true
+        true,
+        requirementAnalysis
       );
       return this.withPolicyDecision(intent, state, policy);
     }
@@ -44,7 +49,9 @@ export class IntentEngine {
         IntentTypes.RECOVER_PENDING_TRANSITION,
         state,
         'Pending transition exists and must be recovered first',
-        1
+        1,
+        false,
+        requirementAnalysis
       );
       return this.withPolicyDecision(intent, state, policy);
     }
@@ -54,7 +61,9 @@ export class IntentEngine {
         IntentTypes.BLOCK,
         state,
         'Projection continuity is invalid',
-        1
+        1,
+        false,
+        requirementAnalysis
       );
       return this.withPolicyDecision(intent, state, policy);
     }
@@ -64,7 +73,9 @@ export class IntentEngine {
         IntentTypes.BLOCK,
         state,
         'Failure retry threshold reached',
-        0.98
+        0.98,
+        false,
+        requirementAnalysis
       );
       return this.withPolicyDecision(intent, state, policy);
     }
@@ -75,7 +86,9 @@ export class IntentEngine {
         IntentTypes.FIX_FAILURE,
         state,
         `Latest execution failed with ${normalize(state?.failureStats?.lastFailureCode) || 'unknown failure'}`,
-        0.95
+        0.95,
+        false,
+        requirementAnalysis
       );
       return this.withPolicyDecision(intent, state, policy);
     }
@@ -85,7 +98,9 @@ export class IntentEngine {
         IntentTypes.CHECKPOINT,
         state,
         'Execution completed without matching checkpoint',
-        0.9
+        0.9,
+        false,
+        requirementAnalysis
       );
       return this.withPolicyDecision(intent, state, policy);
     }
@@ -95,7 +110,9 @@ export class IntentEngine {
         IntentTypes.CLOSE,
         state,
         'All tracked tasks are completed',
-        0.9
+        0.9,
+        false,
+        requirementAnalysis
       );
       return this.withPolicyDecision(intent, state, policy);
     }
@@ -105,7 +122,9 @@ export class IntentEngine {
         IntentTypes.CREATE_SLICE,
         state,
         `Continuation recommends: ${normalize(state?.nextRecommendedAction)}`,
-        0.86
+        0.86,
+        false,
+        requirementAnalysis
       );
       return this.withPolicyDecision(intent, state, policy);
     }
@@ -114,7 +133,9 @@ export class IntentEngine {
       IntentTypes.SELECT_NEXT_TASK,
       state,
       'No explicit next action found; selecting next task',
-      0.7
+      0.7,
+      false,
+      requirementAnalysis
     );
     return this.withPolicyDecision(intent, state, policy);
   }

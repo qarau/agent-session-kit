@@ -131,6 +131,23 @@ Expanded OHDER entropy dimensions are also persisted in metrics history:
 
 Drift analytics derives `ssotViolationTrend`, `durabilityTrend`, `complexityTrend`, `duplicationTrend`, `observabilityTrend`, and `refactorHealthTrend` from those history fields. `ask metrics show --history <n>` exposes both the raw history entries and the current `latestEntropyDimensions` summary.
 
+## Requirement Analysis
+
+Before intent selection, ASK classifies the current requirement from runtime state, next recommended action, goal text, and touched-file hints.
+
+Requirement classes:
+
+- `feature`
+- `bugfix`
+- `refactor`
+- `docs`
+- `governance`
+- `release`
+- `security-sensitive`
+- `durability-sensitive`
+
+`IntentSelected` includes `requirementAnalysis`, and planned slices persist the same object under `slice.metadata.requirementAnalysis`. OHDER can use `riskFlags.securitySensitive` and `riskFlags.durabilitySensitive` as early governance signals before code is executed.
+
 ## `governance_contract`
 
 - `policy_schema_version`
