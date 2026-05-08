@@ -34,6 +34,13 @@ Use this playbook when `ask architect status` shows analyzer warnings but no har
 - Avoid direct cloud/database overwrite paths from core runtime code.
 - In strict mode, `event_only_sync: invalid` is a hard-law violation and blocks close unless explicitly exempted.
 
+## Duplication And DRY Warnings
+
+- Inspect `duplicationAnalysis.duplicateGroups` and the `duplication_risk` semantic fact.
+- Treat repeated logic blocks across runtime layers as architectural entropy, not just style drift.
+- Extract shared behavior into one authority path or central contract when duplicated code represents policy, validation, projection, or orchestration logic.
+- Boilerplate mirrors such as imports, constants, and empty shells should not create findings.
+
 ## Security Boundary Warnings
 
 - Inspect `securityAnalysis.filesAnalyzed` and `securityAnalysis.findings`.

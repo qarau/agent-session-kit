@@ -7,7 +7,7 @@ ASK Forge runtime behavior is split across cooperating concerns:
 - ASK runtime: orchestration, session lifecycle, execution loop, checkpointing
 - Projection runtime: event replay, snapshot hydration, continuity integrity
 - Architect runtime: OHDER law enforcement and architectural integrity checks
-- Analyzer runtime: deterministic coupling, durability, authority, security boundary, and complexity analysis
+- Analyzer runtime: deterministic coupling, durability, authority, SSoT, event-only sync, duplication, security boundary, and complexity analysis
 - Flow runtime: behavior continuity, protected/hard-flow guardrails
 - Design runtime: visual continuity, pattern consistency, and brand drift detection
 
@@ -82,6 +82,7 @@ Analyzer responsibilities:
 - `OhderAuthorityAnalyzerEngine`: detects direct governed-state writes outside approved snapshot, projection, ledger, sequence, file-store, or scaffold authorities.
 - `OhderSsotAnalyzerEngine`: detects duplicate governed-state authorities for the same projection, snapshot, ledger, sequence, policy, or runtime state target.
 - `OhderEventOnlySyncAnalyzerEngine`: detects direct synchronization or state overwrite paths that bypass event-ledger or projection authority.
+- `OhderDuplicationAnalyzerEngine`: detects meaningful copied logic across touched source files while ignoring boilerplate mirrors.
 - `OhderSecurityBoundaryAnalyzerEngine`: detects auth, token, permission, secret, session, and bypass-sensitive changes that lack matching test guardrails.
 - `OhderComplexityAnalyzerEngine`: detects large files, branch-heavy code, mixed concerns, and SRP risk.
 
@@ -92,6 +93,7 @@ Architect status fields:
 - `authorityAnalysis`
 - `ssotAnalysis`
 - `eventOnlySyncAnalysis`
+- `duplicationAnalysis`
 - `securityAnalysis`
 - `complexityAnalysis`
 - `semanticFacts`

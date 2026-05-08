@@ -152,6 +152,7 @@ export class OhderSemanticFactEngine {
     authorityAnalysis = {},
     ssotAnalysis = {},
     eventOnlySyncAnalysis = {},
+    duplicationAnalysis = {},
     couplingAnalysis = {},
     durabilityAnalysis = {},
     complexityAnalysis = {},
@@ -203,6 +204,22 @@ export class OhderSemanticFactEngine {
           })))
           : [],
         recommendations: ssotAnalysis.recommendations,
+      },
+      {
+        factId: 'duplication-risk',
+        metric: 'duplication_risk',
+        value: ohderFacts.duplication_risk,
+        confidence: confidenceForFact(ohderFacts.duplication_risk, duplicationAnalysis.risk),
+        severity: severityForFact(ohderFacts.duplication_risk),
+        source: 'OhderDuplicationAnalyzerEngine',
+        evidence: Array.isArray(duplicationAnalysis.duplicateGroups)
+          ? duplicationAnalysis.duplicateGroups.flatMap(item => item.occurrences.map(occurrence => ({
+            filePath: occurrence.filePath,
+            reason: 'duplicated logic',
+            lineHint: `line ${String(occurrence.startLine)}`,
+          })))
+          : [],
+        recommendations: duplicationAnalysis.recommendations,
       },
       {
         factId: 'security-boundary',

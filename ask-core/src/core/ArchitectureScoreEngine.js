@@ -103,6 +103,7 @@ export class ArchitectureScoreEngine {
     authorityAnalysis = null,
     ssotAnalysis = null,
     eventOnlySyncAnalysis = null,
+    duplicationAnalysis = null,
     complexityAnalysis = null,
     securityAnalysis = null,
   } = {}) {
@@ -128,6 +129,13 @@ export class ArchitectureScoreEngine {
     if (eventOnlySyncAnalysis?.risk === 'high' || eventOnlySyncAnalysis?.eventOnlySyncValid === false) {
       applyPenalty(categories, 'replayability', 25);
       applyPenalty(categories, 'observability', 15);
+    }
+    if (duplicationAnalysis?.risk === 'high' || duplicationAnalysis?.duplicationValid === false) {
+      applyPenalty(categories, 'replaceability', 20);
+      applyPenalty(categories, 'testability', 12);
+    } else if (duplicationAnalysis?.risk === 'medium') {
+      applyPenalty(categories, 'replaceability', 10);
+      applyPenalty(categories, 'testability', 6);
     }
     if (complexityAnalysis?.risk === 'high') {
       applyPenalty(categories, 'testability', 20);
