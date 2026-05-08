@@ -155,6 +155,8 @@ This section governs `ask slice close <taskId>` auto-close behavior (auto verifi
 
 Slice close also runs OHDER architect governance before auto verification, task completion, and commit creation. A blocking OHDER result returns `slice-close-ohder-blocked`, leaves the task `in-progress`, and creates no commit.
 
+Slice close records autonomous loop parity evidence in `.ask/runtime/loop-state.json` and emits `AutonomousLoopStepEntered` events for the applicable 16-step loop stages. Successful close records decision `continue`; OHDER-blocked close records decision `block`; commit failure records decision `retry`.
+
 ## `slice_commit`
 
 - `enabled`

@@ -20,6 +20,7 @@ import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 import { MetricsWriter } from './MetricsWriter.js';
 import { RuntimeDriftAnalyticsEngine } from './RuntimeDriftAnalyticsEngine.js';
 import { OhderEntropySnapshotEngine } from './OhderEntropySnapshotEngine.js';
+import { AutonomousLoopStateMachine, AUTONOMOUS_LOOP_STEPS } from './AutonomousLoopStateMachine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -144,6 +145,7 @@ export class SliceCloseRuntime {
     this.metricsWriter = new MetricsWriter(cwd);
     this.driftAnalyticsEngine = new RuntimeDriftAnalyticsEngine();
     this.entropySnapshotEngine = new OhderEntropySnapshotEngine();
+    this.loopStateMachine = new AutonomousLoopStateMachine(cwd);
   }
 
   runGit(args, allowFailure = false) {
@@ -379,6 +381,22 @@ export class SliceCloseRuntime {
     await this.projectionEngine.projectIncremental();
   }
 
+  async enterSliceCloseLoopStep(stepIndex, session, taskId, details = {}) {
+    const stepName = AUTONOMOUS_LOOP_STEPS[stepIndex - 1] || '';
+    const step = await this.loopStateMachine.enter(stepIndex, {
+      source: 'slice-close',
+      taskId,
+      ...details,
+    });
+    await this.emitRuntimeEvent('AutonomousLoopStepEntered', session, taskId, {
+      stepIndex,
+      stepName,
+      details: step.details || {},
+      enteredAt: step.enteredAt,
+    });
+    return step;
+  }
+
   buildArchitectEventPayload(taskId, architect) {
     return {
       taskId,
@@ -595,14 +613,29 @@ export class SliceCloseRuntime {
         missing: preflight.missing,
       });
     }
+    await this.loopStateMachine.start(session.sessionId, {
+      source: 'slice-close',
+      taskId: resolvedTaskId,
+      title: normalize(task.title),
+    });
+    await this.enterSliceCloseLoopStep(1, session, resolvedTaskId, {
+      status: 'hydrated',
+    });
 
     const laneInputs = await this.resolveLaneInputs(resolvedTaskId, task, policy);
+    await this.enterSliceCloseLoopStep(3, session, resolvedTaskId, {
+      lanes: laneInputs.lanes,
+      requiresFullSuite: laneInputs.requiresFullSuite,
+    });
     const fullSuiteResult = {
       required: laneInputs.requiresFullSuite,
       command: '',
       args: [],
       status: 0,
     };
+    await this.enterSliceCloseLoopStep(8, session, resolvedTaskId, {
+      required: laneInputs.requiresFullSuite,
+    });
     if (laneInputs.requiresFullSuite) {
       const suite = this.runFullSuite(policy);
       fullSuiteResult.command = suite.command;
@@ -636,14 +669,36 @@ export class SliceCloseRuntime {
     }
 
     const architect = await this.assessOhderBeforeClose(resolvedTaskId, task, policy, fullSuiteResult, evidence);
+    await this.enterSliceCloseLoopStep(9, session, resolvedTaskId, {
+      status: normalize(architect?.status),
+      blocking: architect?.blocking === true,
+    });
     await this.emitArchitectReplayabilityEvents(session, resolvedTaskId, architect);
     if (architect.blocking === true) {
+      await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+        decision: 'block',
+        reason: normalize(architect?.reason),
+      });
+      await this.loopStateMachine.fail('block', {
+        taskId: resolvedTaskId,
+        reason: normalize(architect?.reason),
+      });
       return fail('slice-close-ohder-blocked', 'OHDER architect governance blocked slice close', {
         taskId: resolvedTaskId,
         architect,
       });
     }
     const entropy = await this.captureEntropyImpact(session, resolvedTaskId, architect, policy);
+    await this.enterSliceCloseLoopStep(10, session, resolvedTaskId, {
+      refactorPressure: normalize(entropy?.entropy?.refactorPressure || entropy?.refactorPressure),
+      trend: normalize(entropy?.entropy?.trend || entropy?.trend),
+    });
+    await this.enterSliceCloseLoopStep(11, session, resolvedTaskId, {
+      triggered: false,
+    });
+    await this.enterSliceCloseLoopStep(12, session, resolvedTaskId, {
+      validation: 'auto-verify',
+    });
 
     const summary = resolveSummary({
       taskId: resolvedTaskId,
@@ -652,20 +707,59 @@ export class SliceCloseRuntime {
     });
     const verified = await this.verificationRuntime.verify(resolvedTaskId, 'pass', summary);
     if (!verified.ok) {
+      await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+        decision: 'block',
+        reason: 'verification failed',
+      });
+      await this.loopStateMachine.fail('block', {
+        taskId: resolvedTaskId,
+        reason: 'verification failed',
+      });
       return fail('slice-close-verify-failed', 'failed to auto-verify task before close', {
         verification: verified,
       });
     }
+    await this.enterSliceCloseLoopStep(13, session, resolvedTaskId, {
+      verification: 'passed',
+    });
 
     const completed = await this.taskRuntime.complete(resolvedTaskId);
     if (!completed.ok) {
+      await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+        decision: 'block',
+        reason: 'task completion failed',
+      });
+      await this.loopStateMachine.fail('block', {
+        taskId: resolvedTaskId,
+        reason: 'task completion failed',
+      });
       return fail('slice-close-complete-failed', 'failed to auto-complete task', {
         completion: completed,
       });
     }
+    await this.enterSliceCloseLoopStep(14, session, resolvedTaskId, {
+      checkpoint: 'task-completed',
+    });
+    await this.enterSliceCloseLoopStep(15, session, resolvedTaskId, {
+      resumePacket: 'unchanged',
+    });
+    await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+      decision: 'continue',
+    });
+    await this.loopStateMachine.complete('continue', {
+      taskId: resolvedTaskId,
+    });
 
     const committed = this.commitWithSliceFooter(resolvedTaskId, policy, task);
     if (!committed.ok) {
+      await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+        decision: 'retry',
+        reason: normalize(committed.message),
+      });
+      await this.loopStateMachine.fail('retry', {
+        taskId: resolvedTaskId,
+        reason: normalize(committed.message),
+      });
       const reopened = await this.taskRuntime.reopen(
         resolvedTaskId,
         `slice close rollback after commit failure: ${normalize(committed.message)}`
@@ -686,6 +780,14 @@ export class SliceCloseRuntime {
     if (shouldRunPrePush) {
       const prePush = await this.prePushCheckEngine.run();
       if (!prePush.passed) {
+        await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+          decision: 'block',
+          reason: 'pre-push checks failed',
+        });
+        await this.loopStateMachine.fail('block', {
+          taskId: resolvedTaskId,
+          reason: 'pre-push checks failed',
+        });
         const blocked = await this.sessionRuntime.block(
           `pre-push checks failed after slice close commit for ${resolvedTaskId}`,
           'slice close pre-push failure'

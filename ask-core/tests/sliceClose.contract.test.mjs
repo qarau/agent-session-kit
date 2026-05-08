@@ -191,6 +191,14 @@ test('slice close auto-completes auto-commits and passes pre-push checks', () =>
   assert.ok(eventTypes.includes('ReplayabilityValidated'));
   assert.ok(eventTypes.includes('EntropyImpactMeasured'));
   assert.ok(eventTypes.includes('EntropyTrendChanged'));
+  assert.ok(eventTypes.includes('AutonomousLoopStepEntered'));
+
+  const loopState = JSON.parse(fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'loop-state.json'), 'utf8'));
+  assert.equal(loopState.status, 'completed');
+  assert.equal(loopState.decision, 'continue');
+  assert.ok(loopState.history.some(step => step.index === 8 && step.name === 'run_validation'));
+  assert.ok(loopState.history.some(step => step.index === 9 && step.name === 'run_ohder_governance_validation'));
+  assert.ok(loopState.history.some(step => step.index === 16 && step.name === 'decide_continue_retry_block_close'));
 
   const history = readNdjson(repoDir, path.join('.ask', 'runtime', 'metrics-history.ndjson'));
   assert.equal(history.length >= 1, true);
@@ -296,6 +304,13 @@ test('slice close blocks before completing task when OHDER assessment blocks', (
   const eventTypes = readEvents(repoDir).map(event => event.type);
   assert.ok(eventTypes.includes('ArchitectValidationCompleted'));
   assert.ok(eventTypes.includes('ArchitectureViolationDetected'));
+  assert.ok(eventTypes.includes('AutonomousLoopStepEntered'));
+
+  const loopState = JSON.parse(fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'loop-state.json'), 'utf8'));
+  assert.equal(loopState.status, 'failed');
+  assert.equal(loopState.decision, 'block');
+  assert.ok(loopState.history.some(step => step.index === 9 && step.name === 'run_ohder_governance_validation'));
+  assert.ok(loopState.history.some(step => step.index === 16 && step.name === 'decide_continue_retry_block_close'));
 });
 
 test('slice close keeps task completed when commit succeeds but pre-push fails', () => {
