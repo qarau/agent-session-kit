@@ -7,6 +7,7 @@ Use these docs in order:
 1. `runtime-architecture.md`: runtime stack, control plane paths, and event flow
 2. `policy-reference.md`: policy keys and governance behavior
 3. `operator-playbooks.md`: day-to-day runbooks and incident response
+4. `ohder-analyzer-playbook.md`: detailed analyzer-warning responses for coupling, durability, authority, complexity, and refactor execution plans
 
 Core commands to keep handy:
 

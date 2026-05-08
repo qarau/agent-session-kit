@@ -1,3 +1,9 @@
+import {
+  approvedRefactorGovernance,
+  createdRefactorGovernance,
+  rejectedRefactorGovernance,
+} from './RefactorTaskGovernance.js';
+
 function normalizeTaskId(event) {
   const taskId = String(event.taskId ?? '').trim();
   return taskId;
@@ -56,20 +62,7 @@ export class TaskBoardProjector {
       const acceptanceCriteria = Array.isArray(event.payload?.acceptanceCriteria)
         ? event.payload.acceptanceCriteria.map(value => String(value ?? '').trim()).filter(Boolean)
         : base.acceptanceCriteria;
-      const refactorGovernance = origin?.type === 'ohder-refactor-governance'
-        ? {
-          recommendationFingerprint: String(origin.recommendationFingerprint ?? ''),
-          targetId: String(origin.targetId ?? ''),
-          confidence: String(origin.confidence ?? ''),
-          approvalRequired: origin.approvalRequired === true,
-          approvalStatus: origin.approvalRequired === true ? 'pending' : 'not-required',
-          approvedBy: '',
-          rejectedReason: '',
-          executionPlan: origin.refactorExecutionPlan && typeof origin.refactorExecutionPlan === 'object'
-            ? { ...origin.refactorExecutionPlan }
-            : null,
-        }
-        : base.refactorGovernance;
+      const refactorGovernance = createdRefactorGovernance(origin, base.refactorGovernance);
       return withTask(state, taskId, {
         ...base,
         status: 'created',
@@ -120,13 +113,7 @@ export class TaskBoardProjector {
     if (type === 'RefactorApproved') {
       return withTask(state, taskId, {
         ...base,
-        refactorGovernance: {
-          ...(base.refactorGovernance ?? {}),
-          approvalStatus: 'approved',
-          approvalRequired: false,
-          approvedBy: String(event.payload?.approvedBy ?? ''),
-          approvedAt: String(event.ts ?? ''),
-        },
+        refactorGovernance: approvedRefactorGovernance(base.refactorGovernance, event),
       });
     }
 
@@ -134,12 +121,7 @@ export class TaskBoardProjector {
       return withTask(state, taskId, {
         ...base,
         status: 'blocked',
-        refactorGovernance: {
-          ...(base.refactorGovernance ?? {}),
-          approvalStatus: 'rejected',
-          rejectedReason: String(event.payload?.reason ?? ''),
-          rejectedAt: String(event.ts ?? ''),
-        },
+        refactorGovernance: rejectedRefactorGovernance(base.refactorGovernance, event),
       });
     }
 
