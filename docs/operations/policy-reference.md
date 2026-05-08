@@ -1,4 +1,4 @@
-# Policy Reference
+﻿# Policy Reference
 
 ## Runtime Policy Files
 
@@ -77,6 +77,22 @@ Design runtime uses changed-files + visual-regression map evidence to emit desig
 
 These keys decide whether governance triggers automated retry slices or hard blocks.
 
+## `refactor_materialization`
+
+This section controls how OHDER refactor recommendations become governed ASK tasks.
+
+Defaults when absent:
+
+- `auto_materialize_high_confidence`: `false`
+- `require_approval_for_medium_confidence`: `true`
+- `low_confidence_mode`: `suggest-only`
+
+Behavior:
+
+- Low-confidence recommendations are suggestions only.
+- Medium-confidence recommendations create approval-required tasks.
+- High-confidence recommendations can be created explicitly with `ask refactor create`.
+- Automatic high-confidence materialization requires `auto_materialize_high_confidence: true` and is surfaced by `ask next` as `ask refactor create --auto`.
 ## `metrics`
 
 - `drift_window_size`: rolling history window for drift analytics
@@ -147,3 +163,4 @@ Current exemption CLI:
 
 - `ask architect exempt add --law-id <id> --reason <text> --approved-by <id> [--operation <name>] [--session-id <id>] [--expires-at <iso>]`
 - `ask architect exempt list`
+

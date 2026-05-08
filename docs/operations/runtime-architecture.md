@@ -1,4 +1,4 @@
-# Runtime Architecture
+﻿# Runtime Architecture
 
 ## Runtime Stack
 
@@ -70,11 +70,11 @@ The loop publishes operator-facing governance outputs:
 When no task is available, `ask next` evaluates architect status, replayability risk, architecture score, refactor governance, entropy trend, refactor pressure, and the latest governance decision. It may return:
 
 - `resolve-architecture-block`: step 16 decides `block` because OHDER reports a blocking architecture state.
-- `create-refactor-slice`: step 11 triggered refactor governance and the operator should create or ingest a repair slice.
+- `create-refactor-slice`: step 11 triggered refactor governance and the operator should preview or materialize a repair task through `ask refactor preview` or `ask refactor create`.
 - `run-governance-validation`: steps 9-12 need refreshed governance validation before more work is selected.
 - `await-new-requirement`: steps 13-16 are clear and the runtime is ready for a new requirement.
 
-OHDER fallback recommendations emit `OhderNextActionRecommended` with action, reason, architect status, architecture score, blocking flag, recommended command, and compact entropy summary. The event makes architecture-driven next actions replayable without creating or changing tasks.
+OHDER fallback recommendations emit `OhderNextActionRecommended` with action, reason, architect status, architecture score, blocking flag, recommended command, compact entropy summary, and refactor recommendation fingerprint when available. The event makes architecture-driven next actions replayable without creating or changing tasks.
 
 ## OHDER Entropy Runtime
 
@@ -86,6 +86,20 @@ The entropy runtime implements steps 10, 11, and 16 of the 16-step OHDER loop fo
 
 `ask slice close <taskId>` appends entropy history to `.ask/runtime/metrics-history.ndjson` and recomputes `.ask/runtime/drift-analytics.json`. This means slice-close governed work contributes to architectural memory even when the autonomous continuation loop is not running.
 
+## OHDER Refactor Governance Materialization
+
+Refactor materialization implements step 11 of the autonomous loop without bypassing ASK task governance.
+
+Flow:
+
+1. OHDER entropy or architect status identifies refactor pressure.
+2. `OhderRefactorRecommendationEngine` converts pressure into a deterministic recommendation with fingerprint, confidence, reason, target signals, and acceptance criteria.
+3. `ask next` exposes the recommendation and points to `ask refactor preview` by default.
+4. `ask refactor create` materializes the recommendation as a normal ASK task when confidence policy allows it.
+5. Approval and rejection are replayed through `RefactorApproved` and `RefactorRejected`.
+6. The refactor task still executes and closes through `ask slice close <taskId>`.
+
+This keeps OHDER detection, recommendation, materialization, approval, execution, and slice-close validation as separate runtime concerns.
 ## Slice-Close OHDER Gate
 
 `ask slice close <taskId>` runs Architect/OHDER governance after evidence gates pass and before ASK verifies, completes, or commits the task.
@@ -132,3 +146,4 @@ Inspect trends with `ask metrics show --history <n>`.
 Tune window size with policy key:
 
 - `metrics.drift_window_size`
+

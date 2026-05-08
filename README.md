@@ -1,4 +1,4 @@
-# ASK Forge
+﻿# ASK Forge
 
 Governed Autonomous Software Development
 
@@ -187,6 +187,7 @@ Task, workflow, and continuity:
 - `ask plan validate --task <taskId> --run-id <runId> [--path <file>] [--force-new-batch]`
 - `ask plan batch show <planBatchId>`
 - `ask slice preview|close`
+- `ask refactor preview|create|approve|reject`
 - `ask workflow recommend|start|artifact|complete|fail`
 - `ask flow list|status|discover --last|validate --last|promote ...`
 - `ask design list|status|discover --last|validate --last|promote ...`
@@ -235,6 +236,8 @@ OHDER-driven next actions:
 - `run-governance-validation`: replayability risk, medium `refactorPressure`, low architecture score, or a blocked governance decision requires validation before choosing new work.
 - `await-new-requirement`: architecture governance is clear and ASK is ready for a new requirement.
 
+When the action is `create-refactor-slice`, `ask next` now includes a compact `refactorRecommendation` and the concrete command `ask refactor preview` by default. If policy explicitly enables automatic high-confidence materialization, the command becomes `ask refactor create --auto`.
+
 Each OHDER fallback recommendation emits `OhderNextActionRecommended` into the runtime ledger with a compact entropy summary when entropy data is available. The command does not mutate task state when it recommends an OHDER action.
 
 ## OHDER Entropy Runtime
@@ -254,6 +257,33 @@ node ask-core/bin/ask.js metrics show --history 20
 
 Key fields are `entropyScore`, `refactorPressure`, `architectureScoreDelta`, `couplingTrend`, and `replayabilityTrend`. `ask next` uses these signals when no task is ready: high pressure or regressing trend recommends `create-refactor-slice`; medium pressure recommends `run-governance-validation`; clear entropy allows `await-new-requirement`.
 
+## OHDER Refactor Governance Materialization
+
+OHDER Refactor Governance Materialization is the bridge between architecture pressure and executable ASK work. Entropy and architect signals no longer stop at "create a refactor slice" text; ASK can now generate a deterministic recommendation and materialize it into a normal governed task.
+
+Operator flow:
+
+```bash
+node ask-core/bin/ask.js next
+node ask-core/bin/ask.js refactor preview
+node ask-core/bin/ask.js refactor create
+node ask-core/bin/ask.js refactor approve <taskId> --approved-by <id>
+node ask-core/bin/ask.js refactor reject <taskId> --reason "too risky"
+```
+
+Confidence governance:
+
+- `low`: suggest-only; no task is created by `ask refactor create`.
+- `medium`: creates an approval-required governed task with `refactorGovernance.approvalStatus: "pending"`.
+- `high`: explicit `ask refactor create` creates a governed task; automatic creation only happens when policy enables `refactor_materialization.auto_materialize_high_confidence`.
+
+Replayable events:
+
+- `RefactorSuggested`: a recommendation was materialized into a task.
+- `RefactorApproved`: an approval-required refactor task was approved.
+- `RefactorRejected`: a refactor task was rejected and blocked.
+
+The created task includes the recommendation title, objective, reason, target signals, acceptance criteria, confidence, and recommendation fingerprint. It still closes through `ask slice close <taskId>`, so OHDER validation, full-suite checks, auto commit, and pre-push validation remain enforced.
 ## OHDER Slice-Close Governance
 
 `ask slice close <taskId>` now runs OHDER architect governance before ASK marks the task verified, completed, or committed.
@@ -327,4 +357,5 @@ npm run ask:pre-push-check
 - `CONTRIBUTING.md`
 - `CODE_OF_CONDUCT.md`
 - `SECURITY.md`
+
 

@@ -1,4 +1,4 @@
-# Operator Playbooks
+﻿# Operator Playbooks
 
 ## Daily Start
 
@@ -18,12 +18,45 @@
 Action responses:
 
 - `resolve-architecture-block`: run `node ask-core/bin/ask.js architect status` and `node ask-core/bin/ask.js governance explain`, then fix the blocking law violation or use an approved short-lived exemption.
-- `create-refactor-slice`: create or ingest a focused refactor slice that reduces entropy/coupling or restores replayability before continuing feature work.
+- `create-refactor-slice`: run `node ask-core/bin/ask.js refactor preview`, then `node ask-core/bin/ask.js refactor create` when the recommendation is acceptable. Approve medium-confidence tasks before execution.
 - `run-governance-validation`: run `node ask-core/bin/ask.js governance status`, `node ask-core/bin/ask.js architect status`, and relevant tests before asking for the next task again.
 - `await-new-requirement`: architecture governance is clear; add or ingest the next product requirement.
 
 OHDER-driven next actions are advisory task-selection outputs. They emit `OhderNextActionRecommended` for replayability but do not mutate the task board.
 
+## OHDER Refactor Materialization Playbook
+
+Use this playbook when `ask next` returns `next.action: "create-refactor-slice"`.
+
+1. Preview the recommendation:
+   - `node ask-core/bin/ask.js refactor preview`
+2. Inspect:
+   - `recommendation.confidence`
+   - `recommendation.reason`
+   - `recommendation.targetSignals`
+   - `recommendation.acceptanceCriteria`
+3. Materialize when acceptable:
+   - `node ask-core/bin/ask.js refactor create`
+4. If confidence is `medium`, approve before execution:
+   - `node ask-core/bin/ask.js refactor approve <taskId> --approved-by <id>`
+5. If the recommendation is unsafe or poorly timed, reject it:
+   - `node ask-core/bin/ask.js refactor reject <taskId> --reason "<reason>"`
+6. Execute the created task through the normal governed loop:
+   - `node ask-core/bin/ask.js task start <taskId>`
+   - implement and validate changes
+   - `node ask-core/bin/ask.js slice close <taskId>`
+
+Confidence behavior:
+
+- `low`: suggest-only; no task is created.
+- `medium`: task is created with approval required.
+- `high`: explicit creation is allowed; automatic creation requires policy opt-in.
+
+Ledger events:
+
+- `RefactorSuggested`
+- `RefactorApproved`
+- `RefactorRejected`
 ## Executing a Governed Loop
 
 Use governed continuation for checkpointed execution:
@@ -199,3 +232,4 @@ When session is blocked:
    - `node ask-core/bin/ask.js can-commit`
    - `node ask-core/bin/ask.js pre-commit-check`
    - `node ask-core/bin/ask.js pre-push-check`
+
