@@ -1,3 +1,5 @@
+import { compactEntropy, compactRefactorRecommendation, resolveRefactorCommand } from './OhderRuntimeSummaries.js';
+
 function normalize(value) {
   return String(value ?? '').trim();
 }
@@ -17,46 +19,6 @@ function hasEntries(value) {
 
 function architectureScore(architect = {}) {
   return toNumber(architect?.architectureScore?.overallScore, 0);
-}
-
-function compactRefactorRecommendation(recommendation = null) {
-  if (!recommendation || typeof recommendation !== 'object' || Array.isArray(recommendation)) {
-    return null;
-  }
-  return {
-    fingerprint: normalize(recommendation.fingerprint),
-    title: normalize(recommendation.title),
-    confidence: normalize(recommendation.confidence),
-    reason: normalize(recommendation.reason),
-    targetSignals: Array.isArray(recommendation.targetSignals)
-      ? recommendation.targetSignals.map(normalize).filter(Boolean)
-      : [],
-  };
-}
-
-function resolveRefactorCommand(recommendation = null, policy = {}) {
-  const compact = compactRefactorRecommendation(recommendation);
-  if (
-    compact?.confidence === 'high'
-    && policy?.refactor_materialization?.auto_materialize_high_confidence === true
-  ) {
-    return 'ask refactor create --auto';
-  }
-  return 'ask refactor preview';
-}
-
-function compactEntropy(entropy = null) {
-  if (!entropy || typeof entropy !== 'object' || Array.isArray(entropy)) {
-    return null;
-  }
-  return {
-    entropyScore: toNumber(entropy.entropyScore, 0),
-    trend: normalize(entropy.trend),
-    couplingTrend: normalize(entropy.couplingTrend),
-    replayabilityTrend: normalize(entropy.replayabilityTrend),
-    architectureScoreDelta: toNumber(entropy.architectureScoreDelta, 0),
-    refactorPressure: normalize(entropy.refactorPressure),
-  };
 }
 
 function baseDecision(action, reason, architect = {}, patch = {}) {
@@ -162,3 +124,4 @@ export class OhderNextActionEngine {
     );
   }
 }
+
