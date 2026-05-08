@@ -4,6 +4,7 @@ import { OhderLawPackEngine } from './OhderLawPackEngine.js';
 import { ArchitectureScoreEngine } from './ArchitectureScoreEngine.js';
 import { OhderCouplingAnalyzerEngine } from './OhderCouplingAnalyzerEngine.js';
 import { OhderDurabilityValidatorEngine } from './OhderDurabilityValidatorEngine.js';
+import { OhderAuthorityAnalyzerEngine } from './OhderAuthorityAnalyzerEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -42,6 +43,7 @@ export class ArchitectRuntime {
     this.scoreEngine = new ArchitectureScoreEngine();
     this.couplingAnalyzer = new OhderCouplingAnalyzerEngine(cwd);
     this.durabilityValidator = new OhderDurabilityValidatorEngine(cwd);
+    this.authorityAnalyzer = new OhderAuthorityAnalyzerEngine(cwd);
   }
 
   entropyDelta(execution = {}, validation = {}) {
@@ -125,6 +127,9 @@ export class ArchitectRuntime {
     const durabilityAnalysis = this.durabilityValidator.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
+    const authorityAnalysis = this.authorityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
     const couplingDelta = Math.max(this.couplingDelta(execution), toNumber(couplingAnalysis.couplingDelta, 0));
     const replayabilityRisk = this.replayabilityRisk(state, execution);
     const maxEntropy = toNonNegativeInt(policy?.architect?.max_entropy_delta, 3);
@@ -174,6 +179,7 @@ export class ArchitectRuntime {
       execution_status: normalize(execution.status).toLowerCase(),
       execution_ok: execution.ok === true ? 'true' : 'false',
       durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
+      projection_authority: authorityAnalysis.authorityValid ? 'valid' : 'invalid',
     });
     const lawFindings = lawEvaluation.violations.map(violation => {
       const detail = normalize(violation.message)
@@ -206,6 +212,7 @@ export class ArchitectRuntime {
       lawEvaluation,
       couplingAnalysis,
       durabilityAnalysis,
+      authorityAnalysis,
     });
     const payload = {
       status,
@@ -222,6 +229,7 @@ export class ArchitectRuntime {
       lawExemptions: lawEvaluation.exempted,
       couplingAnalysis,
       durabilityAnalysis,
+      authorityAnalysis,
       architectureScore,
       recommendedAction,
       updatedAt: nowIso(),
