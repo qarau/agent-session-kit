@@ -84,9 +84,11 @@ Core runtime layers active in v5:
 - ASK runtime: session lifecycle, task/slice orchestration, continuation state
 - Projection runtime: event replay, snapshot hydration, continuity proofs
 - Architect runtime: OHDER governance law evaluation, hard/soft law taxonomy, architecture scoring, and exemptions
+- Analyzer runtime: coupling, durability, authority, and complexity/SRP analysis for changed files
 - Flow runtime: protected/hard-flow continuity governance
 - Design runtime: visual continuity and drift governance
 - Ingestion runtime: plan-to-slice materialization and batch traceability
+- Refactor execution planner: concrete, approval-aware refactor plans derived from OHDER findings
 - Delivery runtime: feature/release/promotion/rollout governance
 
 ## Prerequisites
@@ -257,11 +259,38 @@ node ask-core/bin/ask.js metrics show --history 20
 
 Key fields are `entropyScore`, `refactorPressure`, `architectureScoreDelta`, `couplingTrend`, and `replayabilityTrend`. `ask next` uses these signals when no task is ready: high pressure or regressing trend recommends a refactor only when ASK can identify a concrete target; medium pressure recommends `run-governance-validation`; clear entropy allows `await-new-requirement`.
 
+## OHDER Deep Analyzer Runtime
+
+The OHDER architect runtime now includes deterministic analyzers that explain why a slice changes architectural pressure. The goal is not just to say "entropy increased"; the goal is to show which runtime quality moved and what an operator should do next.
+
+Architect status can now include:
+
+- `couplingAnalysis`: touched runtime layers, cross-layer imports, coupling hotspots, and layer-discipline risk.
+- `durabilityAnalysis`: projector, snapshot, ledger, sequence, policy, and migration touchpoints that may require replay validation.
+- `authorityAnalysis`: governed-state write authority checks, including direct `.ask` runtime writes outside approved projection, ledger, sequence, or snapshot authorities.
+- `complexityAnalysis`: file size, branch pressure, concern mixing, and SRP risk for changed source files.
+
+These analyzers feed the weighted `architectureScore` categories:
+
+- Coupling risk affects `layerDiscipline`.
+- Durability risk affects `durability`.
+- Authority violations affect `ssotIntegrity`.
+- Complexity/SRP risk affects `testability` and `replaceability`.
+
+Example: if a slice changes `ask-core/src/runtime/projectors/TaskBoardProjector.js`, OHDER can mark the slice as durability-sensitive because projection snapshots may need replay validation. If a core runtime imports a CLI command directly, OHDER can mark the slice as a coupling risk because the domain layer now depends on an outer orchestration layer.
+
 ## OHDER Refactor Governance Materialization
 
 OHDER Refactor Governance Materialization is the bridge between architecture pressure and executable ASK work. Entropy and architect signals no longer stop at "create a refactor slice" text; ASK can now generate a deterministic recommendation and materialize it into a normal governed task.
 
 In the targeted refactor flow, ASK does not keep repeating the same generic entropy recommendation. It reads recent slice commits, `ASK-Slice` footers, changed files, entropy history, and completed OHDER refactor tasks to select a concrete hotspot target. The recommendation fingerprint includes that target, so a new target becomes a new governed task while a completed target is skipped.
+
+The refactor execution planner turns recommendations and analyzer findings into concrete plan actions without applying patches automatically:
+
+- documentation targets become `split-doc-section` plans
+- cross-layer coupling findings become `reduce-cross-layer-import` plans
+- high-risk plans require approval before execution
+- the generated `refactorExecutionPlan` is embedded into refactor task metadata for replayability
 
 If entropy is regressing but ASK cannot discover a new concrete target, `ask refactor preview` returns `recommendation: null` with `suppression.reason: "no-new-refactor-target"`. In that state, `ask next` recommends `run-governance-validation` instead of another vague refactor slice.
 
@@ -287,7 +316,8 @@ Replayable events:
 - `RefactorApproved`: an approval-required refactor task was approved.
 - `RefactorRejected`: a refactor task was rejected and blocked.
 
-The created task includes the recommendation title, objective, reason, concrete target, target signals, acceptance criteria, confidence, and recommendation fingerprint. It still closes through `ask slice close <taskId>`, so OHDER validation, full-suite checks, auto commit, and pre-push validation remain enforced.
+The created task includes the recommendation title, objective, reason, concrete target, target signals, acceptance criteria, confidence, recommendation fingerprint, and refactor execution plan. It still closes through `ask slice close <taskId>`, so OHDER validation, full-suite checks, auto commit, and pre-push validation remain enforced.
+
 ## OHDER Slice-Close Governance
 
 `ask slice close <taskId>` now runs OHDER architect governance before ASK marks the task verified, completed, or committed.

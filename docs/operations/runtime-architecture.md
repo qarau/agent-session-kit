@@ -7,6 +7,7 @@ ASK Forge runtime behavior is split across cooperating concerns:
 - ASK runtime: orchestration, session lifecycle, execution loop, checkpointing
 - Projection runtime: event replay, snapshot hydration, continuity integrity
 - Architect runtime: OHDER law enforcement and architectural integrity checks
+- Analyzer runtime: deterministic coupling, durability, authority, and complexity analysis
 - Flow runtime: behavior continuity, protected/hard-flow guardrails
 - Design runtime: visual continuity, pattern consistency, and brand drift detection
 
@@ -63,6 +64,31 @@ The loop publishes operator-facing governance outputs:
 
 `ask architect status` includes an `architectureScore` payload with weighted categories for SSoT integrity, replayability, layer discipline, durability, testability, security, observability, and replaceability. The score is operational telemetry for trend visibility; hard-law blocking decisions still take precedence.
 
+## OHDER Analyzer Runtime
+
+The analyzer runtime deepens step 3 and step 9 of the autonomous loop:
+
+- Step 3, Analyze Architectural Context: analyzer engines inspect touched files and source text before the slice is judged.
+- Step 9, Run OHDER Governance Validation: ArchitectRuntime writes analyzer results into `.ask/runtime/architect-status.json`.
+- Step 10, Measure Entropy Impact: analyzer deltas contribute to architecture score and entropy history.
+- Step 11, Trigger Refactor Governance If Needed: analyzer findings give refactor governance concrete targets.
+
+Analyzer responsibilities:
+
+- `OhderCouplingAnalyzerEngine`: measures touched layers, boundary spread, and risky import directions such as core depending on CLI.
+- `OhderDurabilityValidatorEngine`: detects projector, snapshot, ledger, sequence, policy, and migration touchpoints.
+- `OhderAuthorityAnalyzerEngine`: detects direct governed-state writes outside approved snapshot, projection, ledger, sequence, file-store, or scaffold authorities.
+- `OhderComplexityAnalyzerEngine`: detects large files, branch-heavy code, mixed concerns, and SRP risk.
+
+Architect status fields:
+
+- `couplingAnalysis`
+- `durabilityAnalysis`
+- `authorityAnalysis`
+- `complexityAnalysis`
+
+The analyzer runtime is advisory unless the law pack or policy makes the finding blocking. The default path is score and entropy pressure, not automatic failure.
+
 ## OHDER-Driven Next Actions
 
 `ask next` now maps the last decision step of the 16-step loop to an operator action. The command remains task-first: active and dependency-ready tasks are selected before OHDER fallback logic runs.
@@ -95,13 +121,17 @@ Flow:
 1. OHDER entropy or architect status identifies refactor pressure.
 2. `GitSliceChangeHistoryReader` and `OhderRefactorTargetDiscoveryEngine` derive concrete targets from recent `ASK-Slice` commits, changed files, entropy history, and completed OHDER refactor tasks.
 3. `OhderRefactorRecommendationEngine` converts pressure and the selected target into a deterministic recommendation with fingerprint, confidence, reason, target metadata, target signals, and acceptance criteria.
-4. `ask next` exposes the recommendation and points to `ask refactor preview` by default.
-5. `ask refactor create` materializes the recommendation as a normal ASK task when confidence policy allows it.
-6. If no new target is discoverable, the recommendation is suppressed with `no-new-refactor-target` and `ask next` falls back to governance validation.
-7. Approval and rejection are replayed through `RefactorApproved` and `RefactorRejected`.
-8. The refactor task still executes and closes through `ask slice close <taskId>`.
+4. `OhderRefactorExecutionPlannerEngine` converts the recommendation and analyzer findings into actions such as `split-doc-section`, `reduce-cross-layer-import`, or `extract-responsibility`.
+5. `ask next` exposes the recommendation and points to `ask refactor preview` by default.
+6. `ask refactor create` materializes the recommendation as a normal ASK task when confidence policy allows it.
+7. If no new target is discoverable, the recommendation is suppressed with `no-new-refactor-target` and `ask next` falls back to governance validation.
+8. Approval and rejection are replayed through `RefactorApproved` and `RefactorRejected`.
+9. The refactor task still executes and closes through `ask slice close <taskId>`.
 
 This keeps OHDER detection, recommendation, materialization, approval, execution, and slice-close validation as separate runtime concerns.
+
+Refactor execution plans are embedded under task origin metadata as `refactorExecutionPlan` and projected into `task.refactorGovernance.executionPlan`. High-risk plans require approval even when the recommendation itself is high confidence.
+
 ## Slice-Close OHDER Gate
 
 `ask slice close <taskId>` runs Architect/OHDER governance after evidence gates pass and before ASK verifies, completes, or commits the task.

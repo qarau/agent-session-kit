@@ -37,6 +37,8 @@ Use this playbook when `ask next` returns `next.action: "create-refactor-slice"`
    - `recommendation.reason`
    - `recommendation.targetSignals`
    - `recommendation.acceptanceCriteria`
+   - `refactorExecutionPlan.actions`
+   - `refactorExecutionPlan.approvalRequired`
 3. If preview returns `suppression.reason: "no-new-refactor-target"`, do not force a generic refactor. Run governance validation, review recent entropy history, and add new evidence or a clearer refactor plan before materializing work.
 4. Materialize when acceptable:
    - `node ask-core/bin/ask.js refactor create`
@@ -54,6 +56,7 @@ Confidence behavior:
 - `low`: suggest-only; no task is created.
 - `medium`: task is created with approval required.
 - `high`: explicit creation is allowed; automatic creation requires policy opt-in.
+- `refactorExecutionPlan.risk: "high"`: approval is required even when recommendation confidence is high.
 
 Ledger events:
 
@@ -126,6 +129,40 @@ Manage temporary exemptions:
 - List: `node ask-core/bin/ask.js architect exempt list`
 
 Use exemptions as short-lived operational controls, not permanent policy.
+
+## OHDER Analyzer Warning Playbook
+
+Use this playbook when `ask architect status` shows analyzer warnings but no hard-law block.
+
+Coupling warnings:
+
+- Inspect `couplingAnalysis.crossLayerImports`.
+- If core imports CLI, move the dependency behind a core-owned contract or an adapter boundary.
+- Re-run the targeted tests and `ask slice close <taskId>`.
+
+Durability warnings:
+
+- Inspect `durabilityAnalysis.touchpoints`.
+- For projector, snapshot, ledger, sequence, policy, or migration changes, run replay or projection validation before closing.
+- Treat migrations and snapshot format changes as approval-worthy even if OHDER only warns.
+
+Authority warnings:
+
+- Inspect `authorityAnalysis.violations`.
+- Replace direct `.ask` state writes with approved authorities such as `RuntimeSnapshotStore`, `RuntimeProjectionEngine`, `EventLedger`, `SequenceStore`, `FileStore`, or `Scaffolder`.
+- Do not add exemptions for permanent duplicate authority paths.
+
+Complexity/SRP warnings:
+
+- Inspect `complexityAnalysis.filesAnalyzed`.
+- Split mixed concerns before adding more behavior to high-complexity files.
+- Prefer a new refactor slice if the feature slice is already passing but complexity pressure is rising.
+
+Refactor execution plan responses:
+
+- `split-doc-section`: move deep runtime detail out of README into operations docs and cross-link it.
+- `reduce-cross-layer-import`: remove outer-layer imports from inner runtime layers.
+- `extract-responsibility`: isolate one concern and preserve behavior with focused contract tests.
 
 ## Metrics and Drift Monitoring
 
