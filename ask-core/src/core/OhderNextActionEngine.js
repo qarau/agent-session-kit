@@ -21,6 +21,12 @@ function architectureScore(architect = {}) {
   return toNumber(architect?.architectureScore?.overallScore, 0);
 }
 
+function governanceValidationCleared(state = {}) {
+  const decision = state?.governanceDecision || {};
+  return normalizeLower(decision?.decision || decision) === 'continue'
+    && normalizeLower(decision?.validationStatus) === 'passed';
+}
+
 function baseDecision(action, reason, architect = {}, patch = {}) {
   return {
     type: 'ohder-action',
@@ -67,6 +73,7 @@ export class OhderNextActionEngine {
 
     const entropyPressure = normalizeLower(entropy?.refactorPressure);
     const entropyTrend = normalizeLower(entropy?.trend);
+    const validationCleared = governanceValidationCleared(state);
     if (entropyPressure === 'high' || entropyTrend === 'regressing') {
       if (!refactorRecommendation && normalizeLower(refactorSuppression?.reason) === 'no-new-refactor-target') {
         return baseDecision(
@@ -75,7 +82,7 @@ export class OhderNextActionEngine {
           architect,
           {
             entropy: compactEntropy(entropy),
-            recommendedCommand: 'ask governance status',
+            recommendedCommand: 'ask governance validate',
             refactorSuppression: {
               reason: normalize(refactorSuppression.reason),
               baseSignals: Array.isArray(refactorSuppression.baseSignals)
@@ -99,14 +106,14 @@ export class OhderNextActionEngine {
         }
       );
     }
-    if (entropyPressure === 'medium') {
+    if (entropyPressure === 'medium' && !validationCleared) {
       return baseDecision(
         'run-governance-validation',
         'OHDER entropy refactor pressure requires governance validation',
         architect,
         {
           entropy: compactEntropy(entropy),
-          recommendedCommand: 'ask governance status',
+          recommendedCommand: 'ask governance validate',
         }
       );
     }
@@ -126,7 +133,7 @@ export class OhderNextActionEngine {
         reason,
         architect,
         {
-          recommendedCommand: 'ask governance status',
+          recommendedCommand: 'ask governance validate',
         }
       );
     }

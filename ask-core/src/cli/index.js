@@ -87,7 +87,7 @@ Usage:
   ask design discover --last
   ask design validate --last
   ask design promote <region-id> --to <stage> --reason <text> [--approved-by <id>] [--approval-ticket <id>]
-  ask governance status|explain
+  ask governance status|explain|validate
   ask plan ingest|validate|batch show
   ask refactor preview|create
   ask next

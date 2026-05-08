@@ -19,10 +19,10 @@ Action responses:
 
 - `resolve-architecture-block`: run `node ask-core/bin/ask.js architect status` and `node ask-core/bin/ask.js governance explain`, then fix the blocking law violation or use an approved short-lived exemption.
 - `create-refactor-slice`: run `node ask-core/bin/ask.js refactor preview`, confirm the concrete target, then `node ask-core/bin/ask.js refactor create` when the recommendation is acceptable. Approve medium-confidence tasks before execution.
-- `run-governance-validation`: run `node ask-core/bin/ask.js governance status`, `node ask-core/bin/ask.js architect status`, and relevant tests before asking for the next task again.
+- `run-governance-validation`: run `node ask-core/bin/ask.js governance validate` before asking for the next task again.
 - `await-new-requirement`: architecture governance is clear; add or ingest the next product requirement.
 
-OHDER-driven next actions are advisory task-selection outputs. They emit `OhderNextActionRecommended` for replayability but do not mutate the task board.
+OHDER-driven next actions are advisory task-selection outputs. They emit `OhderNextActionRecommended` for replayability but do not mutate the task board. `governance validate` is the explicit mutating governance refresh path: it recomputes architect/entropy evidence, writes `.ask/runtime/governance-decision.json`, and emits `GovernanceValidationCompleted` plus `GovernanceDecisionWritten`.
 
 ## OHDER Refactor Materialization Playbook
 

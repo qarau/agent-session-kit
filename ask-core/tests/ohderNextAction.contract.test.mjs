@@ -93,7 +93,7 @@ test('OHDER next action requests governance validation for high replayability or
   });
 
   assert.equal(replayDecision.action, 'run-governance-validation');
-  assert.equal(replayDecision.recommendedCommand, 'ask governance status');
+  assert.equal(replayDecision.recommendedCommand, 'ask governance validate');
 
   const scoreDecision = decide({
     architect: {
@@ -193,7 +193,7 @@ test('OHDER next action requests governance validation for medium entropy pressu
   assert.equal(decision.action, 'run-governance-validation');
   assert.match(decision.reason, /entropy/i);
   assert.equal(decision.entropy.refactorPressure, 'medium');
-  assert.equal(decision.recommendedCommand, 'ask governance status');
+  assert.equal(decision.recommendedCommand, 'ask governance validate');
 });
 
 

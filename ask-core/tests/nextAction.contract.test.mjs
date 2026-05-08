@@ -330,6 +330,6 @@ test('ask next runs governance validation when entropy regresses without a concr
 
   assert.equal(payload.next.action, 'run-governance-validation');
   assert.equal(payload.next.reason, 'OHDER entropy is regressing but no new concrete refactor target was found');
-  assert.equal(payload.next.recommendedCommand, 'ask governance status');
+  assert.equal(payload.next.recommendedCommand, 'ask governance validate');
   assert.equal(payload.next.refactorSuppression.reason, 'no-new-refactor-target');
 });

@@ -1,5 +1,6 @@
 import { PolicyEngine } from '../../core/PolicyEngine.js';
 import { RuntimeStateEngine } from '../../core/RuntimeStateEngine.js';
+import { GovernanceValidationRuntime } from '../../core/GovernanceValidationRuntime.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -17,7 +18,7 @@ function modeBehavior(mode) {
 }
 
 function printUsage() {
-  console.log('Usage: ask governance status|explain');
+  console.log('Usage: ask governance status|explain|validate');
 }
 
 function explainDecision(state = {}) {
@@ -51,12 +52,18 @@ function explainDecision(state = {}) {
 
 export async function runGovernance(subcommand) {
   const action = String(subcommand || 'status').trim();
-  if (!['status', 'explain'].includes(action)) {
+  if (!['status', 'explain', 'validate'].includes(action)) {
     printUsage();
     return;
   }
 
   const cwd = process.cwd();
+  if (action === 'validate') {
+    const result = await new GovernanceValidationRuntime(cwd).run();
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
   const policyEngine = new PolicyEngine(cwd);
   const stateEngine = new RuntimeStateEngine(cwd);
   const policy = await policyEngine.load();
