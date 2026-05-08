@@ -83,6 +83,7 @@ Analyzer responsibilities:
 - `OhderSsotAnalyzerEngine`: detects duplicate governed-state authorities for the same projection, snapshot, ledger, sequence, policy, or runtime state target.
 - `OhderEventOnlySyncAnalyzerEngine`: detects direct synchronization or state overwrite paths that bypass event-ledger or projection authority.
 - `OhderDuplicationAnalyzerEngine`: detects meaningful copied logic across touched source files while ignoring boilerplate mirrors.
+- `OhderObservabilityAnalyzerEngine`: detects blocking paths without diagnostic code/message and governance mutations without replayable events.
 - `OhderSecurityBoundaryAnalyzerEngine`: detects auth, token, permission, secret, session, and bypass-sensitive changes that lack matching test guardrails.
 - `OhderComplexityAnalyzerEngine`: detects large files, branch-heavy code, mixed concerns, and SRP risk.
 
@@ -94,6 +95,7 @@ Architect status fields:
 - `ssotAnalysis`
 - `eventOnlySyncAnalysis`
 - `duplicationAnalysis`
+- `observabilityAnalysis`
 - `securityAnalysis`
 - `complexityAnalysis`
 - `semanticFacts`

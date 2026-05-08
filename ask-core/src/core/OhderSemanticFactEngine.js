@@ -153,6 +153,7 @@ export class OhderSemanticFactEngine {
     ssotAnalysis = {},
     eventOnlySyncAnalysis = {},
     duplicationAnalysis = {},
+    observabilityAnalysis = {},
     couplingAnalysis = {},
     durabilityAnalysis = {},
     complexityAnalysis = {},
@@ -220,6 +221,21 @@ export class OhderSemanticFactEngine {
           })))
           : [],
         recommendations: duplicationAnalysis.recommendations,
+      },
+      {
+        factId: 'observability-risk',
+        metric: 'observability_risk',
+        value: ohderFacts.observability_risk,
+        confidence: confidenceForFact(ohderFacts.observability_risk, observabilityAnalysis.risk),
+        severity: severityForFact(ohderFacts.observability_risk),
+        source: 'OhderObservabilityAnalyzerEngine',
+        evidence: Array.isArray(observabilityAnalysis.violations)
+          ? observabilityAnalysis.violations.map(item => ({
+            filePath: item.filePath,
+            reason: item.reason || item.kind,
+          }))
+          : [],
+        recommendations: observabilityAnalysis.recommendations,
       },
       {
         factId: 'security-boundary',

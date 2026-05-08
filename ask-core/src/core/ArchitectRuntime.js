@@ -11,6 +11,7 @@ import { OhderSemanticFactEngine } from './OhderSemanticFactEngine.js';
 import { OhderSsotAnalyzerEngine } from './OhderSsotAnalyzerEngine.js';
 import { OhderEventOnlySyncAnalyzerEngine } from './OhderEventOnlySyncAnalyzerEngine.js';
 import { OhderDuplicationAnalyzerEngine } from './OhderDuplicationAnalyzerEngine.js';
+import { OhderObservabilityAnalyzerEngine } from './OhderObservabilityAnalyzerEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -60,6 +61,7 @@ export class ArchitectRuntime {
     this.ssotAnalyzer = new OhderSsotAnalyzerEngine(cwd);
     this.eventOnlySyncAnalyzer = new OhderEventOnlySyncAnalyzerEngine(cwd);
     this.duplicationAnalyzer = new OhderDuplicationAnalyzerEngine(cwd);
+    this.observabilityAnalyzer = new OhderObservabilityAnalyzerEngine(cwd);
     this.semanticFactEngine = new OhderSemanticFactEngine();
   }
 
@@ -159,6 +161,9 @@ export class ArchitectRuntime {
     const duplicationAnalysis = this.duplicationAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
+    const observabilityAnalysis = this.observabilityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
     const complexityAnalysis = this.complexityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
@@ -197,6 +202,7 @@ export class ArchitectRuntime {
       event_only_sync: eventOnlySyncAnalysis.eventOnlySyncValid ? 'valid' : 'invalid',
       duplication: normalize(duplicationAnalysis.risk).toLowerCase(),
       duplication_risk: normalize(duplicationAnalysis.risk).toLowerCase(),
+      observability_risk: normalize(observabilityAnalysis.risk).toLowerCase(),
       durability_integrity: durabilityIntegrity,
       srp_integrity: srpIntegrity,
       durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
@@ -240,6 +246,7 @@ export class ArchitectRuntime {
       ssotAnalysis,
       eventOnlySyncAnalysis,
       duplicationAnalysis,
+      observabilityAnalysis,
       couplingAnalysis,
       durabilityAnalysis,
       complexityAnalysis,
@@ -302,6 +309,7 @@ export class ArchitectRuntime {
       ssotAnalysis,
       eventOnlySyncAnalysis,
       duplicationAnalysis,
+      observabilityAnalysis,
       complexityAnalysis,
       securityAnalysis,
     });
@@ -327,6 +335,7 @@ export class ArchitectRuntime {
       ssotAnalysis,
       eventOnlySyncAnalysis,
       duplicationAnalysis,
+      observabilityAnalysis,
       complexityAnalysis,
       securityAnalysis,
       architectureScore,
@@ -357,6 +366,14 @@ export class ArchitectRuntime {
         duplicationValid: true,
         filesAnalyzed: [],
         duplicateGroups: [],
+        findings: [],
+        recommendations: [],
+      },
+      observabilityAnalysis: {
+        risk: 'unknown',
+        observabilityValid: true,
+        filesAnalyzed: [],
+        violations: [],
         findings: [],
         recommendations: [],
       },

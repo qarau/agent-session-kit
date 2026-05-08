@@ -41,6 +41,13 @@ Use this playbook when `ask architect status` shows analyzer warnings but no har
 - Extract shared behavior into one authority path or central contract when duplicated code represents policy, validation, projection, or orchestration logic.
 - Boilerplate mirrors such as imports, constants, and empty shells should not create findings.
 
+## Observability Warnings
+
+- Inspect `observabilityAnalysis.violations` and the `observability_risk` semantic fact.
+- Add `code` and `message` fields to blocking `{ ok: false }` paths so operators and replay tools can explain failure.
+- Emit replayable events when governance/runtime state mutates.
+- Prefer status/explain visibility for new governance state so `ask governance explain`, `ask architect status`, or related commands can surface the decision.
+
 ## Security Boundary Warnings
 
 - Inspect `securityAnalysis.filesAnalyzed` and `securityAnalysis.findings`.
