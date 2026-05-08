@@ -3,6 +3,7 @@ import { FileStore } from '../fs/FileStore.js';
 import { OhderLawPackEngine } from './OhderLawPackEngine.js';
 import { ArchitectureScoreEngine } from './ArchitectureScoreEngine.js';
 import { OhderCouplingAnalyzerEngine } from './OhderCouplingAnalyzerEngine.js';
+import { OhderDurabilityValidatorEngine } from './OhderDurabilityValidatorEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -40,6 +41,7 @@ export class ArchitectRuntime {
     this.lawPackEngine = new OhderLawPackEngine(cwd);
     this.scoreEngine = new ArchitectureScoreEngine();
     this.couplingAnalyzer = new OhderCouplingAnalyzerEngine(cwd);
+    this.durabilityValidator = new OhderDurabilityValidatorEngine(cwd);
   }
 
   entropyDelta(execution = {}, validation = {}) {
@@ -120,6 +122,9 @@ export class ArchitectRuntime {
     const couplingAnalysis = this.couplingAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
+    const durabilityAnalysis = this.durabilityValidator.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
     const couplingDelta = Math.max(this.couplingDelta(execution), toNumber(couplingAnalysis.couplingDelta, 0));
     const replayabilityRisk = this.replayabilityRisk(state, execution);
     const maxEntropy = toNonNegativeInt(policy?.architect?.max_entropy_delta, 3);
@@ -168,6 +173,7 @@ export class ArchitectRuntime {
       validation_status: normalize(validation.status).toLowerCase(),
       execution_status: normalize(execution.status).toLowerCase(),
       execution_ok: execution.ok === true ? 'true' : 'false',
+      durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
     });
     const lawFindings = lawEvaluation.violations.map(violation => {
       const detail = normalize(violation.message)
@@ -199,6 +205,7 @@ export class ArchitectRuntime {
       replayabilityRisk,
       lawEvaluation,
       couplingAnalysis,
+      durabilityAnalysis,
     });
     const payload = {
       status,
@@ -214,6 +221,7 @@ export class ArchitectRuntime {
       lawViolations: lawEvaluation.violations,
       lawExemptions: lawEvaluation.exempted,
       couplingAnalysis,
+      durabilityAnalysis,
       architectureScore,
       recommendedAction,
       updatedAt: nowIso(),
