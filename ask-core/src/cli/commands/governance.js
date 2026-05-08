@@ -21,9 +21,28 @@ function printUsage() {
   console.log('Usage: ask governance status|explain|validate');
 }
 
+function findingValues(state = {}) {
+  return Object.values(state.ohderFindings?.findings || {});
+}
+
+function compactFinding(finding = {}) {
+  return {
+    id: normalize(finding.id),
+    status: normalize(finding.status),
+    severity: normalize(finding.severity),
+    confidence: normalize(finding.confidence),
+    metric: normalize(finding.metric),
+    analyzerId: normalize(finding.analyzerId),
+    lawId: normalize(finding.lawId),
+    blocking: finding.blocking === true,
+    resolution: finding.resolution || null,
+  };
+}
+
 function explainDecision(state = {}) {
   const decision = state.governanceDecision || {};
   const loop = state.loop || {};
+  const findings = findingValues(state);
   const reasons = [];
   if (normalize(decision.reason)) {
     reasons.push(normalize(decision.reason));
@@ -45,6 +64,26 @@ function explainDecision(state = {}) {
     loopStatus: normalize(loop.status),
     ohderMode: normalize(state.ohderMode || state.architect?.ohderMode || 'fast'),
     modeBehavior: modeBehavior(state.ohderMode || state.architect?.ohderMode),
+    unresolvedBlockingFindings: findings
+      .filter(finding => finding.blocking === true)
+      .filter(finding => !['suppressed', 'resolved', 'exempted', 'accepted-risk'].includes(normalize(finding.status).toLowerCase()))
+      .map(compactFinding),
+    acceptedRisks: findings
+      .filter(finding => normalize(finding.status).toLowerCase() === 'accepted-risk')
+      .map(compactFinding),
+    temporaryExemptions: findings
+      .filter(finding => normalize(finding.status).toLowerCase() === 'exempted')
+      .map(compactFinding),
+    recentSuppressions: findings
+      .filter(finding => normalize(finding.status).toLowerCase() === 'suppressed')
+      .map(compactFinding),
+    lawTuningRequests: findings
+      .filter(finding => normalize(finding.resolution?.decision).toLowerCase() === 'tune-law')
+      .map(compactFinding),
+    analyzerTuningRequests: findings
+      .filter(finding => normalize(finding.resolution?.decision).toLowerCase() === 'tune-analyzer')
+      .map(compactFinding),
+    analyzerHealthWarnings: [],
     lastStep: compactSteps.length > 0 ? compactSteps[compactSteps.length - 1] : null,
     steps: compactSteps,
   };
@@ -82,6 +121,7 @@ export async function runGovernance(subcommand) {
       flow: state.flow || {},
       loop: state.loop || {},
       governanceDecision: state.governanceDecision || {},
+      ohderFindings: state.ohderFindings || { version: 1, findings: {} },
     }, null, 2));
     return;
   }

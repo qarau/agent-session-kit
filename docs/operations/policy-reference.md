@@ -247,3 +247,24 @@ Current exemption CLI:
 - `ask architect exempt add --law-id <id> --reason <text> --approved-by <id> [--operation <name>] [--session-id <id>] [--expires-at <iso>]`
 - `ask architect exempt list`
 
+## OHDER Finding Resolution
+
+Finding resolution is record-only in v1. It records adjudication decisions for OHDER findings without changing hard-law blocking behavior.
+
+Commands:
+
+- `ask architect finding list [--status <status>]`
+- `ask architect finding explain <finding-id>`
+- `ask architect finding resolve <finding-id> --decision <type> --reason <text> --approved-by <id> [--expires-at <iso>] [--task-id <id>] [--notes <text>]`
+
+Resolution decisions:
+
+- `fix-planned`
+- `false-positive`
+- `justified-risk`
+- `exempt`
+- `tune-law`
+- `tune-analyzer`
+
+`justified-risk` and `exempt` require `--expires-at`. False-positive decisions are tracked in `.ask/runtime/ohder-finding-metrics.json` so noisy analyzers become visible. Automatic suppression and analyzer confidence weighting are future capabilities, not current policy behavior.
+

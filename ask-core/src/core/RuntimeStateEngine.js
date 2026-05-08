@@ -213,6 +213,11 @@ export class RuntimeStateEngine {
       blocking: false,
       writtenAt: '',
     });
+    const ohderFindings = await this.store.readJson(this.paths.ohderFindings(), {
+      version: 1,
+      updatedAt: '',
+      findings: {},
+    });
     const latestTask = this.readLatestTask(taskBoard?.tasks || {});
     const failureStats = this.summarizeFailures(events, policy);
     const ohderMode = normalizeOhderMode(policy?.ohder?.mode || architectStatus?.ohderMode);
@@ -263,6 +268,7 @@ export class RuntimeStateEngine {
       },
       loop: loopState,
       governanceDecision,
+      ohderFindings,
       dirtyWorktree,
       pendingTransitionExists,
       checkpointMatchesExecution,

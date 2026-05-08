@@ -111,6 +111,25 @@ Architect status fields:
 
 The analyzer runtime is advisory unless the law pack or policy makes the finding blocking. The default path is score and entropy pressure, not automatic failure.
 
+## OHDER Finding Resolution Runtime
+
+OFRR turns analyzer output into governed finding records. A finding is an architectural risk claim, not an unquestionable fact.
+
+Runtime files:
+
+- `.ask/runtime/ohder-findings.json`: projected finding registry
+- `.ask/runtime/ohder-finding-metrics.json`: analyzer false-positive metrics
+- `.ask/runtime/findings/evidence/<finding-id>.json`: immutable evidence pack
+- `.ask/runtime/findings/history/<finding-id>.json`: per-finding replay history
+
+Operator commands:
+
+- `ask architect finding list`
+- `ask architect finding explain <finding-id>`
+- `ask architect finding resolve <finding-id> --decision <type> --reason <text> --approved-by <id>`
+
+V1 is record-only. A `false-positive`, `justified-risk`, or `tune-analyzer` resolution is replayable governance memory, but it does not silently suppress OHDER blocking. Existing law-pack exemptions remain the explicit hard-law bypass path.
+
 Future OHDER capability boundaries are documented in `future-ohder-runtime.md`; roadmap items there are not current enforcement unless they also have runtime code, tests, and operator playbooks.
 
 ## Architectural Replay Events

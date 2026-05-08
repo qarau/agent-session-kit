@@ -78,6 +78,7 @@ Usage:
   ask slice close <taskId>
   ask validate-last
   ask architect status
+  ask architect finding list|explain|resolve
   ask architect exempt list|add --law-id <id> --reason <text> --approved-by <id> [--operation <name>] [--session-id <id>] [--expires-at <iso>]
   ask flow status|list
   ask flow discover --last

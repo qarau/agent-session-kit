@@ -154,6 +154,34 @@ export class AskPaths {
     return path.join(this.runtimeDir(), 'governance-decision.json');
   }
 
+  ohderFindings() {
+    return path.join(this.runtimeDir(), 'ohder-findings.json');
+  }
+
+  ohderFindingMetrics() {
+    return path.join(this.runtimeDir(), 'ohder-finding-metrics.json');
+  }
+
+  ohderFindingsDir() {
+    return path.join(this.runtimeDir(), 'findings');
+  }
+
+  ohderFindingEvidenceDir() {
+    return path.join(this.ohderFindingsDir(), 'evidence');
+  }
+
+  ohderFindingHistoryDir() {
+    return path.join(this.ohderFindingsDir(), 'history');
+  }
+
+  ohderFindingEvidence(findingId) {
+    return path.join(this.ohderFindingEvidenceDir(), `${String(findingId ?? '').trim()}.json`);
+  }
+
+  ohderFindingHistory(findingId) {
+    return path.join(this.ohderFindingHistoryDir(), `${String(findingId ?? '').trim()}.json`);
+  }
+
   replayProof() {
     return path.join(this.runtimeDir(), 'replay-proof.json');
   }

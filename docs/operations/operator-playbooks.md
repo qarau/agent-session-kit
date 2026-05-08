@@ -17,6 +17,7 @@
 
 Action responses:
 
+- `inspect-ohder-findings`: run `node ask-core/bin/ask.js architect finding list`, explain each blocking finding, then resolve it as fix-planned, false-positive, justified-risk, exempt, tune-law, or tune-analyzer.
 - `resolve-architecture-block`: run `node ask-core/bin/ask.js architect status` and `node ask-core/bin/ask.js governance explain`, then fix the blocking law violation or use an approved short-lived exemption.
 - `create-refactor-slice`: run `node ask-core/bin/ask.js refactor preview`, confirm the concrete target, then `node ask-core/bin/ask.js refactor create` when the recommendation is acceptable. Approve medium-confidence tasks before execution.
 - `run-governance-validation`: run `node ask-core/bin/ask.js governance validate` before asking for the next task again.
@@ -145,6 +146,14 @@ Manage temporary exemptions:
 - List: `node ask-core/bin/ask.js architect exempt list`
 
 Use exemptions as short-lived operational controls, not permanent policy.
+
+Resolve OHDER findings:
+
+- List: `node ask-core/bin/ask.js architect finding list`
+- Explain: `node ask-core/bin/ask.js architect finding explain <finding-id>`
+- Resolve: `node ask-core/bin/ask.js architect finding resolve <finding-id> --decision <fix-planned|false-positive|justified-risk|exempt|tune-law|tune-analyzer> --reason "<text>" --approved-by <id> [--expires-at <iso>] [--task-id <id>] [--notes "<text>"]`
+
+OFRR v1 records decisions only. A `false-positive` resolution makes analyzer noise visible and replayable, but it does not automatically bypass a hard-law block. Use the existing exemption command when a time-boxed hard-law bypass is actually required.
 
 ## OHDER Analyzer Warning Playbook
 

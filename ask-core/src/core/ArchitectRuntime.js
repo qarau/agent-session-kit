@@ -16,6 +16,7 @@ import { OhderTestabilityAnalyzerEngine } from './OhderTestabilityAnalyzerEngine
 import { OhderReplaceabilityAnalyzerEngine } from './OhderReplaceabilityAnalyzerEngine.js';
 import { normalizeOhderProfile } from './PolicyEngine.js';
 import { OhderArchitectureReviewEnvelope } from './OhderArchitectureReviewEnvelope.js';
+import { FindingResolutionRuntime } from './FindingResolutionRuntime.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -106,6 +107,7 @@ export class ArchitectRuntime {
     this.replaceabilityAnalyzer = new OhderReplaceabilityAnalyzerEngine(cwd);
     this.semanticFactEngine = new OhderSemanticFactEngine();
     this.reviewEnvelope = new OhderArchitectureReviewEnvelope();
+    this.findingRuntime = new FindingResolutionRuntime(cwd);
   }
 
   entropyDelta(execution = {}, validation = {}) {
@@ -413,6 +415,12 @@ export class ArchitectRuntime {
       recommendedAction,
       updatedAt: nowIso(),
     };
+    const findingResult = await this.findingRuntime.detectFromArchitect({
+      sessionId: normalize(state.sessionId),
+      taskId: normalize(slice.id),
+      architect: payload,
+    });
+    payload.findings = findingResult.findings;
     await this.store.writeJson(this.paths.architectStatus(), payload);
     return payload;
   }

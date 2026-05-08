@@ -101,6 +101,7 @@ Core runtime layers active in v5:
 - Architect runtime: OHDER governance law evaluation, hard/soft law taxonomy, architecture scoring, and exemptions
 - Analyzer runtime: coupling, durability, authority, security boundary, and complexity/SRP analysis for changed files
 - Semantic fact runtime: normalized `semanticFacts` with confidence, severity, source, evidence, and recommendations
+- OHDER finding resolution runtime: stable finding IDs, evidence packs, false-positive adjudication, and record-only resolution history
 - Flow runtime: protected/hard-flow continuity governance
 - Design runtime: visual continuity and drift governance
 - Ingestion runtime: plan-to-slice materialization and batch traceability
@@ -143,6 +144,7 @@ Operational runtime guidance lives in:
 - `docs/operations/runtime-architecture.md`
 - `docs/operations/policy-reference.md`
 - `docs/operations/operator-playbooks.md`
+- `docs/operations/ohder-finding-resolution-runtime.md`
 - `docs/operations/future-ohder-runtime.md`
 
 ## Adopt ASK Forge in Another Repository (Vendor Copy + Hooks)
@@ -209,6 +211,7 @@ Task, workflow, and continuity:
 - `ask slice preview|close`
 - `ask refactor preview|create|approve|reject`
 - `ask governance status|explain|validate`
+- `ask architect finding list|explain|resolve`
 - `ask workflow recommend|start|artifact|complete|fail`
 - `ask flow list|status|discover --last|validate --last|promote ...`
 - `ask design list|status|discover --last|validate --last|promote ...`
@@ -363,7 +366,23 @@ Inspect OHDER state with:
 ```bash
 node ask-core/bin/ask.js architect status
 node ask-core/bin/ask.js governance explain
+node ask-core/bin/ask.js architect finding list
 ```
+
+## OHDER Finding Resolution Runtime
+
+OHDER findings are architecture risk claims backed by evidence. They can be wrong, stale, or too broad. ASK Forge now gives those claims stable IDs and a governed adjudication path:
+
+```bash
+node ask-core/bin/ask.js architect finding list
+node ask-core/bin/ask.js architect finding explain <finding-id>
+node ask-core/bin/ask.js architect finding resolve <finding-id> \
+  --decision false-positive \
+  --reason "Analyzer matched fixture-only token text" \
+  --approved-by "architect"
+```
+
+V1 is intentionally record-only. A false-positive or tune-analyzer decision becomes replayable governance memory, but it does not silently suppress OHDER blocking. Use explicit law-pack exemptions for approved temporary hard-law bypasses.
 
 Architect status includes an `architectureScore` with weighted categories for SSoT integrity, replayability, layer discipline, durability, testability, security, observability, and replaceability. The score is telemetry; hard-law blocking still takes precedence.
 

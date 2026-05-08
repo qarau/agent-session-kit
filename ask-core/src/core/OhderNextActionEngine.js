@@ -41,10 +41,38 @@ function baseDecision(action, reason, architect = {}, patch = {}) {
   };
 }
 
+function unresolvedBlockingFindings(state = {}) {
+  return Object.values(state?.ohderFindings?.findings || {})
+    .filter(finding => finding?.blocking === true)
+    .filter(finding => !['suppressed', 'resolved', 'exempted', 'accepted-risk'].includes(normalizeLower(finding?.status)));
+}
+
 export class OhderNextActionEngine {
   decide({ state = {}, architect = {}, refactorGovernance = {}, entropy = null, refactorRecommendation = null, refactorSuppression = null, tasks = {}, policy = {} } = {}) {
     if (hasEntries(tasks.active) || hasEntries(tasks.ready)) {
       return null;
+    }
+
+    const blockingFindings = unresolvedBlockingFindings(state);
+    if (blockingFindings.length > 0) {
+      return baseDecision(
+        'inspect-ohder-findings',
+        'unresolved OHDER findings require evidence inspection',
+        architect,
+        {
+          blocking: true,
+          recommendedCommand: 'ask architect finding list',
+          findings: blockingFindings.map(finding => ({
+            id: normalize(finding.id),
+            status: normalize(finding.status),
+            severity: normalize(finding.severity),
+            metric: normalize(finding.metric),
+            analyzerId: normalize(finding.analyzerId),
+            lawId: normalize(finding.lawId),
+            blocking: finding.blocking === true,
+          })),
+        }
+      );
     }
 
     if (architect.blocking === true) {

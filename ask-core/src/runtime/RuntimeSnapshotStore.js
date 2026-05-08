@@ -181,6 +181,14 @@ export class RuntimeSnapshotStore {
     await this.store.writeJson(this.paths.subagentDispatchSnapshot(), payload);
   }
 
+  async readOhderFindings(fallback = { version: 1, updatedAt: '', findings: {} }) {
+    return this.store.readJson(this.paths.ohderFindings(), fallback);
+  }
+
+  async writeOhderFindings(payload) {
+    await this.store.writeJson(this.paths.ohderFindings(), payload);
+  }
+
   async readProjectionState() {
     return this.store.readJson(this.paths.projectionState(), defaultProjectionState());
   }
