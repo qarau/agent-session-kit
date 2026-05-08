@@ -6,6 +6,7 @@ import { OhderCouplingAnalyzerEngine } from './OhderCouplingAnalyzerEngine.js';
 import { OhderDurabilityValidatorEngine } from './OhderDurabilityValidatorEngine.js';
 import { OhderAuthorityAnalyzerEngine } from './OhderAuthorityAnalyzerEngine.js';
 import { OhderComplexityAnalyzerEngine } from './OhderComplexityAnalyzerEngine.js';
+import { OhderSecurityBoundaryAnalyzerEngine } from './OhderSecurityBoundaryAnalyzerEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -51,6 +52,7 @@ export class ArchitectRuntime {
     this.durabilityValidator = new OhderDurabilityValidatorEngine(cwd);
     this.authorityAnalyzer = new OhderAuthorityAnalyzerEngine(cwd);
     this.complexityAnalyzer = new OhderComplexityAnalyzerEngine(cwd);
+    this.securityAnalyzer = new OhderSecurityBoundaryAnalyzerEngine(cwd);
   }
 
   entropyDelta(execution = {}, validation = {}) {
@@ -142,6 +144,9 @@ export class ArchitectRuntime {
     const complexityAnalysis = this.complexityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
+    const securityAnalysis = this.securityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
     const couplingDelta = Math.max(this.couplingDelta(execution), toNumber(couplingAnalysis.couplingDelta, 0));
     const replayabilityRisk = this.replayabilityRisk(state, execution);
     const maxEntropy = toNonNegativeInt(policy?.architect?.max_entropy_delta, 3);
@@ -169,7 +174,7 @@ export class ArchitectRuntime {
       execution_ok: execution.ok === true ? 'true' : 'false',
       projection_authority: authorityAnalysis.authorityValid ? 'valid' : 'invalid',
       ssot_integrity: 'valid',
-      security_boundary: 'valid',
+      security_boundary: securityAnalysis.boundaryValid ? 'valid' : 'invalid',
       layer_isolation: layerIsolation,
       event_only_sync: 'valid',
       durability_integrity: durabilityIntegrity,
@@ -196,6 +201,9 @@ export class ArchitectRuntime {
       }
       if (normalize(durabilityAnalysis.risk).toLowerCase() === 'high') {
         legacyFindings.push('durability integrity at risk: high durability-sensitive change detected');
+      }
+      if (securityAnalysis.boundaryValid === false) {
+        legacyFindings.push('security boundary invalid: security-sensitive change lacks required guardrails');
       }
     }
 
@@ -255,6 +263,7 @@ export class ArchitectRuntime {
       durabilityAnalysis,
       authorityAnalysis,
       complexityAnalysis,
+      securityAnalysis,
     });
     const payload = {
       status,
@@ -275,6 +284,7 @@ export class ArchitectRuntime {
       durabilityAnalysis,
       authorityAnalysis,
       complexityAnalysis,
+      securityAnalysis,
       architectureScore,
       recommendedAction,
       updatedAt: nowIso(),
@@ -297,6 +307,13 @@ export class ArchitectRuntime {
       lawViolations: [],
       lawExemptions: [],
       ohderFacts: {},
+      securityAnalysis: {
+        risk: 'unknown',
+        boundaryValid: true,
+        filesAnalyzed: [],
+        findings: [],
+        recommendations: [],
+      },
       architectureScore: this.scoreEngine.score(),
       recommendedAction: '',
       updatedAt: '',

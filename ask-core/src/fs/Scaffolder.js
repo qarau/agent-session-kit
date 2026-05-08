@@ -244,6 +244,13 @@ function defaultArchitectStatus() {
     lawOutcome: '',
     lawViolations: [],
     lawExemptions: [],
+    securityAnalysis: {
+      risk: 'unknown',
+      boundaryValid: true,
+      filesAnalyzed: [],
+      findings: [],
+      recommendations: [],
+    },
     recommendedAction: '',
     updatedAt: '',
   };

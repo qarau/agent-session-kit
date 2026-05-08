@@ -20,6 +20,12 @@ Use this playbook when `ask architect status` shows analyzer warnings but no har
 - Replace direct `.ask` state writes with approved authorities such as `RuntimeSnapshotStore`, `RuntimeProjectionEngine`, `EventLedger`, `SequenceStore`, `FileStore`, or `Scaffolder`.
 - Do not add exemptions for permanent duplicate authority paths.
 
+## Security Boundary Warnings
+
+- Inspect `securityAnalysis.filesAnalyzed` and `securityAnalysis.findings`.
+- Add matching tests for auth, token, permission, session, credential, or bypass-sensitive changes.
+- Treat `securityAnalysis.boundaryValid: false` as a hard-law issue in strict mode; fix the guardrail gap before closing the slice.
+
 ## Complexity And SRP Warnings
 
 - Inspect `complexityAnalysis.filesAnalyzed`.
@@ -31,4 +37,3 @@ Use this playbook when `ask architect status` shows analyzer warnings but no har
 - `split-doc-section`: move deep runtime detail out of README or broad playbooks into focused operations docs and cross-link it.
 - `reduce-cross-layer-import`: remove outer-layer imports from inner runtime layers.
 - `extract-responsibility`: isolate one concern and preserve behavior with focused contract tests.
-

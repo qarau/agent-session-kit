@@ -148,7 +148,7 @@ Use exemptions as short-lived operational controls, not permanent policy.
 
 Detailed analyzer-warning response guidance now lives in `docs/operations/ohder-analyzer-playbook.md`.
 
-Use that playbook when `ask architect status` reports coupling, durability, authority, complexity/SRP, or refactor execution plan warnings without a hard-law block.
+Use that playbook when `ask architect status` reports coupling, durability, authority, security boundary, complexity/SRP, or refactor execution plan warnings without a hard-law block.
 
 ## Metrics and Drift Monitoring
 

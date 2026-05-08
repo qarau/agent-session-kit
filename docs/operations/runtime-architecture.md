@@ -7,7 +7,7 @@ ASK Forge runtime behavior is split across cooperating concerns:
 - ASK runtime: orchestration, session lifecycle, execution loop, checkpointing
 - Projection runtime: event replay, snapshot hydration, continuity integrity
 - Architect runtime: OHDER law enforcement and architectural integrity checks
-- Analyzer runtime: deterministic coupling, durability, authority, and complexity analysis
+- Analyzer runtime: deterministic coupling, durability, authority, security boundary, and complexity analysis
 - Flow runtime: behavior continuity, protected/hard-flow guardrails
 - Design runtime: visual continuity, pattern consistency, and brand drift detection
 
@@ -78,6 +78,7 @@ Analyzer responsibilities:
 - `OhderCouplingAnalyzerEngine`: measures touched layers, boundary spread, and risky import directions such as core depending on CLI.
 - `OhderDurabilityValidatorEngine`: detects projector, snapshot, ledger, sequence, policy, and migration touchpoints.
 - `OhderAuthorityAnalyzerEngine`: detects direct governed-state writes outside approved snapshot, projection, ledger, sequence, file-store, or scaffold authorities.
+- `OhderSecurityBoundaryAnalyzerEngine`: detects auth, token, permission, secret, session, and bypass-sensitive changes that lack matching test guardrails.
 - `OhderComplexityAnalyzerEngine`: detects large files, branch-heavy code, mixed concerns, and SRP risk.
 
 Architect status fields:
@@ -85,6 +86,7 @@ Architect status fields:
 - `couplingAnalysis`
 - `durabilityAnalysis`
 - `authorityAnalysis`
+- `securityAnalysis`
 - `complexityAnalysis`
 
 The analyzer runtime is advisory unless the law pack or policy makes the finding blocking. The default path is score and entropy pressure, not automatic failure.

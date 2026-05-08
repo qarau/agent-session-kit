@@ -102,6 +102,7 @@ export class ArchitectureScoreEngine {
     durabilityAnalysis = null,
     authorityAnalysis = null,
     complexityAnalysis = null,
+    securityAnalysis = null,
   } = {}) {
     const categories = initialCategories();
     const violations = Array.isArray(lawEvaluation.violations) ? lawEvaluation.violations : [];
@@ -124,6 +125,11 @@ export class ArchitectureScoreEngine {
       applyPenalty(categories, 'replaceability', 10);
     } else if (complexityAnalysis?.risk === 'medium') {
       applyPenalty(categories, 'testability', 10);
+    }
+    if (securityAnalysis?.risk === 'high' || securityAnalysis?.boundaryValid === false) {
+      applyPenalty(categories, 'security', 30);
+    } else if (securityAnalysis?.risk === 'medium') {
+      applyPenalty(categories, 'security', 12);
     }
     applyPenalty(categories, 'layerDiscipline', Math.min(20, toNumber(couplingDelta, 0) * 5));
     if (couplingAnalysis?.risk === 'high') {
