@@ -7,6 +7,7 @@ import { OhderDurabilityValidatorEngine } from './OhderDurabilityValidatorEngine
 import { OhderAuthorityAnalyzerEngine } from './OhderAuthorityAnalyzerEngine.js';
 import { OhderComplexityAnalyzerEngine } from './OhderComplexityAnalyzerEngine.js';
 import { OhderSecurityBoundaryAnalyzerEngine } from './OhderSecurityBoundaryAnalyzerEngine.js';
+import { OhderSemanticFactEngine } from './OhderSemanticFactEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -53,6 +54,7 @@ export class ArchitectRuntime {
     this.authorityAnalyzer = new OhderAuthorityAnalyzerEngine(cwd);
     this.complexityAnalyzer = new OhderComplexityAnalyzerEngine(cwd);
     this.securityAnalyzer = new OhderSecurityBoundaryAnalyzerEngine(cwd);
+    this.semanticFactEngine = new OhderSemanticFactEngine();
   }
 
   entropyDelta(execution = {}, validation = {}) {
@@ -123,6 +125,7 @@ export class ArchitectRuntime {
         ohderMode: normalizeOhderMode(policy?.ohder?.mode),
         findings: [],
         ohderFacts: {},
+        semanticFacts: [],
         architectureScore: this.scoreEngine.score(),
         recommendedAction: 'continue',
         updatedAt: nowIso(),
@@ -208,6 +211,14 @@ export class ArchitectRuntime {
     }
 
     const loadedLawPack = await this.lawPackEngine.load();
+    const semanticFacts = this.semanticFactEngine.fromArchitectContext({
+      ohderFacts,
+      authorityAnalysis,
+      couplingAnalysis,
+      durabilityAnalysis,
+      complexityAnalysis,
+      securityAnalysis,
+    });
     const lawPack = {
       ...loadedLawPack,
       laws: Array.isArray(loadedLawPack?.laws)
@@ -280,6 +291,7 @@ export class ArchitectRuntime {
       lawViolations: lawEvaluation.violations,
       lawExemptions: lawEvaluation.exempted,
       ohderFacts,
+      semanticFacts,
       couplingAnalysis,
       durabilityAnalysis,
       authorityAnalysis,
@@ -307,6 +319,7 @@ export class ArchitectRuntime {
       lawViolations: [],
       lawExemptions: [],
       ohderFacts: {},
+      semanticFacts: [],
       securityAnalysis: {
         risk: 'unknown',
         boundaryValid: true,

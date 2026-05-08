@@ -90,6 +90,9 @@ Architect status fields:
 - `authorityAnalysis`
 - `securityAnalysis`
 - `complexityAnalysis`
+- `semanticFacts`
+
+`semanticFacts` is the normalized OHDER evidence envelope that sits beside the backward-compatible flat `ohderFacts` map. Each fact includes `metric`, `value`, `confidence`, `severity`, `source`, `evidence`, and `recommendations`. This gives future analyzers a common semantic output model without breaking existing law-pack evaluation.
 
 The analyzer runtime is advisory unless the law pack or policy makes the finding blocking. The default path is score and entropy pressure, not automatic failure.
 
