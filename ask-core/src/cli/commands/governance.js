@@ -5,6 +5,17 @@ function normalize(value) {
   return String(value ?? '').trim();
 }
 
+function modeBehavior(mode) {
+  const normalized = normalize(mode).toLowerCase();
+  if (normalized === 'strict') {
+    return 'strict mode blocks hard-law OHDER violations and treats analyzer guardrail failures as close blockers';
+  }
+  if (normalized === 'refactor') {
+    return 'refactor mode validates refactor outcomes against baseline entropy and architecture score before close';
+  }
+  return 'fast mode surfaces OHDER warnings quickly while preserving warning-first development flow';
+}
+
 function printUsage() {
   console.log('Usage: ask governance status|explain');
 }
@@ -31,6 +42,8 @@ function explainDecision(state = {}) {
     reasons: [...new Set(reasons)],
     loopId: normalize(loop.loopId),
     loopStatus: normalize(loop.status),
+    ohderMode: normalize(state.ohderMode || state.architect?.ohderMode || 'fast'),
+    modeBehavior: modeBehavior(state.ohderMode || state.architect?.ohderMode),
     lastStep: compactSteps.length > 0 ? compactSteps[compactSteps.length - 1] : null,
     steps: compactSteps,
   };
@@ -55,6 +68,7 @@ export async function runGovernance(subcommand) {
       sessionId: normalize(state.sessionId),
       runtimeStatus: normalize(state.status),
       nextRecommendedAction: normalize(state.nextRecommendedAction),
+      ohderMode: normalize(state.ohderMode || state.architect?.ohderMode || 'fast'),
       continuityValid: state.continuityValid === true,
       dirtyWorktree: state.dirtyWorktree === true,
       architect: state.architect || {},
@@ -69,6 +83,7 @@ export async function runGovernance(subcommand) {
   console.log(JSON.stringify({
     ok: true,
     sessionId: normalize(state.sessionId),
+    ohderMode: normalize(state.ohderMode || state.architect?.ohderMode || 'fast'),
     explanation,
   }, null, 2));
 }

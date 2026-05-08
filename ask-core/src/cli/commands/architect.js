@@ -1,5 +1,6 @@
 import { ArchitectRuntime } from '../../core/ArchitectRuntime.js';
 import { OhderLawPackEngine } from '../../core/OhderLawPackEngine.js';
+import { PolicyEngine } from '../../core/PolicyEngine.js';
 
 function getArgValue(args, name) {
   for (let index = 0; index < args.length; index += 1) {
@@ -18,6 +19,11 @@ function normalize(value) {
   return String(value ?? '').trim();
 }
 
+function normalizeOhderMode(value) {
+  const normalized = normalize(value).toLowerCase();
+  return ['fast', 'strict', 'refactor'].includes(normalized) ? normalized : 'fast';
+}
+
 function printUsage() {
   console.log('Usage: ask architect status | ask architect exempt list | ask architect exempt add --law-id <id> --reason <text> --approved-by <id> [--operation <name>] [--session-id <id>] [--expires-at <iso>]');
 }
@@ -27,8 +33,12 @@ export async function runArchitect(subcommand, args = []) {
   const runtime = new ArchitectRuntime(process.cwd());
 
   if (action === 'status') {
+    const policy = await new PolicyEngine(process.cwd()).load();
     const payload = await runtime.readStatus();
-    console.log(JSON.stringify(payload, null, 2));
+    console.log(JSON.stringify({
+      ...payload,
+      ohderMode: normalizeOhderMode(policy?.ohder?.mode || payload.ohderMode),
+    }, null, 2));
     return;
   }
 
