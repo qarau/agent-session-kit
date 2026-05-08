@@ -136,3 +136,35 @@ test('security analyzer lowers risk when matching authorization contract test is
   assert.equal(result.boundaryValid, true);
   assert.deepEqual(result.findings, []);
 });
+
+test('security analyzer ignores keyword detector literals inside analyzer code', async () => {
+  const repoDir = await setupRepo();
+  writeFile(
+    repoDir,
+    'src/core/SecuritySignalAnalyzer.js',
+    `export class SecuritySignalAnalyzer {
+  signals(source = '') {
+    return /\\b(?:skipAuth|disableAuth|bypassAuth|allowAnonymous|permitAll|noAuth)\\b/iu.test(source)
+      || /\\b(?:role|permission|scope|rbac|acl|authorize|authenticate)\\b/iu.test(source)
+      || /\\b(?:secret|password|credential|privateKey|apiKey|accessToken|refreshToken|jwt|token)\\b/iu.test(source);
+  }
+}
+`
+  );
+  writeFile(
+    repoDir,
+    'tests/SecuritySignalAnalyzer.contract.test.js',
+    "import { SecuritySignalAnalyzer } from '../src/core/SecuritySignalAnalyzer.js';\nassert.equal(new SecuritySignalAnalyzer().signals('skipAuth'), true);\n"
+  );
+
+  const result = new OhderSecurityBoundaryAnalyzerEngine(repoDir).analyze({
+    touchedFiles: [
+      'src/core/SecuritySignalAnalyzer.js',
+      'tests/SecuritySignalAnalyzer.contract.test.js',
+    ],
+  });
+
+  assert.equal(result.risk, 'low');
+  assert.equal(result.boundaryValid, true);
+  assert.deepEqual(result.findings, []);
+});

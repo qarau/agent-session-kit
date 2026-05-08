@@ -37,6 +37,7 @@ function isSecuritySensitivePath(filePath) {
 }
 
 function securitySignals(source = '') {
+  const inspectedSource = stripRegexLiterals(source);
   const checks = [
     ['credential-or-secret', /\b(?:secret|password|credential|privateKey|apiKey|accessToken|refreshToken|jwt|token)\b/iu],
     ['auth-bypass', /\b(?:skipAuth|disableAuth|bypassAuth|allowAnonymous|permitAll|noAuth)\b/iu],
@@ -44,8 +45,12 @@ function securitySignals(source = '') {
     ['permission-change', /\b(?:role|permission|scope|rbac|acl|authorize|authenticate)\b/iu],
   ];
   return checks
-    .filter(([, pattern]) => pattern.test(source))
+    .filter(([, pattern]) => pattern.test(inspectedSource))
     .map(([signal]) => signal);
+}
+
+function stripRegexLiterals(source = '') {
+  return source.replace(/\/(?:\\.|[^/\r\n])+\/[dgimsuvy]*/gu, '');
 }
 
 function categoriesFor(signals = [], filePath = '') {
@@ -81,6 +86,7 @@ function matchingTestFiles(filePath, touchedFiles) {
 
 function analyzeFile(cwd, filePath, touchedFiles) {
   const source = readFileSafe(cwd, filePath);
+  const inspectedSource = stripRegexLiterals(source);
   const signals = securitySignals(source);
   const categories = categoriesFor(signals, filePath);
   const sensitive = isSecuritySensitivePath(filePath) || signals.length > 0;
@@ -96,9 +102,9 @@ function analyzeFile(cwd, filePath, touchedFiles) {
   if (signals.includes('auth-bypass')) {
     findings.push(`auth bypass signal detected: ${filePath}`);
   }
-  if (signals.includes('credential-or-secret') && hardcodedCredentialEvidence(source)) {
+  if (signals.includes('credential-or-secret') && hardcodedCredentialEvidence(inspectedSource)) {
     findings.push(`hardcoded credential or token evidence detected: ${filePath}`);
-  } else if (signals.includes('credential-or-secret') && /process\.env/iu.test(source)) {
+  } else if (signals.includes('credential-or-secret') && /process\.env/iu.test(inspectedSource)) {
     findings.push(`credential or token handling changed: ${filePath}`);
   }
 
