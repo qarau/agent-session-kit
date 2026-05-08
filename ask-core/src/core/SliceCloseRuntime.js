@@ -75,6 +75,15 @@ function renderTemplate(template, values = {}) {
   return String(template ?? '').replace(/\{([^}]+)\}/g, (_full, key) => normalize(values[key]));
 }
 
+function parseGitStatusPath(line) {
+  const raw = String(line ?? '').trimEnd();
+  if (!raw) {
+    return '';
+  }
+  const pathStart = raw.length > 2 && raw[2] === ' ' ? 3 : 2;
+  return raw.slice(pathStart).trim();
+}
+
 function resolveSummary({ taskId, lanes, fullSuiteResult }) {
   const laneText = lanes.length > 0 ? lanes.join(',') : 'default';
   if (fullSuiteResult.required) {
@@ -271,7 +280,7 @@ export class SliceCloseRuntime {
       .split('\n')
       .map(line => line.trimEnd())
       .filter(Boolean)
-      .map(line => line.slice(3).trim())
+      .map(parseGitStatusPath)
       .map(filePath => filePath.split(' -> ').at(-1))
       .map(filePath => normalize(filePath).replace(/\\/gu, '/'))
       .filter(Boolean)
