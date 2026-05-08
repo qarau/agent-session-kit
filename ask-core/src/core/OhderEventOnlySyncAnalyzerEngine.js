@@ -32,6 +32,17 @@ function isApprovedEventAuthority(filePath) {
   ].some(authorityPath => normalized.endsWith(authorityPath));
 }
 
+function isAnalyzableSourceFile(filePath) {
+  const normalized = normalizePath(filePath);
+  if (!/\.(?:mjs|js|cjs|ts|tsx|jsx)$/u.test(normalized)) {
+    return false;
+  }
+  if (/(?:^|\/)(?:test|tests|__tests__)\//u.test(normalized) || /\.(?:test|spec)\./u.test(normalized)) {
+    return false;
+  }
+  return normalized.includes('/src/') || normalized.startsWith('src/');
+}
+
 function detectsDirectSyncOverwrite(source = '') {
   return [
     /\bcollection\s*\([^)]*\)\s*\.doc\s*\([^)]*\)\s*\.(?:set|update|delete)\s*\(/u,
@@ -53,6 +64,9 @@ export class OhderEventOnlySyncAnalyzerEngine {
     const violations = [];
 
     for (const filePath of files) {
+      if (!isAnalyzableSourceFile(filePath)) {
+        continue;
+      }
       const approved = isApprovedEventAuthority(filePath);
       if (approved) {
         approvedAuthorities.push(filePath);

@@ -90,6 +90,31 @@ test('event-only sync analyzer reports direct non-event sync mutation', async ()
   assert.match(result.violations[0].reason, /bypasses event ledger/u);
 });
 
+test('event-only sync analyzer ignores docs and contract tests that mention sync mutations', async () => {
+  const repoDir = await setupRepo();
+  writeFile(
+    repoDir,
+    'docs/operations/event-sync.md',
+    'Direct sync current state mutation bypasses event ledger and should be documented as a warning example.\n'
+  );
+  writeFile(
+    repoDir,
+    'ask-core/tests/eventSync.contract.test.mjs',
+    "const sample = 'direct sync current state mutation bypasses event ledger';\n"
+  );
+
+  const result = new OhderEventOnlySyncAnalyzerEngine(repoDir).analyze({
+    touchedFiles: [
+      'docs/operations/event-sync.md',
+      'ask-core/tests/eventSync.contract.test.mjs',
+    ],
+  });
+
+  assert.equal(result.risk, 'low');
+  assert.equal(result.eventOnlySyncValid, true);
+  assert.deepEqual(result.violations, []);
+});
+
 test('architect runtime maps direct sync mutation to event-only hard-law violation', async () => {
   const repoDir = await setupRepo();
   const status = await new ArchitectRuntime(repoDir).assess(baseAssessment([
