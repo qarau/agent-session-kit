@@ -150,6 +150,7 @@ export class OhderSemanticFactEngine {
   fromArchitectContext({
     ohderFacts = {},
     authorityAnalysis = {},
+    ssotAnalysis = {},
     couplingAnalysis = {},
     durabilityAnalysis = {},
     complexityAnalysis = {},
@@ -170,6 +171,22 @@ export class OhderSemanticFactEngine {
           }))
           : [],
         recommendations: authorityAnalysis.recommendations,
+      },
+      {
+        factId: 'ssot-integrity',
+        metric: 'ssot_integrity',
+        value: ohderFacts.ssot_integrity,
+        confidence: confidenceForFact(ohderFacts.ssot_integrity, ssotAnalysis.risk),
+        severity: severityForFact(ohderFacts.ssot_integrity),
+        source: 'OhderSsotAnalyzerEngine',
+        evidence: Array.isArray(ssotAnalysis.violations)
+          ? ssotAnalysis.violations.flatMap(item => item.writers.map(writer => ({
+            filePath: writer.filePath,
+            reason: item.reason,
+            lineHint: item.target,
+          })))
+          : [],
+        recommendations: ssotAnalysis.recommendations,
       },
       {
         factId: 'security-boundary',

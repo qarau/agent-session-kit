@@ -20,6 +20,13 @@ Use this playbook when `ask architect status` shows analyzer warnings but no har
 - Replace direct `.ask` state writes with approved authorities such as `RuntimeSnapshotStore`, `RuntimeProjectionEngine`, `EventLedger`, `SequenceStore`, `FileStore`, or `Scaffolder`.
 - Do not add exemptions for permanent duplicate authority paths.
 
+## SSoT Integrity Warnings
+
+- Inspect `ssotAnalysis.violations` and the `ssot_integrity` semantic fact.
+- Keep each governed runtime target under one approved authority.
+- Move duplicate snapshot, projection, ledger, sequence, or policy writes behind the approved runtime authority instead of adding another writer.
+- In strict mode, `ssot_integrity: invalid` is a hard-law violation and must be fixed or explicitly exempted before close.
+
 ## Security Boundary Warnings
 
 - Inspect `securityAnalysis.filesAnalyzed` and `securityAnalysis.findings`.

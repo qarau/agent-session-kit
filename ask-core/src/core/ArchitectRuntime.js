@@ -8,6 +8,7 @@ import { OhderAuthorityAnalyzerEngine } from './OhderAuthorityAnalyzerEngine.js'
 import { OhderComplexityAnalyzerEngine } from './OhderComplexityAnalyzerEngine.js';
 import { OhderSecurityBoundaryAnalyzerEngine } from './OhderSecurityBoundaryAnalyzerEngine.js';
 import { OhderSemanticFactEngine } from './OhderSemanticFactEngine.js';
+import { OhderSsotAnalyzerEngine } from './OhderSsotAnalyzerEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -54,6 +55,7 @@ export class ArchitectRuntime {
     this.authorityAnalyzer = new OhderAuthorityAnalyzerEngine(cwd);
     this.complexityAnalyzer = new OhderComplexityAnalyzerEngine(cwd);
     this.securityAnalyzer = new OhderSecurityBoundaryAnalyzerEngine(cwd);
+    this.ssotAnalyzer = new OhderSsotAnalyzerEngine(cwd);
     this.semanticFactEngine = new OhderSemanticFactEngine();
   }
 
@@ -144,6 +146,9 @@ export class ArchitectRuntime {
     const authorityAnalysis = this.authorityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
+    const ssotAnalysis = this.ssotAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
     const complexityAnalysis = this.complexityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
@@ -176,7 +181,7 @@ export class ArchitectRuntime {
       execution_status: normalize(execution.status).toLowerCase(),
       execution_ok: execution.ok === true ? 'true' : 'false',
       projection_authority: authorityAnalysis.authorityValid ? 'valid' : 'invalid',
-      ssot_integrity: 'valid',
+      ssot_integrity: ssotAnalysis.ssotValid ? 'valid' : 'invalid',
       security_boundary: securityAnalysis.boundaryValid ? 'valid' : 'invalid',
       layer_isolation: layerIsolation,
       event_only_sync: 'valid',
@@ -199,6 +204,9 @@ export class ArchitectRuntime {
       if (authorityAnalysis.authorityValid === false) {
         legacyFindings.push('projection authority invalid: direct governed-state write detected outside approved authority');
       }
+      if (ssotAnalysis.ssotValid === false) {
+        legacyFindings.push('SSoT integrity invalid: duplicate governed-state authority detected');
+      }
       if (Array.isArray(couplingAnalysis.crossLayerImports) && couplingAnalysis.crossLayerImports.length > 0) {
         legacyFindings.push('layer isolation invalid: cross-layer import direction risk detected');
       }
@@ -214,6 +222,7 @@ export class ArchitectRuntime {
     const semanticFacts = this.semanticFactEngine.fromArchitectContext({
       ohderFacts,
       authorityAnalysis,
+      ssotAnalysis,
       couplingAnalysis,
       durabilityAnalysis,
       complexityAnalysis,
@@ -273,6 +282,7 @@ export class ArchitectRuntime {
       couplingAnalysis,
       durabilityAnalysis,
       authorityAnalysis,
+      ssotAnalysis,
       complexityAnalysis,
       securityAnalysis,
     });
@@ -295,6 +305,7 @@ export class ArchitectRuntime {
       couplingAnalysis,
       durabilityAnalysis,
       authorityAnalysis,
+      ssotAnalysis,
       complexityAnalysis,
       securityAnalysis,
       architectureScore,

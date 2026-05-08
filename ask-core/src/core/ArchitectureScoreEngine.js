@@ -101,6 +101,7 @@ export class ArchitectureScoreEngine {
     couplingAnalysis = null,
     durabilityAnalysis = null,
     authorityAnalysis = null,
+    ssotAnalysis = null,
     complexityAnalysis = null,
     securityAnalysis = null,
   } = {}) {
@@ -119,6 +120,9 @@ export class ArchitectureScoreEngine {
     }
     if (authorityAnalysis?.risk === 'high' || authorityAnalysis?.authorityValid === false) {
       applyPenalty(categories, 'ssotIntegrity', 25);
+    }
+    if (ssotAnalysis?.risk === 'high' || ssotAnalysis?.ssotValid === false) {
+      applyPenalty(categories, 'ssotIntegrity', 30);
     }
     if (complexityAnalysis?.risk === 'high') {
       applyPenalty(categories, 'testability', 20);
