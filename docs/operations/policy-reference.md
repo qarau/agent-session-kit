@@ -183,6 +183,13 @@ Hard laws are architectural safety boundaries and block unless an active exempti
 
 Architect status includes `ohderFacts`, the normalized fact map evaluated by the law pack. Some facts are currently analyzer-derived (`projection_authority`, `layer_isolation`, `durability_integrity`, replayability, entropy, coupling, validation), while future slices expand deeper security, SSoT, and event-only synchronization analyzers.
 
+Default analyzer-to-law mappings:
+
+- Authority analyzer direct governed-state writes set `projection_authority: invalid`.
+- Coupling analyzer forbidden import directions set `layer_isolation: invalid`.
+- Durability validator high-risk touchpoints set `durability_integrity: at-risk`.
+- Complexity analyzer high-risk files set `srp_integrity: weak`, which is a soft warning by default.
+
 Architect status includes `architectureScore`, which reports `overallScore`, `grade`, weighted categories, and weights. Use it for trend visibility and refactor prioritization; do not use it to bypass hard-law blocks.
 
 Current exemption CLI:

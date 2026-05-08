@@ -76,6 +76,7 @@ const validFacts = {
   layer_isolation: 'valid',
   event_only_sync: 'valid',
   durability_integrity: 'valid',
+  srp_integrity: 'strong',
 };
 
 test('scaffolded law pack includes all OHDER hard-law categories', async () => {

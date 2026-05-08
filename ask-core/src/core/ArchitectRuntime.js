@@ -155,6 +155,9 @@ export class ArchitectRuntime {
     const durabilityIntegrity = normalize(durabilityAnalysis.risk).toLowerCase() === 'high'
       ? 'at-risk'
       : 'valid';
+    const srpIntegrity = normalize(complexityAnalysis.risk).toLowerCase() === 'high'
+      ? 'weak'
+      : 'strong';
     const ohderFacts = {
       sessionId: normalize(state.sessionId),
       operation: normalize(slice?.execution?.operation),
@@ -170,6 +173,7 @@ export class ArchitectRuntime {
       layer_isolation: layerIsolation,
       event_only_sync: 'valid',
       durability_integrity: durabilityIntegrity,
+      srp_integrity: srpIntegrity,
       durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
       complexity_risk: normalize(complexityAnalysis.risk).toLowerCase(),
     };

@@ -534,6 +534,18 @@ function defaultOhderLawPack() {
         message: 'Coupling increase exceeded allowed budget.',
       },
       {
+        id: 'ohder-srp-integrity',
+        name: 'SRP Integrity',
+        lawClass: 'soft',
+        enabled: true,
+        severity: 'medium',
+        metric: 'srp_integrity',
+        operator: '==',
+        value: 'strong',
+        outcome: 'warn',
+        message: 'High complexity or mixed responsibilities weakened SRP integrity.',
+      },
+      {
         id: 'ohder-security-boundary',
         name: 'SecurityBoundary',
         lawClass: 'hard',
