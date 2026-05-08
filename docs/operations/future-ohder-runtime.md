@@ -14,6 +14,7 @@ Current OHDER capabilities are implemented in ASK Forge as governed, determinist
 - OHDER-driven `ask next` fallback actions.
 - Refactor recommendation, preview, approval, materialization, and close outcome validation.
 - Runtime mode visibility through `ask architect status`, `ask governance status`, `ask governance explain`, and `ask project-state`.
+- Patch readiness evaluation through `OhderPatchReadinessGate`.
 
 Operator rule: treat these as active runtime behavior.
 
@@ -67,5 +68,6 @@ High-confidence autonomous patch application:
 
 - Would allow ASK to authorize narrow implementation patches when the plan, tests, risk, and rollback path are all explicit.
 - Requires patch-scope constraints, stronger proof of test relevance, rollback evidence, and operator-approved autonomy policy.
+- Current boundary: ASK can report `patchReady: true` when confidence, blast radius, tests, rollback, approval, semantic facts, and clean worktree evidence are sufficient. It still returns `patchExecutionAllowed: false`; no autonomous patch application is enabled.
 
 Operator rule: future capabilities can guide roadmap planning, but implementation claims must stay tied to tested runtime behavior.
