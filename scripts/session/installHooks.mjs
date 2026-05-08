@@ -35,6 +35,7 @@ function main() {
   const hooksDir = resolveHooksDir(repoRoot);
 
   ensureHookExecutable(hooksDir, 'pre-commit');
+  ensureHookExecutable(hooksDir, 'commit-msg');
   ensureHookExecutable(hooksDir, 'pre-push');
   ensureHookExecutable(hooksDir, 'post-commit');
 

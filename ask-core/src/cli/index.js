@@ -5,6 +5,7 @@ import { runPreflight } from './commands/preflight.js';
 import { runCanCommit } from './commands/canCommit.js';
 import { runPreCommitCheck } from './commands/preCommitCheck.js';
 import { runPrePushCheck } from './commands/prePushCheck.js';
+import { runCommitMsgCheck } from './commands/commitMsgCheck.js';
 import { runHandoff } from './commands/handoff.js';
 import { runCodex } from './commands/codex.js';
 import { runReplay } from './commands/replay.js';
@@ -54,6 +55,7 @@ Usage:
   ask can-commit
   ask pre-commit-check
   ask pre-push-check
+  ask commit-msg-check <commit-msg-file>
   ask task create|assign|start|complete|reopen|depends|status
   ask evidence attach
   ask evidence checks record|status
@@ -146,6 +148,11 @@ export async function runCli(args) {
 
   if (command === 'pre-push-check') {
     await runPrePushCheck();
+    return;
+  }
+
+  if (command === 'commit-msg-check') {
+    await runCommitMsgCheck([subcommand, ...rest].filter(Boolean));
     return;
   }
 
