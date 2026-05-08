@@ -144,7 +144,7 @@ export class OhderSecurityBoundaryAnalyzerEngine {
       .filter(filePath => isSourceFile(filePath) && !isTestFile(filePath));
     const filesAnalyzed = files
       .map(filePath => analyzeFile(this.cwd, filePath, touchedFiles))
-      .filter(item => item.sensitive || item.findings.length > 0);
+      .filter(item => item.findings.length > 0 || item.signals.length > 0);
     const findings = filesAnalyzed.flatMap(item => item.findings);
     const risk = riskFor(filesAnalyzed);
 

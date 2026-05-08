@@ -166,5 +166,41 @@ test('security analyzer ignores keyword detector literals inside analyzer code',
 
   assert.equal(result.risk, 'low');
   assert.equal(result.boundaryValid, true);
+  assert.deepEqual(result.filesAnalyzed, []);
+  assert.deepEqual(result.findings, []);
+});
+
+test('security analyzer ignores detector message string literals', async () => {
+  const repoDir = await setupRepo();
+  writeFile(
+    repoDir,
+    'src/core/SecurityMessageCatalog.js',
+    `export class SecurityMessageCatalog {
+  messages() {
+    return [
+      'security-sensitive change lacks matching test coverage',
+      'authorization evidence missing for role, permission, or scope change',
+      'credential-or-secret',
+      'session-mutation'
+    ];
+  }
+}
+`
+  );
+  writeFile(
+    repoDir,
+    'tests/SecurityMessageCatalog.contract.test.js',
+    "import { SecurityMessageCatalog } from '../src/core/SecurityMessageCatalog.js';\nassert.equal(new SecurityMessageCatalog().messages().length, 4);\n"
+  );
+
+  const result = new OhderSecurityBoundaryAnalyzerEngine(repoDir).analyze({
+    touchedFiles: [
+      'src/core/SecurityMessageCatalog.js',
+      'tests/SecurityMessageCatalog.contract.test.js',
+    ],
+  });
+
+  assert.equal(result.risk, 'low');
+  assert.equal(result.boundaryValid, true);
   assert.deepEqual(result.findings, []);
 });
