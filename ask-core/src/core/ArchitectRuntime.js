@@ -14,6 +14,7 @@ import { OhderDuplicationAnalyzerEngine } from './OhderDuplicationAnalyzerEngine
 import { OhderObservabilityAnalyzerEngine } from './OhderObservabilityAnalyzerEngine.js';
 import { OhderTestabilityAnalyzerEngine } from './OhderTestabilityAnalyzerEngine.js';
 import { OhderReplaceabilityAnalyzerEngine } from './OhderReplaceabilityAnalyzerEngine.js';
+import { normalizeOhderProfile } from './PolicyEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -47,6 +48,42 @@ function uniqueDirs(paths = []) {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function strictSemanticEvidence(ohderProfile, ohderFacts = {}, semanticFacts = []) {
+  const requiredMetrics = [
+    'projection_authority',
+    'ssot_integrity',
+    'event_only_sync',
+    'security_boundary',
+    'layer_isolation',
+    'durability_integrity',
+  ].filter(metric => ['invalid', 'at-risk', 'high', 'failed', 'false'].includes(
+    normalize(ohderFacts?.[metric]).toLowerCase()
+  ));
+
+  if (ohderProfile?.requireSemanticFactEvidence !== true) {
+    return {
+      required: false,
+      status: 'not-required',
+      requiredMetrics,
+      missingMetrics: [],
+    };
+  }
+
+  const missingMetrics = requiredMetrics.filter(metric => !semanticFacts.some(fact => (
+    normalize(fact?.metric) === metric
+    && normalize(fact?.confidence).toLowerCase() === 'high'
+    && Array.isArray(fact?.evidence)
+    && fact.evidence.length > 0
+  )));
+
+  return {
+    required: true,
+    status: missingMetrics.length > 0 ? 'missing' : 'satisfied',
+    requiredMetrics,
+    missingMetrics,
+  };
 }
 
 export class ArchitectRuntime {
@@ -188,6 +225,7 @@ export class ArchitectRuntime {
     const requireReplayability = policy?.architect?.require_replayability !== false;
     const blockOnViolation = policy?.architect?.block_on_violation !== false;
     const ohderMode = normalizeOhderMode(policy?.ohder?.mode);
+    const ohderProfile = normalizeOhderProfile(policy);
     const layerIsolation = Array.isArray(couplingAnalysis.crossLayerImports) && couplingAnalysis.crossLayerImports.length > 0
       ? 'invalid'
       : 'valid';
@@ -222,6 +260,21 @@ export class ArchitectRuntime {
       durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
       complexity_risk: normalize(complexityAnalysis.risk).toLowerCase(),
     };
+    const semanticFacts = this.semanticFactEngine.fromArchitectContext({
+      ohderFacts,
+      authorityAnalysis,
+      ssotAnalysis,
+      eventOnlySyncAnalysis,
+      duplicationAnalysis,
+      observabilityAnalysis,
+      testabilityAnalysis,
+      replaceabilityAnalysis,
+      couplingAnalysis,
+      durabilityAnalysis,
+      complexityAnalysis,
+      securityAnalysis,
+    });
+    const semanticEvidence = strictSemanticEvidence(ohderProfile, ohderFacts, semanticFacts);
     const legacyFindings = [];
     if (entropyDelta > maxEntropy) {
       legacyFindings.push(`entropy delta ${String(entropyDelta)} exceeds max ${String(maxEntropy)}`);
@@ -251,23 +304,12 @@ export class ArchitectRuntime {
       if (securityAnalysis.boundaryValid === false) {
         legacyFindings.push('security boundary invalid: security-sensitive change lacks required guardrails');
       }
+      if (semanticEvidence.status === 'missing') {
+        legacyFindings.push(`strict mode semantic evidence missing for: ${semanticEvidence.missingMetrics.join(', ')}`);
+      }
     }
 
     const loadedLawPack = await this.lawPackEngine.load();
-    const semanticFacts = this.semanticFactEngine.fromArchitectContext({
-      ohderFacts,
-      authorityAnalysis,
-      ssotAnalysis,
-      eventOnlySyncAnalysis,
-      duplicationAnalysis,
-      observabilityAnalysis,
-      testabilityAnalysis,
-      replaceabilityAnalysis,
-      couplingAnalysis,
-      durabilityAnalysis,
-      complexityAnalysis,
-      securityAnalysis,
-    });
     const lawPack = {
       ...loadedLawPack,
       laws: Array.isArray(loadedLawPack?.laws)
@@ -337,6 +379,8 @@ export class ArchitectRuntime {
       reason: violation ? findings.join('; ') : 'architecture guardrails satisfied',
       sliceId: normalize(slice.id),
       ohderMode,
+      ohderProfile,
+      semanticEvidence,
       entropyDelta,
       couplingDelta,
       replayabilityRisk,
@@ -374,6 +418,13 @@ export class ArchitectRuntime {
       couplingDelta: 0,
       replayabilityRisk: 'unknown',
       ohderMode: 'fast',
+      ohderProfile: normalizeOhderProfile({ ohder: { mode: 'fast' } }),
+      semanticEvidence: {
+        required: false,
+        status: 'not-required',
+        requiredMetrics: [],
+        missingMetrics: [],
+      },
       findings: [],
       lawPackVersion: 1,
       lawOutcome: '',

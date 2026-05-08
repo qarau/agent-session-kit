@@ -22,6 +22,7 @@ import { RuntimeDriftAnalyticsEngine } from './RuntimeDriftAnalyticsEngine.js';
 import { OhderEntropySnapshotEngine } from './OhderEntropySnapshotEngine.js';
 import { AutonomousLoopStateMachine, AUTONOMOUS_LOOP_STEPS } from './AutonomousLoopStateMachine.js';
 import { OhderRefactorOutcomeEngine } from './OhderRefactorOutcomeEngine.js';
+import { normalizeOhderProfile } from './PolicyEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -124,6 +125,15 @@ function resolveSummary({ taskId, lanes, fullSuiteResult }) {
     return `slice close auto-verified after full suite pass for ${taskId}; lanes=${laneText}; command=${fullSuiteResult.command}`;
   }
   return `slice close auto-verified for ${taskId}; lanes=${laneText}; full-suite=not-required`;
+}
+
+function isRefactorGovernedTask(task = {}) {
+  const taskId = normalizeLower(task?.taskId || task?.id);
+  const title = normalizeLower(task?.title);
+  return Boolean(task?.refactorGovernance)
+    || normalize(task?.origin?.type) === 'ohder-refactor-governance'
+    || taskId.includes('refactor')
+    || title.includes('refactor');
 }
 
 export class SliceCloseRuntime {
@@ -275,6 +285,25 @@ export class SliceCloseRuntime {
       taskId,
       taskTitle: normalize(task?.title),
     });
+  }
+
+  evaluateOhderModeCloseGuard(task = {}, policy = {}) {
+    const profile = normalizeOhderProfile(policy);
+    if (profile.blockNonRefactorSlices !== true || isRefactorGovernedTask(task)) {
+      return {
+        ok: true,
+        profile,
+      };
+    }
+
+    return fail(
+      'ohder-refactor-mode-non-refactor-slice',
+      'OHDER refactor mode only closes refactor-governed slices unless policy allows non-refactor close',
+      {
+        profile,
+        taskId: normalize(task?.taskId || task?.id),
+      }
+    );
   }
 
   resolveCommitFooterKey(policy) {
@@ -609,6 +638,10 @@ export class SliceCloseRuntime {
     const policy = await this.policyEngine.load();
     if (toBoolean(policy?.slice_close?.enabled, true) !== true) {
       return fail('slice-close-disabled', 'slice close runtime disabled by policy');
+    }
+    const modeGuard = this.evaluateOhderModeCloseGuard(task, policy);
+    if (!modeGuard.ok) {
+      return modeGuard;
     }
 
     const session = await this.sessionRuntime.getActiveSession();

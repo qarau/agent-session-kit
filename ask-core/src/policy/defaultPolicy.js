@@ -67,6 +67,7 @@ architect:
 
 ohder:
   mode: fast
+  allow_non_refactor_close: false
 
 refactor_governance:
   enabled: true

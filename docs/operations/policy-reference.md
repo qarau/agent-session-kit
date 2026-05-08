@@ -35,12 +35,21 @@ These controls shape architect outcomes and law-pack threshold values.
 ## `ohder`
 
 - `mode`: `fast`, `strict`, or `refactor`
+- `allow_non_refactor_close`: allows normal feature/docs slices to close while `mode: refactor` is active
 
 Mode behavior:
 
 - `fast`: hard laws still block through the law pack, but analyzer findings remain warning-first unless mapped to an active law.
-- `strict`: hard-law OHDER violations block close. Current strict checks cover projection authority, security boundary, layer isolation, and high durability risk.
-- `refactor`: refactor-governed mode validates refactor outcomes against baseline entropy and architecture score before close.
+- `strict`: hard-law OHDER violations block close, replayability is required, and risky hard-law metrics must have high-confidence semantic fact evidence.
+- `refactor`: non-refactor slices are blocked unless `allow_non_refactor_close: true`; refactor-governed slices must improve or explicitly justify architecture/entropy outcomes.
+
+ASK also exposes a computed `ohder_profile` object after policy load:
+
+- `warningFirst`
+- `requireSemanticFactEvidence`
+- `requireReplayability`
+- `blockNonRefactorSlices`
+- `requireRefactorOutcome`
 
 Operator outputs include `ohderMode` in `ask architect status`, `ask governance status`, `ask governance explain`, and `ask project-state` so operators can see which mode is governing the current decision.
 

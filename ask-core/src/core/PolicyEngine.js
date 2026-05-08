@@ -93,6 +93,36 @@ function normalizeOhderMode(value) {
   return ['fast', 'strict', 'refactor'].includes(normalized) ? normalized : 'fast';
 }
 
+function toPolicyBoolean(value, fallback = false) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  const normalized = String(value ?? '').trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+  return fallback;
+}
+
+export function normalizeOhderProfile(policy = {}) {
+  const mode = normalizeOhderMode(policy?.ohder?.mode);
+  const requireReplayability = mode === 'strict'
+    ? true
+    : policy?.architect?.require_replayability !== false;
+  return {
+    mode,
+    warningFirst: mode === 'fast',
+    requireSemanticFactEvidence: mode === 'strict',
+    requireReplayability,
+    blockNonRefactorSlices: mode === 'refactor'
+      && toPolicyBoolean(policy?.ohder?.allow_non_refactor_close, false) !== true,
+    requireRefactorOutcome: mode === 'refactor',
+  };
+}
+
 function mergePolicy(defaults, overrides) {
   const result = { ...defaults };
   for (const [key, value] of Object.entries(overrides ?? {})) {
@@ -216,6 +246,7 @@ function migratePolicy(parsed = {}, defaults = {}) {
     ...asObject(merged.ohder),
     mode: normalizeOhderMode(merged.ohder?.mode),
   };
+  merged.ohder_profile = normalizeOhderProfile(merged);
 
   return {
     policy: merged,
