@@ -15,6 +15,7 @@ Current OHDER capabilities are implemented in ASK Forge as governed, determinist
 - Refactor recommendation, preview, approval, materialization, and close outcome validation.
 - Runtime mode visibility through `ask architect status`, `ask governance status`, `ask governance explain`, and `ask project-state`.
 - Patch readiness evaluation through `OhderPatchReadinessGate`.
+- Council-lite architecture review envelope in architect status with survivability, replayability, security, durability, and replaceability perspectives.
 
 Operator rule: treat these as active runtime behavior.
 
@@ -58,6 +59,7 @@ Architectural councils:
 
 - Would evaluate major changes through multiple specialized architecture perspectives before execution.
 - Requires deterministic council roles, conflict resolution rules, and replayable decision envelopes.
+- Current boundary: council-lite is deterministic and replayable. It is not an LLM/agent debate and does not replace future architectural councils.
 
 Autonomous entropy reduction:
 

@@ -15,6 +15,7 @@ import { OhderObservabilityAnalyzerEngine } from './OhderObservabilityAnalyzerEn
 import { OhderTestabilityAnalyzerEngine } from './OhderTestabilityAnalyzerEngine.js';
 import { OhderReplaceabilityAnalyzerEngine } from './OhderReplaceabilityAnalyzerEngine.js';
 import { normalizeOhderProfile } from './PolicyEngine.js';
+import { OhderArchitectureReviewEnvelope } from './OhderArchitectureReviewEnvelope.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -104,6 +105,7 @@ export class ArchitectRuntime {
     this.testabilityAnalyzer = new OhderTestabilityAnalyzerEngine(cwd);
     this.replaceabilityAnalyzer = new OhderReplaceabilityAnalyzerEngine(cwd);
     this.semanticFactEngine = new OhderSemanticFactEngine();
+    this.reviewEnvelope = new OhderArchitectureReviewEnvelope();
   }
 
   entropyDelta(execution = {}, validation = {}) {
@@ -373,6 +375,10 @@ export class ArchitectRuntime {
       complexityAnalysis,
       securityAnalysis,
     });
+    const architectureReview = this.reviewEnvelope.review({
+      semanticFacts,
+      architectureScore,
+    });
     const payload = {
       status,
       blocking,
@@ -403,6 +409,7 @@ export class ArchitectRuntime {
       complexityAnalysis,
       securityAnalysis,
       architectureScore,
+      architectureReview,
       recommendedAction,
       updatedAt: nowIso(),
     };
@@ -474,6 +481,7 @@ export class ArchitectRuntime {
         recommendations: [],
       },
       architectureScore: this.scoreEngine.score(),
+      architectureReview: this.reviewEnvelope.review(),
       recommendedAction: '',
       updatedAt: '',
     });
