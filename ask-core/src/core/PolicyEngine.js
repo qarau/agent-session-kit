@@ -88,6 +88,11 @@ function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
+function normalizeOhderMode(value) {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  return ['fast', 'strict', 'refactor'].includes(normalized) ? normalized : 'fast';
+}
+
 function mergePolicy(defaults, overrides) {
   const result = { ...defaults };
   for (const [key, value] of Object.entries(overrides ?? {})) {
@@ -206,6 +211,10 @@ function migratePolicy(parsed = {}, defaults = {}) {
   merged.governance_contract = {
     ...governanceContract,
     policy_schema_version: RUNTIME_POLICY_SCHEMA_VERSION,
+  };
+  merged.ohder = {
+    ...asObject(merged.ohder),
+    mode: normalizeOhderMode(merged.ohder?.mode),
   };
 
   return {

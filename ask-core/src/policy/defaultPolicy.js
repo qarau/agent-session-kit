@@ -65,6 +65,9 @@ architect:
   max_coupling_delta: 2
   require_replayability: true
 
+ohder:
+  mode: fast
+
 refactor_governance:
   enabled: true
   trigger_on_architect_failed: true

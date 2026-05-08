@@ -20,6 +20,11 @@ function toNonNegativeInt(value, fallback = 0) {
   return Math.max(0, Math.floor(toNumber(value, fallback)));
 }
 
+function normalizeOhderMode(value) {
+  const normalized = normalize(value).toLowerCase();
+  return ['fast', 'strict', 'refactor'].includes(normalized) ? normalized : 'fast';
+}
+
 function uniqueDirs(paths = []) {
   const dirs = new Set();
   for (const filePath of paths) {
@@ -113,6 +118,7 @@ export class ArchitectRuntime {
         entropyDelta: 0,
         couplingDelta: 0,
         replayabilityRisk: 'unknown',
+        ohderMode: normalizeOhderMode(policy?.ohder?.mode),
         findings: [],
         architectureScore: this.scoreEngine.score(),
         recommendedAction: 'continue',
@@ -141,6 +147,7 @@ export class ArchitectRuntime {
     const maxCoupling = toNonNegativeInt(policy?.architect?.max_coupling_delta, 2);
     const requireReplayability = policy?.architect?.require_replayability !== false;
     const blockOnViolation = policy?.architect?.block_on_violation !== false;
+    const ohderMode = normalizeOhderMode(policy?.ohder?.mode);
     const legacyFindings = [];
     if (entropyDelta > maxEntropy) {
       legacyFindings.push(`entropy delta ${String(entropyDelta)} exceeds max ${String(maxEntropy)}`);
@@ -150,6 +157,17 @@ export class ArchitectRuntime {
     }
     if (requireReplayability && replayabilityRisk === 'high') {
       legacyFindings.push('replayability continuity risk is high');
+    }
+    if (ohderMode === 'strict') {
+      if (authorityAnalysis.authorityValid === false) {
+        legacyFindings.push('projection authority invalid: direct governed-state write detected outside approved authority');
+      }
+      if (Array.isArray(couplingAnalysis.crossLayerImports) && couplingAnalysis.crossLayerImports.length > 0) {
+        legacyFindings.push('layer isolation invalid: cross-layer import direction risk detected');
+      }
+      if (normalize(durabilityAnalysis.risk).toLowerCase() === 'high') {
+        legacyFindings.push('durability integrity at risk: high durability-sensitive change detected');
+      }
     }
 
     const loadedLawPack = await this.lawPackEngine.load();
@@ -226,6 +244,7 @@ export class ArchitectRuntime {
       blocking,
       reason: violation ? findings.join('; ') : 'architecture guardrails satisfied',
       sliceId: normalize(slice.id),
+      ohderMode,
       entropyDelta,
       couplingDelta,
       replayabilityRisk,
@@ -253,6 +272,7 @@ export class ArchitectRuntime {
       entropyDelta: 0,
       couplingDelta: 0,
       replayabilityRisk: 'unknown',
+      ohderMode: 'fast',
       findings: [],
       lawPackVersion: 1,
       lawOutcome: '',

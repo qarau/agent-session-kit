@@ -32,6 +32,18 @@ Schema tooling:
 
 These controls shape architect outcomes and law-pack threshold values.
 
+## `ohder`
+
+- `mode`: `fast`, `strict`, or `refactor`
+
+Mode behavior:
+
+- `fast`: hard laws still block through the law pack, but analyzer findings remain advisory unless already mapped to an active law.
+- `strict`: hard analyzer findings can become blocking architect findings. The first strict checks cover projection authority violations, layer isolation import risk, and high durability risk.
+- `refactor`: marks the runtime as refactor-governed for follow-on refactor outcome gates. Refactor-specific enforcement is expanded by the refactor outcome runtime.
+
+Architect status includes `ohderMode` so operators can see which mode produced the current decision.
+
 ## `flow`
 
 - `enabled`
