@@ -57,12 +57,15 @@ The loop publishes operator-facing governance outputs:
 
 - `ask governance status`: full runtime governance state
 - `ask governance explain`: compact decision rationale
+- `ask governance validate`: mutating governance refresh that recomputes architect/entropy state and writes a governance decision
 - `ask architect status`: latest architecture law evaluation
 - `ask flow status`: latest flow/behavior governance evaluation
 - `ask design status`: latest design/visual governance evaluation
 - `ask next`: task graph + runtime-driven next action
 
 `ask architect status` includes an `architectureScore` payload with weighted categories for SSoT integrity, replayability, layer discipline, durability, testability, security, observability, and replaceability. The score is operational telemetry for trend visibility; hard-law blocking decisions still take precedence.
+
+`ask architect status` also includes `architectureReview`, a deterministic council-lite envelope with survivability, replayability, security, durability, and replaceability perspectives. It is replayable evidence, not an LLM council.
 
 `ask architect status`, `ask governance status`, `ask governance explain`, and `ask project-state` expose `ohderMode` from runtime policy. `governance explain` also includes the mode behavior summary so operators can tell whether ASK is running warning-first `fast`, hard-law `strict`, or refactor-outcome `refactor` governance.
 
@@ -135,6 +138,8 @@ When no task is available, `ask next` evaluates architect status, replayability 
 
 OHDER fallback recommendations emit `OhderNextActionRecommended` with action, reason, architect status, architecture score, blocking flag, recommended command, compact entropy summary, and refactor recommendation fingerprint when available. The event makes architecture-driven next actions replayable without creating or changing tasks.
 
+When validation evidence is stale or entropy pressure needs confirmation, `ask next` recommends `ask governance validate`. That command emits `GovernanceValidationCompleted` and `GovernanceDecisionWritten`, then `.ask/runtime/governance-decision.json` becomes the latest explicit governance decision.
+
 ## OHDER Entropy Runtime
 
 The entropy runtime implements steps 10, 11, and 16 of the 16-step OHDER loop for slice-close work:
@@ -154,14 +159,18 @@ Flow:
 1. OHDER entropy or architect status identifies refactor pressure.
 2. `GitSliceChangeHistoryReader` and `OhderRefactorTargetDiscoveryEngine` derive concrete targets from recent `ASK-Slice` commits, changed files, entropy history, and completed OHDER refactor tasks.
 3. `OhderRefactorRecommendationEngine` converts pressure and the selected target into a deterministic recommendation with fingerprint, confidence, reason, target metadata, target signals, and acceptance criteria.
-4. `OhderRefactorExecutionPlannerEngine` converts the recommendation and analyzer findings into actions such as `split-doc-section`, `reduce-cross-layer-import`, or `extract-responsibility`.
-5. `ask next` exposes the recommendation and points to `ask refactor preview` by default.
-6. `ask refactor create` materializes the recommendation as a normal ASK task when confidence policy allows it.
-7. If no new target is discoverable, the recommendation is suppressed with `no-new-refactor-target` and `ask next` falls back to governance validation.
-8. Approval and rejection are replayed through `RefactorApproved` and `RefactorRejected`.
-9. The refactor task still executes and closes through `ask slice close <taskId>`.
+4. The recommendation includes `targetPortfolio`, a ranked list of concrete refactor candidates with score, confidence, blast radius, freshness, reasons, and related slice evidence.
+5. `OhderRefactorExecutionPlannerEngine` converts the recommendation and analyzer findings into actions such as `split-doc-section`, `reduce-cross-layer-import`, or `extract-responsibility`.
+6. `ask next` exposes the recommendation and points to `ask refactor preview` by default.
+7. `ask refactor create` materializes the recommendation as a normal ASK task when confidence policy allows it.
+8. `ohder_autonomy` may allow `ask refactor create --auto` to create one bounded task, but it never applies code patches.
+9. If no new target is discoverable, the recommendation is suppressed with `no-new-refactor-target` and `ask next` falls back to governance validation.
+10. Approval and rejection are replayed through `RefactorApproved` and `RefactorRejected`.
+11. The refactor task still executes and closes through `ask slice close <taskId>`.
 
 This keeps OHDER detection, recommendation, materialization, approval, execution, and slice-close validation as separate runtime concerns.
+
+`OhderPatchReadinessGate` is available for future autonomy planning. It can report whether a patch is safe to consider based on confidence, blast radius, tests, rollback plan, clean worktree, approval, and semantic facts. It always keeps patch execution disabled today.
 
 Refactor execution plans are embedded under task origin metadata as `refactorExecutionPlan` and projected into `task.refactorGovernance.executionPlan`. High-risk plans require approval even when the recommendation itself is high confidence.
 

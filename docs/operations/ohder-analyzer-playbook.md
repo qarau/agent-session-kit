@@ -2,6 +2,8 @@
 
 Use this playbook when `ask architect status` shows analyzer warnings but no hard-law block.
 
+Each analyzer contributes to the normalized `semanticFacts` envelope. When responding to warnings, inspect both the analyzer-specific payload and the matching semantic fact so the remediation preserves evidence, confidence, source, and recommendations.
+
 ## Coupling Warnings
 
 - Inspect `couplingAnalysis.crossLayerImports`.

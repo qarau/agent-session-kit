@@ -4,7 +4,7 @@ Governed Autonomous Software Development
 
 ## Runtime Status
 
-Current release line: `v5.0.1`
+Current release line: `v5.1.0`
 
 ASK Forge is a Developer-Agent Runtime for governing long-running implementation sessions before code reaches remote CI. It enforces session and policy checks at commit/push boundaries and keeps runtime state reconstructable through an event ledger.
 
@@ -31,6 +31,21 @@ In this model, ASK does not replace Codex or Superpowers. ASK governs the softwa
 - delivery and coordination runtime surfaces (feature/release/promote/rollout + route/claim/agent/child-session) move ASK from policy helper to end-to-end governed execution control plane
 
 In short: 4.x proved runtime governance works; 5.0.0 turns that governance into an operational execution system.
+
+## Why 5.1.0 Is Special
+
+`v5.1.0` is the OHDER Semantic Autonomy release. It moves ASK Forge from architecture checks and refactor suggestions toward semantic, evidence-backed architecture governance.
+
+What changed:
+
+- `semanticFacts` normalize analyzer evidence across OHDER laws, architecture scoring, and future automation.
+- `ask governance validate` is now the explicit mutating governance refresh command; it recomputes architecture/entropy evidence and writes a replayable governance decision.
+- OHDER refactor recommendations now include a ranked `targetPortfolio` with confidence, blast radius, freshness, reasons, and related slice evidence.
+- `ohder_autonomy` can create bounded refactor tasks when policy allows, but ASK still does not apply patches automatically.
+- `OhderPatchReadinessGate` can say whether a future autonomous patch is safe to consider while keeping `patchExecutionAllowed: false`.
+- `architectureReview` adds a deterministic `council-lite` envelope with survivability, replayability, security, durability, and replaceability perspectives.
+
+In short: 5.0 made ASK Forge an execution control plane; 5.1 makes OHDER smarter, more semantic, and more explicit about the boundary between task autonomy and future patch autonomy.
 
 ## What Changed in 5.0.0 (from 4.x)
 
@@ -85,10 +100,12 @@ Core runtime layers active in v5:
 - Projection runtime: event replay, snapshot hydration, continuity proofs
 - Architect runtime: OHDER governance law evaluation, hard/soft law taxonomy, architecture scoring, and exemptions
 - Analyzer runtime: coupling, durability, authority, security boundary, and complexity/SRP analysis for changed files
+- Semantic fact runtime: normalized `semanticFacts` with confidence, severity, source, evidence, and recommendations
 - Flow runtime: protected/hard-flow continuity governance
 - Design runtime: visual continuity and drift governance
 - Ingestion runtime: plan-to-slice materialization and batch traceability
 - Refactor execution planner: concrete, approval-aware refactor plans derived from OHDER findings
+- OHDER semantic autonomy runtime: ranked `targetPortfolio`, `ohder_autonomy`, `OhderPatchReadinessGate`, and `council-lite` architecture review
 - Delivery runtime: feature/release/promotion/rollout governance
 
 ## Prerequisites
@@ -191,6 +208,7 @@ Task, workflow, and continuity:
 - `ask plan batch show <planBatchId>`
 - `ask slice preview|close`
 - `ask refactor preview|create|approve|reject`
+- `ask governance status|explain|validate`
 - `ask workflow recommend|start|artifact|complete|fail`
 - `ask flow list|status|discover --last|validate --last|promote ...`
 - `ask design list|status|discover --last|validate --last|promote ...`
