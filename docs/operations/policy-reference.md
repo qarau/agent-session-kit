@@ -98,6 +98,16 @@ Design runtime uses changed-files + visual-regression map evidence to emit desig
 
 These keys decide whether governance triggers automated retry slices or hard blocks.
 
+## `ohder_autonomy`
+
+- `auto_create_refactor_tasks`: defaults to `false`; enables `ask refactor create --auto` only when explicitly opted in
+- `max_auto_created_tasks_per_session`: defaults to `1`
+- `require_clean_worktree`: defaults to `true`
+- `min_confidence`: defaults to `high`
+- `max_blast_radius`: defaults to `medium`
+
+OHDER autonomy can create bounded refactor tasks from high-confidence recommendations. It does not apply code patches. Targets above the configured blast radius require approval or manual creation.
+
 ## `refactor_materialization`
 
 This section controls how OHDER refactor recommendations become governed ASK tasks.

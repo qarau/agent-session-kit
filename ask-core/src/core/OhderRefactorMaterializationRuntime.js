@@ -11,6 +11,7 @@ import { RefactorGovernanceEngine } from './RefactorGovernanceEngine.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 import { RuntimeStateEngine } from './RuntimeStateEngine.js';
 import { TaskRuntime } from './TaskRuntime.js';
+import { OhderAutonomousEntropyController } from './OhderAutonomousEntropyController.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -47,6 +48,7 @@ export class OhderRefactorMaterializationRuntime {
     this.targetDiscoveryEngine = new OhderRefactorTargetDiscoveryEngine();
     this.executionPlanner = new OhderRefactorExecutionPlannerEngine();
     this.refactorGovernanceEngine = new RefactorGovernanceEngine();
+    this.autonomousEntropyController = new OhderAutonomousEntropyController();
     this.taskRuntime = new TaskRuntime(cwd);
     this.ledger = new EventLedger(cwd);
     this.projectionEngine = new RuntimeProjectionEngine(cwd);
@@ -144,8 +146,15 @@ export class OhderRefactorMaterializationRuntime {
     return { create: true, decision: 'create', approvalRequired: false };
   }
 
+  countAutoCreatedRefactorTasks(tasks = {}) {
+    return Object.values(tasks)
+      .filter(task => normalize(task?.origin?.type) === 'ohder-refactor-governance')
+      .filter(task => normalize(task?.origin?.requestedBy) === 'auto')
+      .length;
+  }
+
   async create({ requestedBy = 'local', auto = false } = {}) {
-    const { recommendation, suppression, state, architect, entropy, refactorGovernance, policy, targetDiscovery } = await this.recommendationFromCurrentState();
+    const { recommendation, suppression, state, architect, entropy, refactorGovernance, policy, targetDiscovery, tasks } = await this.recommendationFromCurrentState();
     if (!recommendation) {
       return {
         ok: true,
@@ -162,6 +171,31 @@ export class OhderRefactorMaterializationRuntime {
     }
 
     const refactorExecutionPlan = this.executionPlanner.plan({ recommendation, architect });
+    if (auto) {
+      const autonomy = this.autonomousEntropyController.evaluate({
+        recommendation,
+        policy,
+        dirtyWorktree: state.dirtyWorktree === true,
+        autoCreatedCount: this.countAutoCreatedRefactorTasks(tasks),
+      });
+      if (autonomy.createTask !== true) {
+        return {
+          ok: true,
+          mode: 'create',
+          created: false,
+          decision: autonomy.decision,
+          approvalRequired: autonomy.approvalRequired,
+          recommendation,
+          refactorExecutionPlan,
+          autonomy,
+          task: null,
+          architect,
+          entropy,
+          refactorGovernance,
+        };
+      }
+      requestedBy = 'auto';
+    }
     const decision = this.resolveConfidenceDecision(recommendation, policy, auto);
     const approvalRequired = decision.approvalRequired === true || refactorExecutionPlan.approvalRequired === true;
     if (!decision.create) {

@@ -34,7 +34,10 @@ export function resolveRefactorCommand(recommendation = null, policy = {}) {
   const compact = compactRefactorRecommendation(recommendation);
   if (
     compact?.confidence === 'high'
-    && policy?.refactor_materialization?.auto_materialize_high_confidence === true
+    && (
+      policy?.ohder_autonomy?.auto_create_refactor_tasks === true
+      || policy?.refactor_materialization?.auto_materialize_high_confidence === true
+    )
   ) {
     return 'ask refactor create --auto';
   }
