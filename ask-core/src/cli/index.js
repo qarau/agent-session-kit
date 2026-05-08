@@ -39,6 +39,7 @@ import { runFlow } from './commands/flow.js';
 import { runGovernance } from './commands/governance.js';
 import { runDesign } from './commands/design.js';
 import { runPlan } from './commands/plan.js';
+import { runPlanMode } from './commands/planMode.js';
 import { runRefactor } from './commands/refactor.js';
 
 function printHelp() {
@@ -90,6 +91,7 @@ Usage:
   ask design promote <region-id> --to <stage> --reason <text> [--approved-by <id>] [--approval-ticket <id>]
   ask governance status|explain|validate
   ask plan ingest|validate|batch show
+  ask plan-mode handoff --title <text> --source <md> --plan-json <json>
   ask refactor preview|create
   ask next
   ask resume-packet show
@@ -292,6 +294,11 @@ export async function runCli(args) {
 
   if (command === 'plan') {
     await runPlan(subcommand, rest);
+    return;
+  }
+
+  if (command === 'plan-mode') {
+    await runPlanMode(subcommand, rest);
     return;
   }
 

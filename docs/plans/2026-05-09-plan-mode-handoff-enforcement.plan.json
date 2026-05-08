@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "pmh",
+  "planTitle": "ASK Plan Mode Handoff Enforcement",
+  "planSummary": "Make ASK the mandatory governance bridge between Codex/Superpowers planning and implementation by requiring plan artifacts, ASK ingestion, active slices, validation, and commit provenance.",
+  "slices": [
+    {
+      "sliceId": "plan-mode-handoff-runtime",
+      "title": "Plan Mode Handoff Runtime",
+      "description": "Create ask plan-mode handoff so markdown and JSON plan artifacts are attached to an ASK workflow run, validated, ingested, and recorded as durable handoff state.",
+      "acceptanceCriteria": [
+        "ask plan-mode handoff exists",
+        "The command accepts title, source markdown path, JSON plan path, task id, run id, and workflow metadata",
+        "The runtime records durable handoff state under .ask/runtime",
+        "The runtime emits explicit events for handoff creation, validation, and ingestion",
+        "The command returns created ASK task ids and next task when ingestion succeeds"
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "implementation-preflight-runtime",
+      "title": "Implementation Preflight Runtime",
+      "description": "Add ask implementation preflight to refuse development when a plan handoff is required but no active ASK slice is present.",
+      "acceptanceCriteria": [
+        "ask implementation preflight exists",
+        "The preflight detects missing plan handoff state",
+        "The preflight detects no active ASK task",
+        "The preflight reports exact recovery commands",
+        "The preflight supports documented advisory mode for non-Plan-Mode maintenance"
+      ],
+      "dependsOn": ["plan-mode-handoff-runtime"],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "pre-commit-implementation-contract-gate",
+      "title": "Pre-Commit Implementation Contract Gate",
+      "description": "Extend git hook enforcement so implementation commits cannot bypass ASK slice governance.",
+      "acceptanceCriteria": [
+        "The pre-commit adapter invokes implementation preflight or equivalent runtime check",
+        "The gate blocks implementation commits with no active slice or no slice close provenance",
+        "Documentation explains recovery from the block",
+        "Existing hook behavior remains intact"
+      ],
+      "dependsOn": ["implementation-preflight-runtime"],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "commit-message-ask-slice-provenance",
+      "title": "Commit Message ASK-Slice Provenance",
+      "description": "Add commit-message enforcement so governed implementation commits carry explicit ASK slice provenance.",
+      "acceptanceCriteria": [
+        "A commit message hook adapter exists and is wired by ASK hook installation",
+        "Slice-close commits include an ASK-Slice footer",
+        "Non-governed implementation commits are blocked unless explicitly classified as docs or tooling maintenance",
+        "Tests cover valid and invalid commit messages"
+      ],
+      "dependsOn": ["pre-commit-implementation-contract-gate"],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ask-next-plan-mode-awareness",
+      "title": "ASK Next Plan Mode Awareness",
+      "description": "Teach ask next to surface pending plan handoff and active slice guidance.",
+      "acceptanceCriteria": [
+        "ask next reports pending handoff state when validation or ingestion is incomplete",
+        "ask next prioritizes the next open generated slice after ingestion",
+        "ask next explains ask task start when implementation is attempted before task start"
+      ],
+      "dependsOn": ["commit-message-ask-slice-provenance"],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "governance-bypass-finding",
+      "title": "Governance Bypass Finding",
+      "description": "Make governance bypass attempts visible as OHDER/ASK findings instead of silent operator mistakes.",
+      "acceptanceCriteria": [
+        "Missing handoff, missing active slice, and invalid commit provenance create explainable findings",
+        "Findings include evidence, severity, remediation, and artifact references",
+        "Findings can be listed through existing governance or finding commands"
+      ],
+      "dependsOn": ["ask-next-plan-mode-awareness"],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "operator-documentation",
+      "title": "Operator Documentation",
+      "description": "Document the Plan Mode to ASK handoff lifecycle and expected command flow.",
+      "acceptanceCriteria": [
+        "README or operations documentation describes the handoff loop",
+        "Examples show markdown plan, JSON plan, ingest, ask next, task start, implementation, validation, and slice close",
+        "The docs clarify ASK, Codex, and Superpowers responsibilities"
+      ],
+      "dependsOn": ["governance-bypass-finding"],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "end-to-end-governance-contract",
+      "title": "End-to-End Governance Contract",
+      "description": "Add an end-to-end governance contract proving plan artifact handoff, slice start, validation, and commit provenance enforcement.",
+      "acceptanceCriteria": [
+        "The test exercises the operator flow from plan artifact to governed slice start",
+        "The test verifies enforcement blocks bypass when active slice or provenance is missing",
+        "The test verifies slice-close commits carry ASK provenance"
+      ],
+      "dependsOn": ["operator-documentation"],
+      "queueClass": "integrator"
+    }
+  ]
+}
