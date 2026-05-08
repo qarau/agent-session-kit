@@ -63,6 +63,14 @@ Ledger events:
 - `RefactorSuggested`
 - `RefactorApproved`
 - `RefactorRejected`
+- `RefactorOutcomeValidated`
+
+Refactor close behavior:
+
+- ASK captures a baseline architecture score and entropy score when an OHDER refactor task is materialized.
+- `ask slice close <taskId>` compares the closing architecture/entropy result against that baseline.
+- In `ohder.mode: refactor`, a worsening outcome without explicit justification blocks close.
+- In other modes, worsening outcomes are visible as governance evidence and can continue when justified.
 ## Executing a Governed Loop
 
 Use governed continuation for checkpointed execution:

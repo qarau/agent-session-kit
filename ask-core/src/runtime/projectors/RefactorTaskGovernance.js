@@ -8,7 +8,8 @@ export function createdRefactorGovernance(origin = null, previous = null) {
   if (!origin || typeof origin !== 'object' || origin.type !== 'ohder-refactor-governance') {
     return previous;
   }
-  return {
+  const baseline = cloneObject(origin.refactorBaseline);
+  const next = {
     recommendationFingerprint: String(origin.recommendationFingerprint ?? ''),
     targetId: String(origin.targetId ?? ''),
     confidence: String(origin.confidence ?? ''),
@@ -18,6 +19,10 @@ export function createdRefactorGovernance(origin = null, previous = null) {
     rejectedReason: '',
     executionPlan: cloneObject(origin.refactorExecutionPlan),
   };
+  if (baseline) {
+    next.baseline = baseline;
+  }
+  return next;
 }
 
 export function approvedRefactorGovernance(previous = null, event = {}) {

@@ -21,6 +21,7 @@ import { MetricsWriter } from './MetricsWriter.js';
 import { RuntimeDriftAnalyticsEngine } from './RuntimeDriftAnalyticsEngine.js';
 import { OhderEntropySnapshotEngine } from './OhderEntropySnapshotEngine.js';
 import { AutonomousLoopStateMachine, AUTONOMOUS_LOOP_STEPS } from './AutonomousLoopStateMachine.js';
+import { OhderRefactorOutcomeEngine } from './OhderRefactorOutcomeEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -146,6 +147,7 @@ export class SliceCloseRuntime {
     this.driftAnalyticsEngine = new RuntimeDriftAnalyticsEngine();
     this.entropySnapshotEngine = new OhderEntropySnapshotEngine();
     this.loopStateMachine = new AutonomousLoopStateMachine(cwd);
+    this.refactorOutcomeEngine = new OhderRefactorOutcomeEngine();
   }
 
   runGit(args, allowFailure = false) {
@@ -689,6 +691,32 @@ export class SliceCloseRuntime {
       });
     }
     const entropy = await this.captureEntropyImpact(session, resolvedTaskId, architect, policy);
+    const refactorOutcome = this.refactorOutcomeEngine.evaluate({
+      task,
+      architect,
+      entropy: entropy?.entropy || entropy,
+      policy,
+    });
+    if (refactorOutcome.required) {
+      await this.emitRuntimeEvent('RefactorOutcomeValidated', session, resolvedTaskId, {
+        taskId: resolvedTaskId,
+        outcome: refactorOutcome,
+      });
+    }
+    if (refactorOutcome.blocking === true) {
+      await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+        decision: 'block',
+        reason: normalize(refactorOutcome.reason),
+      });
+      await this.loopStateMachine.fail('block', {
+        taskId: resolvedTaskId,
+        reason: normalize(refactorOutcome.reason),
+      });
+      return fail('slice-close-refactor-outcome-blocked', 'OHDER refactor outcome validation blocked slice close', {
+        taskId: resolvedTaskId,
+        refactorOutcome,
+      });
+    }
     await this.enterSliceCloseLoopStep(10, session, resolvedTaskId, {
       refactorPressure: normalize(entropy?.entropy?.refactorPressure || entropy?.refactorPressure),
       trend: normalize(entropy?.entropy?.trend || entropy?.trend),

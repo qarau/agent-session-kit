@@ -216,6 +216,11 @@ export class OhderRefactorMaterializationRuntime {
           requestedBy: normalize(requestedBy),
           approvalRequired,
           refactorExecutionPlan,
+          refactorBaseline: {
+            architectureScore: toNumber(architect?.architectureScore?.overallScore, 0),
+            entropyScore: toNumber(entropy?.entropyScore, 0),
+            measuredAt: normalize(entropy?.measuredAt),
+          },
         },
       },
       { source: 'ohder-refactor-materialization-runtime' }
