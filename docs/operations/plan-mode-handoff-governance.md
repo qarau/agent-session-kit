@@ -1,0 +1,130 @@
+﻿# Plan Mode Handoff Governance
+
+ASK Forge uses Plan Mode handoff to prevent implementation from starting from an ungoverned written plan. The handoff boundary is explicit: Codex or Superpowers can write a plan, but ASK must ingest it before development begins.
+
+## Roles
+
+- **ASK Forge = Governance Constitution**: owns the lifecycle rules, plan ingestion, slice queue, implementation preflight, OHDER validation, findings, hook enforcement, and commit provenance.
+- **Codex = Implementation Engine**: performs code, test, documentation, and refactor work only after ASK presents and starts a governed slice.
+- **Superpowers = Workflow Discipline**: supplies planning, TDD, debugging, verification, and branch-completion methods that feed plans and evidence into ASK.
+
+ASK does not replace Codex or Superpowers. ASK makes their output governable, replayable, and auditable.
+
+## Governed Flow
+
+1. Write or receive the plan as markdown.
+2. Convert the plan into a structured ASK plan JSON artifact.
+3. Hand both artifacts to ASK with `ask plan-mode handoff`.
+4. ASK records workflow artifacts, validates the plan, and ingests slices.
+5. Run `ask next` to see the next governed slice.
+6. Start the slice with `ask task start <taskId>`.
+7. Codex implements the slice.
+8. Run validation as needed during development.
+9. Close with `ask slice close <taskId>` so ASK runs full suite validation, OHDER governance, task completion, commit creation, and pre-push validation.
+10. The resulting commit carries `ASK-Slice: <taskId>` provenance.
+
+## Example Handoff
+
+```bash
+node ask-core/bin/ask.js task create plan-source --title "Runtime enforcement plan"
+node ask-core/bin/ask.js workflow start plan-source --workflow superpowers --skill writing-plans --run-id plan-run
+node ask-core/bin/ask.js workflow artifact plan-source --run-id plan-run --type plan --path docs/plans/runtime-enforcement.plan.json --summary "Structured implementation plan"
+node ask-core/bin/ask.js plan validate --task plan-source --run-id plan-run --path docs/plans/runtime-enforcement.plan.json
+node ask-core/bin/ask.js plan ingest --task plan-source --run-id plan-run --path docs/plans/runtime-enforcement.plan.json
+```
+
+The explicit validation and ingestion commands are `ask plan validate` and `ask plan ingest`. The shorter operator command does the same lifecycle in one place:
+
+```bash
+node ask-core/bin/ask.js plan-mode handoff \
+  --title "Runtime enforcement plan" \
+  --source docs/plans/runtime-enforcement.md \
+  --plan-json docs/plans/runtime-enforcement.plan.json \
+  --task plan-source \
+  --run-id plan-run \
+  --workflow superpowers \
+  --skill writing-plans
+```
+
+## Starting Work
+
+After handoff, ASK owns the slice queue:
+
+```bash
+node ask-core/bin/ask.js next
+node ask-core/bin/ask.js task start pmh-001
+node ask-core/bin/ask.js implementation preflight
+```
+
+`ask next` reports pending handoff errors, the next generated task, and the exact `ask task start <taskId>` command when implementation has not started.
+
+`ask implementation preflight` blocks when a plan has not been handed off or when no active ASK slice exists. Use `--advisory` for non-Plan-Mode maintenance checks that should warn without blocking.
+
+## Closing Work
+
+Do not manually commit implementation slices. Close the active ASK slice:
+
+```bash
+node ask-core/bin/ask.js slice close pmh-001
+```
+
+Slice close runs the governed completion loop:
+
+- full-suite validation for integrator/protected lanes
+- OHDER architecture validation
+- entropy impact measurement
+- task verification and completion
+- auto commit with `ASK-Slice: <taskId>`
+- pre-push validation of outgoing commit lineage
+
+## Hook Enforcement
+
+ASK installs three hook entrypoints:
+
+- `.githooks/pre-commit` runs `scripts/session/runAskCorePreCommitAdapter.mjs`
+- `.githooks/commit-msg` runs `scripts/session/runAskCoreCommitMsgAdapter.mjs`
+- `.githooks/pre-push` runs `scripts/session/runAskCorePrePushAdapter.mjs`
+
+Install hooks with:
+
+```bash
+npm run session:hooks:install
+```
+
+The pre-commit gate checks implementation handoff state when Plan Mode governance is active. The commit-msg gate requires `ASK-Slice: <taskId>` or a valid `ASK-Exempt: <kind>` footer. The pre-push gate validates outgoing commit lineage before remote publication.
+
+## Recovery
+
+If handoff is missing:
+
+```bash
+node ask-core/bin/ask.js plan-mode handoff --title <title> --source <md> --plan-json <json>
+```
+
+If the plan artifact is invalid:
+
+```bash
+node ask-core/bin/ask.js plan validate --task <taskId> --run-id <runId> --path <json>
+```
+
+If no slice is active:
+
+```bash
+node ask-core/bin/ask.js next
+node ask-core/bin/ask.js task start <taskId>
+```
+
+If commit provenance is missing:
+
+```text
+ASK-Slice: <taskId>
+```
+
+or, for approved maintenance-only commits:
+
+```text
+ASK-Exempt: meta
+```
+
+Governance bypass failures are recorded as OHDER/ASK findings so operators can inspect evidence, fix the issue, justify it, exempt it, or tune the analyzer/law.
+

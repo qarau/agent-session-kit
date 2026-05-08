@@ -90,8 +90,8 @@ Developer outcomes:
 
 - `ask-core/`: runtime engine + CLI command surface
 - `.ask/`: runtime state directory generated at execution time
-- `.githooks/pre-commit` and `.githooks/pre-push`: enforcement entrypoints
-- `scripts/session/runAskCorePreCommitAdapter.mjs` and `scripts/session/runAskCorePrePushAdapter.mjs`: wrapper adapters called by hooks
+- `.githooks/pre-commit`, `.githooks/commit-msg`, and `.githooks/pre-push`: enforcement entrypoints
+- `scripts/session/runAskCorePreCommitAdapter.mjs`, `scripts/session/runAskCoreCommitMsgAdapter.mjs`, and `scripts/session/runAskCorePrePushAdapter.mjs`: wrapper adapters called by hooks
 - `scripts/session/installHooks.mjs`: hook activation helper (`core.hooksPath=.githooks`)
 
 Core runtime layers active in v5:
@@ -121,6 +121,9 @@ npm test
 node ask-core/bin/ask.js --help
 node ask-core/bin/ask.js preflight
 node ask-core/bin/ask.js can-commit
+node ask-core/bin/ask.js plan-mode handoff --title <title> --source <md> --plan-json <json>
+node ask-core/bin/ask.js implementation preflight
+# shorthand: ask plan-mode handoff
 ```
 
 Enable hooks:
@@ -145,6 +148,7 @@ Operational runtime guidance lives in:
 - `docs/operations/policy-reference.md`
 - `docs/operations/operator-playbooks.md`
 - `docs/operations/ohder-finding-resolution-runtime.md`
+- `docs/operations/plan-mode-handoff-governance.md`
 - `docs/operations/future-ohder-runtime.md`
 
 ## Adopt ASK Forge in Another Repository (Vendor Copy + Hooks)
@@ -176,6 +180,7 @@ node scripts/session/runAskCorePrePushAdapter.mjs
 ASK hook enforcement is intentionally explicit and stable:
 
 - `.githooks/pre-commit` executes `node scripts/session/runAskCorePreCommitAdapter.mjs`
+- `.githooks/commit-msg` executes `node scripts/session/runAskCoreCommitMsgAdapter.mjs`
 - `.githooks/pre-push` executes `node scripts/session/runAskCorePrePushAdapter.mjs`
 - adapters execute `ask init`, `ask context verify`, then gate checks (`ask pre-commit-check` / `ask pre-push-check`)
 
@@ -432,5 +437,7 @@ npm run ask:pre-push-check
 - `CONTRIBUTING.md`
 - `CODE_OF_CONDUCT.md`
 - `SECURITY.md`
+
+
 
 
