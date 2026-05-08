@@ -64,6 +64,8 @@ The loop publishes operator-facing governance outputs:
 
 `ask architect status` includes an `architectureScore` payload with weighted categories for SSoT integrity, replayability, layer discipline, durability, testability, security, observability, and replaceability. The score is operational telemetry for trend visibility; hard-law blocking decisions still take precedence.
 
+`ask architect status`, `ask governance status`, `ask governance explain`, and `ask project-state` expose `ohderMode` from runtime policy. `governance explain` also includes the mode behavior summary so operators can tell whether ASK is running warning-first `fast`, hard-law `strict`, or refactor-outcome `refactor` governance.
+
 ## OHDER Analyzer Runtime
 
 The analyzer runtime deepens step 3 and step 9 of the autonomous loop:
@@ -90,6 +92,8 @@ Architect status fields:
 - `complexityAnalysis`
 
 The analyzer runtime is advisory unless the law pack or policy makes the finding blocking. The default path is score and entropy pressure, not automatic failure.
+
+Future OHDER capability boundaries are documented in `future-ohder-runtime.md`; roadmap items there are not current enforcement unless they also have runtime code, tests, and operator playbooks.
 
 ## Architectural Replay Events
 

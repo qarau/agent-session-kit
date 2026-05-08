@@ -38,11 +38,11 @@ These controls shape architect outcomes and law-pack threshold values.
 
 Mode behavior:
 
-- `fast`: hard laws still block through the law pack, but analyzer findings remain advisory unless already mapped to an active law.
-- `strict`: hard analyzer findings can become blocking architect findings. The first strict checks cover projection authority violations, layer isolation import risk, and high durability risk.
-- `refactor`: marks the runtime as refactor-governed for follow-on refactor outcome gates. Refactor-specific enforcement is expanded by the refactor outcome runtime.
+- `fast`: hard laws still block through the law pack, but analyzer findings remain warning-first unless mapped to an active law.
+- `strict`: hard-law OHDER violations block close. Current strict checks cover projection authority, security boundary, layer isolation, and high durability risk.
+- `refactor`: refactor-governed mode validates refactor outcomes against baseline entropy and architecture score before close.
 
-Architect status includes `ohderMode` so operators can see which mode produced the current decision.
+Operator outputs include `ohderMode` in `ask architect status`, `ask governance status`, `ask governance explain`, and `ask project-state` so operators can see which mode is governing the current decision.
 
 ## `flow`
 
@@ -211,13 +211,14 @@ Default hard-law categories:
 
 Hard laws are architectural safety boundaries and block unless an active exemption applies. Soft laws are quality and survivability signals such as SRP drift, duplication, weak observability, testability issues, speculative abstraction, replaceability leakage, and complexity growth.
 
-Architect status includes `ohderFacts`, the normalized fact map evaluated by the law pack. Some facts are currently analyzer-derived (`projection_authority`, `layer_isolation`, `durability_integrity`, replayability, entropy, coupling, validation), while future slices expand deeper security, SSoT, and event-only synchronization analyzers.
+Architect status includes `ohderFacts`, the normalized fact map evaluated by the law pack. Current analyzer-derived facts include `projection_authority`, `security_boundary`, `layer_isolation`, `durability_integrity`, `srp_integrity`, replayability, entropy, coupling, and validation. Deeper semantic security, SSoT, and event-only synchronization analyzers remain planned/future work; see `docs/operations/future-ohder-runtime.md`.
 
 Default analyzer-to-law mappings:
 
 - Authority analyzer direct governed-state writes set `projection_authority: invalid`.
 - Coupling analyzer forbidden import directions set `layer_isolation: invalid`.
 - Durability validator high-risk touchpoints set `durability_integrity: at-risk`.
+- Security boundary analyzer auth, token, permission, session, credential, or bypass-sensitive findings set `security_boundary: invalid`.
 - Complexity analyzer high-risk files set `srp_integrity: weak`, which is a soft warning by default.
 
 Architect status includes `architectureScore`, which reports `overallScore`, `grade`, weighted categories, and weights. Use it for trend visibility and refactor prioritization; do not use it to bypass hard-law blocks.

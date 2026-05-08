@@ -84,7 +84,7 @@ Core runtime layers active in v5:
 - ASK runtime: session lifecycle, task/slice orchestration, continuation state
 - Projection runtime: event replay, snapshot hydration, continuity proofs
 - Architect runtime: OHDER governance law evaluation, hard/soft law taxonomy, architecture scoring, and exemptions
-- Analyzer runtime: coupling, durability, authority, and complexity/SRP analysis for changed files
+- Analyzer runtime: coupling, durability, authority, security boundary, and complexity/SRP analysis for changed files
 - Flow runtime: protected/hard-flow continuity governance
 - Design runtime: visual continuity and drift governance
 - Ingestion runtime: plan-to-slice materialization and batch traceability
@@ -126,6 +126,7 @@ Operational runtime guidance lives in:
 - `docs/operations/runtime-architecture.md`
 - `docs/operations/policy-reference.md`
 - `docs/operations/operator-playbooks.md`
+- `docs/operations/future-ohder-runtime.md`
 
 ## Adopt ASK Forge in Another Repository (Vendor Copy + Hooks)
 
@@ -268,6 +269,7 @@ Architect status can now include:
 - `couplingAnalysis`: touched runtime layers, cross-layer imports, coupling hotspots, and layer-discipline risk.
 - `durabilityAnalysis`: projector, snapshot, ledger, sequence, policy, and migration touchpoints that may require replay validation.
 - `authorityAnalysis`: governed-state write authority checks, including direct `.ask` runtime writes outside approved projection, ledger, sequence, or snapshot authorities.
+- `securityAnalysis`: auth, token, permission, session, credential, and bypass-sensitive change detection with matching-test guardrail checks.
 - `complexityAnalysis`: file size, branch pressure, concern mixing, and SRP risk for changed source files.
 
 These analyzers feed the weighted `architectureScore` categories:
@@ -277,7 +279,9 @@ These analyzers feed the weighted `architectureScore` categories:
 - Authority violations affect `ssotIntegrity`.
 - Complexity/SRP risk affects `testability` and `replaceability`.
 
-Example: if a slice changes `ask-core/src/runtime/projectors/TaskBoardProjector.js`, OHDER can mark the slice as durability-sensitive because projection snapshots may need replay validation. If a core runtime imports a CLI command directly, OHDER can mark the slice as a coupling risk because the domain layer now depends on an outer orchestration layer.
+Example: if a slice changes `ask-core/src/runtime/projectors/TaskBoardProjector.js`, OHDER can mark the slice as durability-sensitive because projection snapshots may need replay validation. If a core runtime imports a CLI command directly, OHDER can mark the slice as a coupling risk because the domain layer now depends on an outer orchestration layer. If a slice changes auth or token handling without matching tests, OHDER can mark the security boundary as invalid in strict governance.
+
+Future-facing OHDER capabilities are tracked separately in `docs/operations/future-ohder-runtime.md` so current, partial, planned, and future runtime behavior stays explicit.
 
 ## OHDER Refactor Governance Materialization
 
