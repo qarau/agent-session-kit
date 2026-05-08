@@ -65,6 +65,12 @@ export class OhderEntropySnapshotEngine {
     const trend = resolveTrend(driftAnalytics);
     const couplingTrend = resolveArchitectureTrend(driftAnalytics, 'couplingTrend');
     const replayabilityTrend = resolveArchitectureTrend(driftAnalytics, 'replayabilityTrend');
+    const ssotViolationTrend = resolveArchitectureTrend(driftAnalytics, 'ssotViolationTrend');
+    const durabilityTrend = resolveArchitectureTrend(driftAnalytics, 'durabilityTrend');
+    const complexityTrend = resolveArchitectureTrend(driftAnalytics, 'complexityTrend');
+    const duplicationTrend = resolveArchitectureTrend(driftAnalytics, 'duplicationTrend');
+    const observabilityTrend = resolveArchitectureTrend(driftAnalytics, 'observabilityTrend');
+    const refactorHealthTrend = resolveArchitectureTrend(driftAnalytics, 'refactorHealthTrend');
     const blocking = architect.blocking === true;
 
     let refactorPressure = 'none';
@@ -89,6 +95,12 @@ export class OhderEntropySnapshotEngine {
       trend,
       couplingTrend,
       replayabilityTrend,
+      ssotViolationTrend,
+      durabilityTrend,
+      complexityTrend,
+      duplicationTrend,
+      observabilityTrend,
+      refactorHealthTrend,
       architectureScore,
       architectureScoreDelta,
       refactorPressure,

@@ -46,6 +46,31 @@ function replayabilityRiskToScore(risk) {
   return 0.5;
 }
 
+function riskToScore(risk) {
+  const normalized = normalize(risk);
+  if (normalized === 'high' || normalized === 'at-risk' || normalized === 'weak') {
+    return 1;
+  }
+  if (normalized === 'medium') {
+    return 0.5;
+  }
+  return 0;
+}
+
+function refactorHealthToScore(value) {
+  const normalized = normalize(value);
+  if (normalized === 'regressing' || normalized === 'failed') {
+    return 1;
+  }
+  if (normalized === 'warning' || normalized === 'unknown') {
+    return 0.5;
+  }
+  if (normalized === 'improving') {
+    return -1;
+  }
+  return 0;
+}
+
 function trendToNumeric(trend) {
   const normalized = normalize(trend);
   if (normalized === 'increasing') {
@@ -79,6 +104,12 @@ export class RuntimeDriftAnalyticsEngine {
           entropyTrend: 'stable',
           couplingTrend: 'stable',
           replayabilityTrend: 'stable',
+          ssotViolationTrend: 'stable',
+          durabilityTrend: 'stable',
+          complexityTrend: 'stable',
+          duplicationTrend: 'stable',
+          observabilityTrend: 'stable',
+          refactorHealthTrend: 'stable',
           driftScore: 0,
         },
         behavior: {
@@ -98,6 +129,12 @@ export class RuntimeDriftAnalyticsEngine {
     const entropyTrend = numericTrend(window.map(item => toNumber(item.entropyDelta, 0)));
     const couplingTrend = numericTrend(window.map(item => toNumber(item.couplingDelta, 0)));
     const replayabilityTrend = numericTrend(window.map(item => replayabilityRiskToScore(item.replayabilityRisk)));
+    const ssotViolationTrend = numericTrend(window.map(item => toNumber(item.ssotViolationCount, 0)));
+    const durabilityTrend = numericTrend(window.map(item => riskToScore(item.durabilityRisk)));
+    const complexityTrend = numericTrend(window.map(item => riskToScore(item.complexityRisk)));
+    const duplicationTrend = numericTrend(window.map(item => riskToScore(item.duplicationRisk)));
+    const observabilityTrend = numericTrend(window.map(item => riskToScore(item.observabilityRisk)));
+    const refactorHealthTrend = numericTrend(window.map(item => refactorHealthToScore(item.refactorHealth)));
     const replayConfidenceTrend = numericTrend(window.map(item => toNumber(item.behaviorReplayConfidence, 1)));
     const protectedViolationTrend = numericTrend(window.map(item => toNumber(item.protectedFlowViolations, 0)));
     const hardViolationTrend = numericTrend(window.map(item => toNumber(item.hardFlowViolations, 0)));
@@ -106,7 +143,13 @@ export class RuntimeDriftAnalyticsEngine {
       trendToNumeric(entropyTrend)
       + trendToNumeric(couplingTrend)
       + trendToNumeric(replayabilityTrend)
-    ) / 3).toFixed(4));
+      + trendToNumeric(ssotViolationTrend)
+      + trendToNumeric(durabilityTrend)
+      + trendToNumeric(complexityTrend)
+      + trendToNumeric(duplicationTrend)
+      + trendToNumeric(observabilityTrend)
+      + trendToNumeric(refactorHealthTrend)
+    ) / 9).toFixed(4));
     const behaviorDriftScore = Number(((
       (-1 * trendToNumeric(replayConfidenceTrend))
       + trendToNumeric(protectedViolationTrend)
@@ -120,6 +163,12 @@ export class RuntimeDriftAnalyticsEngine {
         entropyTrend,
         couplingTrend,
         replayabilityTrend,
+        ssotViolationTrend,
+        durabilityTrend,
+        complexityTrend,
+        duplicationTrend,
+        observabilityTrend,
+        refactorHealthTrend,
         driftScore: architectureDriftScore,
       },
       behavior: {

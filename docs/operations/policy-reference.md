@@ -120,6 +120,17 @@ Entropy runtime currently uses deterministic defaults when this section is absen
 
 Slice-close entropy capture writes `entropyScore`, `architectureScoreDelta`, `refactorPressure`, coupling/replayability trends, and source `slice-close` into metrics history. `ask next` uses this entropy summary when no task is active or ready.
 
+Expanded OHDER entropy dimensions are also persisted in metrics history:
+
+- `ssotViolationCount`
+- `durabilityRisk`
+- `complexityRisk`
+- `duplicationRisk`
+- `observabilityRisk`
+- `refactorHealth`
+
+Drift analytics derives `ssotViolationTrend`, `durabilityTrend`, `complexityTrend`, `duplicationTrend`, `observabilityTrend`, and `refactorHealthTrend` from those history fields. `ask metrics show --history <n>` exposes both the raw history entries and the current `latestEntropyDimensions` summary.
+
 ## `governance_contract`
 
 - `policy_schema_version`

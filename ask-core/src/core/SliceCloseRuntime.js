@@ -44,6 +44,38 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function normalizeLower(value) {
+  return normalize(value).toLowerCase();
+}
+
+function riskFromScore(score) {
+  const value = toNumber(score, 100);
+  if (value < 70) {
+    return 'high';
+  }
+  if (value < 85) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function entropyDimensionsFromArchitect(architect = {}) {
+  const facts = architect?.ohderFacts && typeof architect.ohderFacts === 'object'
+    ? architect.ohderFacts
+    : {};
+  const observabilityScore = architect?.architectureScore?.categories?.observability;
+  return {
+    ssotViolationCount: normalizeLower(facts.ssot_integrity) === 'invalid' ? 1 : 0,
+    durabilityRisk: normalizeLower(architect?.durabilityAnalysis?.risk)
+      || (normalizeLower(facts.durability_integrity) === 'at-risk' ? 'high' : 'low'),
+    complexityRisk: normalizeLower(architect?.complexityAnalysis?.risk)
+      || (normalizeLower(facts.srp_integrity) === 'weak' ? 'high' : 'low'),
+    duplicationRisk: normalizeLower(architect?.duplicationAnalysis?.risk) || 'low',
+    observabilityRisk: normalizeLower(architect?.observabilityAnalysis?.risk) || riskFromScore(observabilityScore),
+    refactorHealth: normalizeLower(architect?.refactorOutcome?.status) || 'healthy',
+  };
+}
+
 function parseList(value, fallback = [], lower = true) {
   const normalizeEntry = (entry) => {
     const resolved = normalize(entry);
@@ -401,6 +433,7 @@ export class SliceCloseRuntime {
       driftAnalytics: previousAnalytics,
       policy,
     });
+    const entropyDimensions = entropyDimensionsFromArchitect(architect);
     const historyEntry = {
       ts: entropy.measuredAt,
       source: 'slice-close',
@@ -416,6 +449,7 @@ export class SliceCloseRuntime {
       entropyScore: entropy.entropyScore,
       entropyTrend: entropy.trend,
       refactorPressure: entropy.refactorPressure,
+      ...entropyDimensions,
       behaviorReplayConfidence: 1,
       protectedFlowViolations: 0,
       hardFlowViolations: 0,
@@ -434,6 +468,15 @@ export class SliceCloseRuntime {
       driftTrend: normalize(analytics?.overall?.trend) || 'stable',
       driftWindowSize: toNumber(analytics?.windowSize, 0),
       latestEntropy: entropy,
+      latestEntropyDimensions: {
+        ...entropyDimensions,
+        ssotViolationTrend: analytics?.architecture?.ssotViolationTrend || 'stable',
+        durabilityTrend: analytics?.architecture?.durabilityTrend || 'stable',
+        complexityTrend: analytics?.architecture?.complexityTrend || 'stable',
+        duplicationTrend: analytics?.architecture?.duplicationTrend || 'stable',
+        observabilityTrend: analytics?.architecture?.observabilityTrend || 'stable',
+        refactorHealthTrend: analytics?.architecture?.refactorHealthTrend || 'stable',
+      },
       updatedAt: nowIso(),
     };
     await this.metricsWriter.write(nextMetrics);

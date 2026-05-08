@@ -191,6 +191,14 @@ function defaultRuntimeMetrics() {
     behaviorDriftScore: 0,
     driftTrend: 'stable',
     driftWindowSize: 0,
+    latestEntropyDimensions: {
+      ssotViolationTrend: 'stable',
+      durabilityTrend: 'stable',
+      complexityTrend: 'stable',
+      duplicationTrend: 'stable',
+      observabilityTrend: 'stable',
+      refactorHealthTrend: 'stable',
+    },
     updatedAt: '',
   };
 }
@@ -202,6 +210,12 @@ function defaultDriftAnalytics() {
       entropyTrend: 'stable',
       couplingTrend: 'stable',
       replayabilityTrend: 'stable',
+      ssotViolationTrend: 'stable',
+      durabilityTrend: 'stable',
+      complexityTrend: 'stable',
+      duplicationTrend: 'stable',
+      observabilityTrend: 'stable',
+      refactorHealthTrend: 'stable',
       driftScore: 0,
     },
     behavior: {
