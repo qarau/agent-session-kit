@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ohloop",
+  "planTitle": "Remaining OHDER Loop Integration",
+  "slices": [
+    {
+      "sliceId": "path-normalization",
+      "title": "Fix OHDER analyzer path normalization",
+      "description": "Remove analyzer path truncation defects before stricter OHDER enforcement depends on analyzer output.",
+      "acceptanceCriteria": [
+        "Analyzer output preserves ask-core relative paths without truncation.",
+        "Analyzer findings use normalized slash paths.",
+        "Existing analyzer contracts remain green."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "runtime-modes",
+      "title": "Add OHDER runtime modes",
+      "description": "Implement fast, strict, and refactor as policy-driven OHDER governance modes.",
+      "dependsOn": [
+        "path-normalization"
+      ],
+      "acceptanceCriteria": [
+        "Policy supports ohder.mode fast, strict, and refactor.",
+        "Architect status exposes the selected mode.",
+        "Strict mode can block hard analyzer findings.",
+        "Fast mode preserves warning-first behavior."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "hard-law-coverage",
+      "title": "Expand OHDER hard-law coverage",
+      "description": "Add default hard-law categories from the OHDER spec and expose architect facts for them.",
+      "dependsOn": [
+        "runtime-modes"
+      ],
+      "acceptanceCriteria": [
+        "Default law pack includes ProjectionAuthority, SSoTIntegrity, Replayability, SecurityBoundary, LayerIsolation, EventOnlySync, and DurabilityIntegrity.",
+        "Hard-law violations block unless exempted.",
+        "Existing exemption behavior remains deterministic."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "analyzer-law-mapping",
+      "title": "Map OHDER analyzer findings to laws",
+      "description": "Convert analyzer results into law-pack facts so strict mode can enforce architectural findings.",
+      "dependsOn": [
+        "hard-law-coverage"
+      ],
+      "acceptanceCriteria": [
+        "Cross-layer findings can produce layer isolation violations.",
+        "Direct governed-state writes can produce projection authority violations.",
+        "Durability and complexity findings map to governance facts.",
+        "Fast mode remains advisory for soft findings."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "entropy-dimensions",
+      "title": "Expand OHDER entropy dimensions",
+      "description": "Track SSoT, durability, complexity, duplication, observability, and refactor health trends in entropy history.",
+      "dependsOn": [
+        "analyzer-law-mapping"
+      ],
+      "acceptanceCriteria": [
+        "Metrics history includes expanded entropy dimensions.",
+        "Drift analytics computes trends for new dimensions.",
+        "Existing entropy and next-action behavior remains compatible."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "slice-close-loop-parity",
+      "title": "Add slice-close 16-step loop parity",
+      "description": "Make ask slice close record loop-state history and loop-step events equivalent to the autonomous loop where applicable.",
+      "dependsOn": [
+        "entropy-dimensions"
+      ],
+      "acceptanceCriteria": [
+        "Slice close writes loop-state history.",
+        "Slice close emits loop-step replay events.",
+        "Successful close records continue decision.",
+        "Blocked close records block decision."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "requirement-analyzer",
+      "title": "Add OHDER requirement analyzer runtime",
+      "description": "Classify requirements before intent and slice planning so OHDER can reason about risk earlier.",
+      "dependsOn": [
+        "slice-close-loop-parity"
+      ],
+      "acceptanceCriteria": [
+        "Requirements classify as feature, bugfix, refactor, docs, governance, release, security-sensitive, or durability-sensitive.",
+        "IntentSelected includes requirement analysis.",
+        "Slice metadata includes requirement class and risk flags."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "codex-session-coverage",
+      "title": "Enforce governed Codex session coverage",
+      "description": "Require governed launch evidence or explicit interactive checkpoint evidence before closing slices with code changes.",
+      "dependsOn": [
+        "requirement-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "ASK distinguishes governed launch work from interactive work.",
+        "Interactive work needs explicit checkpoint evidence before close.",
+        "Existing hooks remain non-forging and fail-closed."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "refactor-outcome-validation",
+      "title": "Enforce OHDER refactor outcome validation",
+      "description": "Measure before/after refactor outcomes and require improvement or explicit justification.",
+      "dependsOn": [
+        "codex-session-coverage"
+      ],
+      "acceptanceCriteria": [
+        "Refactor tasks include before/after outcome evidence.",
+        "Worsening refactor outcomes are policy-governed.",
+        "Refactor mode can block unjustified entropy regression."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "architectural-replay-events",
+      "title": "Standardize architectural replay events",
+      "description": "Emit CodeWritten, TestPassed, TestFailed, ArchitectureScoreCalculated, and GovernanceGateBlocked events.",
+      "dependsOn": [
+        "refactor-outcome-validation"
+      ],
+      "acceptanceCriteria": [
+        "New replay events appear in ledger.",
+        "Existing projections remain compatible.",
+        "Replay proof still passes."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "security-boundary-analyzer",
+      "title": "Add OHDER security boundary analyzer",
+      "description": "Detect security-sensitive changes and feed risk into architect status, scoring, and strict-mode law enforcement.",
+      "dependsOn": [
+        "architectural-replay-events"
+      ],
+      "acceptanceCriteria": [
+        "Architect status includes securityAnalysis.",
+        "Security findings affect architecture score.",
+        "Strict mode can block security boundary violations."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "mode-cli-visibility",
+      "title": "Expose OHDER runtime mode in CLI output",
+      "description": "Show current OHDER mode in architect status, governance status, governance explain, and project-state output.",
+      "dependsOn": [
+        "security-boundary-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "Operators can see the current OHDER mode.",
+        "Governance explanation includes mode-specific behavior.",
+        "Docs explain when to use fast, strict, or refactor mode."
+      ],
+      "queueClass": "reviewer"
+    },
+    {
+      "sliceId": "future-evolution-docs",
+      "title": "Document future OHDER runtime evolution boundaries",
+      "description": "Separate implemented OHDER capabilities from IDEA-aware runtime, architectural councils, and autonomous entropy reduction plans.",
+      "dependsOn": [
+        "mode-cli-visibility"
+      ],
+      "acceptanceCriteria": [
+        "Docs label current, partial, planned, and future runtime capabilities.",
+        "Future features have explicit implementation prerequisites.",
+        "Operator docs remain actionable."
+      ],
+      "queueClass": "reviewer"
+    }
+  ]
+}
