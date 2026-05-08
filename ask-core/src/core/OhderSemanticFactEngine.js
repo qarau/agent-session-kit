@@ -155,6 +155,7 @@ export class OhderSemanticFactEngine {
     duplicationAnalysis = {},
     observabilityAnalysis = {},
     testabilityAnalysis = {},
+    replaceabilityAnalysis = {},
     couplingAnalysis = {},
     durabilityAnalysis = {},
     complexityAnalysis = {},
@@ -252,6 +253,36 @@ export class OhderSemanticFactEngine {
           }))
           : [],
         recommendations: testabilityAnalysis.recommendations,
+      },
+      {
+        factId: 'replaceability-risk',
+        metric: 'replaceability_risk',
+        value: ohderFacts.replaceability_risk,
+        confidence: confidenceForFact(ohderFacts.replaceability_risk, replaceabilityAnalysis.risk),
+        severity: severityForFact(ohderFacts.replaceability_risk),
+        source: 'OhderReplaceabilityAnalyzerEngine',
+        evidence: Array.isArray(replaceabilityAnalysis.violations)
+          ? replaceabilityAnalysis.violations.map(item => ({
+            filePath: item.filePath,
+            reason: item.reason || item.kind,
+          }))
+          : [],
+        recommendations: replaceabilityAnalysis.recommendations,
+      },
+      {
+        factId: 'yagni-risk',
+        metric: 'yagni_risk',
+        value: ohderFacts.yagni_risk,
+        confidence: confidenceForFact(ohderFacts.yagni_risk, replaceabilityAnalysis.yagniRisk),
+        severity: severityForFact(ohderFacts.yagni_risk),
+        source: 'OhderReplaceabilityAnalyzerEngine',
+        evidence: Array.isArray(replaceabilityAnalysis.yagniWarnings)
+          ? replaceabilityAnalysis.yagniWarnings.map(item => ({
+            filePath: item.filePath,
+            reason: item.reason || item.kind,
+          }))
+          : [],
+        recommendations: replaceabilityAnalysis.recommendations,
       },
       {
         factId: 'security-boundary',

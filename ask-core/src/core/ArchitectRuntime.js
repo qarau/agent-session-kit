@@ -13,6 +13,7 @@ import { OhderEventOnlySyncAnalyzerEngine } from './OhderEventOnlySyncAnalyzerEn
 import { OhderDuplicationAnalyzerEngine } from './OhderDuplicationAnalyzerEngine.js';
 import { OhderObservabilityAnalyzerEngine } from './OhderObservabilityAnalyzerEngine.js';
 import { OhderTestabilityAnalyzerEngine } from './OhderTestabilityAnalyzerEngine.js';
+import { OhderReplaceabilityAnalyzerEngine } from './OhderReplaceabilityAnalyzerEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -64,6 +65,7 @@ export class ArchitectRuntime {
     this.duplicationAnalyzer = new OhderDuplicationAnalyzerEngine(cwd);
     this.observabilityAnalyzer = new OhderObservabilityAnalyzerEngine(cwd);
     this.testabilityAnalyzer = new OhderTestabilityAnalyzerEngine(cwd);
+    this.replaceabilityAnalyzer = new OhderReplaceabilityAnalyzerEngine(cwd);
     this.semanticFactEngine = new OhderSemanticFactEngine();
   }
 
@@ -170,6 +172,9 @@ export class ArchitectRuntime {
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
       validation,
     });
+    const replaceabilityAnalysis = this.replaceabilityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
     const complexityAnalysis = this.complexityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
@@ -210,6 +215,8 @@ export class ArchitectRuntime {
       duplication_risk: normalize(duplicationAnalysis.risk).toLowerCase(),
       observability_risk: normalize(observabilityAnalysis.risk).toLowerCase(),
       testability_risk: normalize(testabilityAnalysis.risk).toLowerCase(),
+      replaceability_risk: normalize(replaceabilityAnalysis.risk).toLowerCase(),
+      yagni_risk: normalize(replaceabilityAnalysis.yagniRisk).toLowerCase(),
       durability_integrity: durabilityIntegrity,
       srp_integrity: srpIntegrity,
       durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
@@ -255,6 +262,7 @@ export class ArchitectRuntime {
       duplicationAnalysis,
       observabilityAnalysis,
       testabilityAnalysis,
+      replaceabilityAnalysis,
       couplingAnalysis,
       durabilityAnalysis,
       complexityAnalysis,
@@ -319,6 +327,7 @@ export class ArchitectRuntime {
       duplicationAnalysis,
       observabilityAnalysis,
       testabilityAnalysis,
+      replaceabilityAnalysis,
       complexityAnalysis,
       securityAnalysis,
     });
@@ -346,6 +355,7 @@ export class ArchitectRuntime {
       duplicationAnalysis,
       observabilityAnalysis,
       testabilityAnalysis,
+      replaceabilityAnalysis,
       complexityAnalysis,
       securityAnalysis,
       architectureScore,
@@ -392,6 +402,16 @@ export class ArchitectRuntime {
         testabilityValid: true,
         filesAnalyzed: [],
         violations: [],
+        findings: [],
+        recommendations: [],
+      },
+      replaceabilityAnalysis: {
+        risk: 'unknown',
+        replaceabilityValid: true,
+        yagniRisk: 'unknown',
+        filesAnalyzed: [],
+        violations: [],
+        yagniWarnings: [],
         findings: [],
         recommendations: [],
       },

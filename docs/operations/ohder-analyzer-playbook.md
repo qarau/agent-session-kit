@@ -55,6 +55,13 @@ Use this playbook when `ask architect status` shows analyzer warnings but no har
 - Extract pure core decisions away from CLI parsing, filesystem reads, process globals, and policy branching.
 - Treat CLI-heavy decision logic as a refactor candidate when tests would need to drive behavior through command plumbing instead of pure contracts.
 
+## Replaceability And YAGNI Warnings
+
+- Inspect `replaceabilityAnalysis.violations`, `replaceabilityAnalysis.yagniWarnings`, `replaceability_risk`, and `yagni_risk`.
+- Keep core runtime code vendor-neutral; infrastructure, adapters, CLI, and provider-specific details should stay behind boundaries.
+- Treat speculative factories, gateways, interfaces, and strategies with no current call site as warning-only YAGNI pressure.
+- Prefer extracting a current contract only when a real caller or adapter already exists.
+
 ## Security Boundary Warnings
 
 - Inspect `securityAnalysis.filesAnalyzed` and `securityAnalysis.findings`.

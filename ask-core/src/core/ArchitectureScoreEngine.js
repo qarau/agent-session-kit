@@ -106,6 +106,7 @@ export class ArchitectureScoreEngine {
     duplicationAnalysis = null,
     observabilityAnalysis = null,
     testabilityAnalysis = null,
+    replaceabilityAnalysis = null,
     complexityAnalysis = null,
     securityAnalysis = null,
   } = {}) {
@@ -149,6 +150,11 @@ export class ArchitectureScoreEngine {
       applyPenalty(categories, 'testability', 25);
     } else if (testabilityAnalysis?.risk === 'medium') {
       applyPenalty(categories, 'testability', 10);
+    }
+    if (replaceabilityAnalysis?.risk === 'high' || replaceabilityAnalysis?.replaceabilityValid === false) {
+      applyPenalty(categories, 'replaceability', 30);
+    } else if (replaceabilityAnalysis?.risk === 'medium' || replaceabilityAnalysis?.yagniRisk === 'medium') {
+      applyPenalty(categories, 'replaceability', 12);
     }
     if (complexityAnalysis?.risk === 'high') {
       applyPenalty(categories, 'testability', 20);

@@ -85,6 +85,7 @@ Analyzer responsibilities:
 - `OhderDuplicationAnalyzerEngine`: detects meaningful copied logic across touched source files while ignoring boilerplate mirrors.
 - `OhderObservabilityAnalyzerEngine`: detects blocking paths without diagnostic code/message and governance mutations without replayable events.
 - `OhderTestabilityAnalyzerEngine`: detects exported runtime behavior without matching contract tests, CLI-heavy decision logic, and core/global coupling.
+- `OhderReplaceabilityAnalyzerEngine`: detects core infrastructure leakage, vendor-specific runtime decisions, and speculative abstractions without current call sites.
 - `OhderSecurityBoundaryAnalyzerEngine`: detects auth, token, permission, secret, session, and bypass-sensitive changes that lack matching test guardrails.
 - `OhderComplexityAnalyzerEngine`: detects large files, branch-heavy code, mixed concerns, and SRP risk.
 
@@ -98,6 +99,7 @@ Architect status fields:
 - `duplicationAnalysis`
 - `observabilityAnalysis`
 - `testabilityAnalysis`
+- `replaceabilityAnalysis`
 - `securityAnalysis`
 - `complexityAnalysis`
 - `semanticFacts`
