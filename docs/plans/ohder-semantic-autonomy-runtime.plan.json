@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ohsmart",
+  "planTitle": "OHDER Semantic Autonomy Runtime",
+  "slices": [
+    {
+      "sliceId": "semantic-fact-envelope",
+      "title": "Add OHDER semantic fact envelope runtime",
+      "description": "Create a shared semantic fact model with confidence, evidence, source traces, recommendations, and backward-compatible flat OHDER facts.",
+      "acceptanceCriteria": [
+        "Architect status includes semanticFacts.",
+        "Existing ohderFacts remains backward compatible.",
+        "Each semantic fact includes metric, value, confidence, source, evidence, and recommendations."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ssot-semantic-analyzer",
+      "title": "Add OHDER SSoT semantic analyzer",
+      "description": "Detect duplicate governed-state authorities and map them to SSoT integrity facts and hard-law behavior.",
+      "dependsOn": [
+        "semantic-fact-envelope"
+      ],
+      "acceptanceCriteria": [
+        "Duplicate governed-state authority produces ssot_integrity invalid.",
+        "Approved authority paths remain valid.",
+        "Strict mode blocks SSoT hard-law violations."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "event-only-sync-analyzer",
+      "title": "Add OHDER event-only sync analyzer",
+      "description": "Detect direct synchronization or state overwrite paths that bypass event-ledger or projection authority.",
+      "dependsOn": [
+        "ssot-semantic-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "Direct non-event sync mutation produces event_only_sync invalid.",
+        "Approved event/projection authorities remain valid.",
+        "Strict mode blocks invalid event-only sync."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "duplication-dry-analyzer",
+      "title": "Add OHDER duplication and DRY analyzer",
+      "description": "Detect meaningful duplication in changed files and feed duplication risk into architecture score and entropy history.",
+      "dependsOn": [
+        "event-only-sync-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "Meaningful duplication is reported with file evidence.",
+        "Boilerplate does not create noisy findings.",
+        "Duplication affects score and entropy trend."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "observability-analyzer",
+      "title": "Add OHDER observability analyzer",
+      "description": "Detect runtime changes that weaken replayability or debugging evidence by adding behavior without events, status fields, or diagnostics.",
+      "dependsOn": [
+        "duplication-dry-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "Governance/runtime behavior without diagnostics is reported.",
+        "Event-backed and diagnostic-rich changes stay low risk.",
+        "Observability trend appears in entropy history."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "testability-analyzer",
+      "title": "Add OHDER testability analyzer",
+      "description": "Detect untested runtime behavior and hard-to-validate code shapes such as filesystem-coupled decisions and CLI-heavy logic.",
+      "dependsOn": [
+        "observability-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "Untested behavior changes are visible in architect status.",
+        "Matching tests reduce risk.",
+        "Score impact is deterministic."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "replaceability-yagni-analyzer",
+      "title": "Add OHDER replaceability and YAGNI analyzer",
+      "description": "Detect infrastructure leakage and speculative abstractions that make the system harder to evolve.",
+      "dependsOn": [
+        "testability-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "Infrastructure leakage is reported.",
+        "Speculative abstractions are warning-only.",
+        "Replaceability score changes deterministically."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "security-semantic-upgrade",
+      "title": "Upgrade OHDER security boundary semantics",
+      "description": "Move security analysis from basic path/content signals toward explicit auth, permission, token, secret, and route-boundary semantics.",
+      "dependsOn": [
+        "replaceability-yagni-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "Security findings include auth/authz/token/secret categories.",
+        "Matching security tests lower risk.",
+        "Strict mode blocks high-confidence security boundary violations."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-mode-profiles",
+      "title": "Deepen OHDER mode profiles",
+      "description": "Make fast, strict, and refactor materially different governance profiles with policy-driven validation requirements.",
+      "dependsOn": [
+        "security-semantic-upgrade"
+      ],
+      "acceptanceCriteria": [
+        "Modes have observable behavioral differences.",
+        "Refactor mode prevents normal feature slices unless policy-exempted.",
+        "Strict mode deepens validation requirements."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "governance-validation-runtime",
+      "title": "Add mutating governance validation runtime",
+      "description": "Add ask governance validate to refresh governance evidence, write a decision, and affect ask next recommendations.",
+      "dependsOn": [
+        "ohder-mode-profiles"
+      ],
+      "acceptanceCriteria": [
+        "Governance validation is an explicit mutating runtime action.",
+        "It writes evidence and decision state.",
+        "ask next responds to refreshed validation evidence."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ranked-refactor-target-portfolio",
+      "title": "Add ranked refactor target portfolio",
+      "description": "Move refactor targeting from one candidate to a ranked portfolio with reasons, blast radius, confidence, and freshness.",
+      "dependsOn": [
+        "governance-validation-runtime"
+      ],
+      "acceptanceCriteria": [
+        "OHDER exposes multiple ranked refactor candidates.",
+        "The selected candidate remains deterministic.",
+        "Completed targets are not repeatedly suggested."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "autonomous-entropy-controller",
+      "title": "Add autonomous entropy reduction controller",
+      "description": "Let ASK create bounded remediation tasks from high-confidence OHDER recommendations under policy without applying code patches automatically.",
+      "dependsOn": [
+        "ranked-refactor-target-portfolio"
+      ],
+      "acceptanceCriteria": [
+        "OHDER can autonomously create bounded refactor tasks when policy allows.",
+        "It cannot mutate code directly.",
+        "It respects confidence, blast radius, worktree, and per-session limits."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "patch-readiness-gate",
+      "title": "Add OHDER patch readiness gate",
+      "description": "Define the gate for future high-confidence autonomous patch application without enabling patch application yet.",
+      "dependsOn": [
+        "autonomous-entropy-controller"
+      ],
+      "acceptanceCriteria": [
+        "ASK can say whether a patch would be safe to consider.",
+        "ASK still does not apply patches automatically.",
+        "Future autonomy boundary remains explicit."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "council-lite-review-envelope",
+      "title": "Add council-lite architecture review envelope",
+      "description": "Add a deterministic multi-perspective architecture review envelope before full architectural councils exist.",
+      "dependsOn": [
+        "patch-readiness-gate"
+      ],
+      "acceptanceCriteria": [
+        "Architect status has deterministic multi-perspective review evidence.",
+        "Full architectural councils remain marked future.",
+        "Review output is replayable."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "semantic-autonomy-docs",
+      "title": "Document OHDER semantic autonomy runtime",
+      "description": "Update README, operations docs, and release notes to explain semantic facts, deeper analyzers, governance validate, and bounded autonomy.",
+      "dependsOn": [
+        "council-lite-review-envelope"
+      ],
+      "acceptanceCriteria": [
+        "Docs distinguish implemented semantic autonomy from future patch autonomy.",
+        "Operators can see how to run governance validation and interpret semantic facts.",
+        "Release note explains why this is a significant OHDER maturity release."
+      ],
+      "queueClass": "reviewer"
+    }
+  ]
+}
