@@ -48,6 +48,13 @@ Use this playbook when `ask architect status` shows analyzer warnings but no har
 - Emit replayable events when governance/runtime state mutates.
 - Prefer status/explain visibility for new governance state so `ask governance explain`, `ask architect status`, or related commands can surface the decision.
 
+## Testability Warnings
+
+- Inspect `testabilityAnalysis.violations` and the `testability_risk` semantic fact.
+- Add or touch a matching contract test when exporting new runtime behavior.
+- Extract pure core decisions away from CLI parsing, filesystem reads, process globals, and policy branching.
+- Treat CLI-heavy decision logic as a refactor candidate when tests would need to drive behavior through command plumbing instead of pure contracts.
+
 ## Security Boundary Warnings
 
 - Inspect `securityAnalysis.filesAnalyzed` and `securityAnalysis.findings`.

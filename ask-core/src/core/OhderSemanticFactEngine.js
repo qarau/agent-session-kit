@@ -154,6 +154,7 @@ export class OhderSemanticFactEngine {
     eventOnlySyncAnalysis = {},
     duplicationAnalysis = {},
     observabilityAnalysis = {},
+    testabilityAnalysis = {},
     couplingAnalysis = {},
     durabilityAnalysis = {},
     complexityAnalysis = {},
@@ -236,6 +237,21 @@ export class OhderSemanticFactEngine {
           }))
           : [],
         recommendations: observabilityAnalysis.recommendations,
+      },
+      {
+        factId: 'testability-risk',
+        metric: 'testability_risk',
+        value: ohderFacts.testability_risk,
+        confidence: confidenceForFact(ohderFacts.testability_risk, testabilityAnalysis.risk),
+        severity: severityForFact(ohderFacts.testability_risk),
+        source: 'OhderTestabilityAnalyzerEngine',
+        evidence: Array.isArray(testabilityAnalysis.violations)
+          ? testabilityAnalysis.violations.map(item => ({
+            filePath: item.filePath,
+            reason: item.reason || item.kind,
+          }))
+          : [],
+        recommendations: testabilityAnalysis.recommendations,
       },
       {
         factId: 'security-boundary',

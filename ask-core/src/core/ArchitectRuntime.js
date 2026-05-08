@@ -12,6 +12,7 @@ import { OhderSsotAnalyzerEngine } from './OhderSsotAnalyzerEngine.js';
 import { OhderEventOnlySyncAnalyzerEngine } from './OhderEventOnlySyncAnalyzerEngine.js';
 import { OhderDuplicationAnalyzerEngine } from './OhderDuplicationAnalyzerEngine.js';
 import { OhderObservabilityAnalyzerEngine } from './OhderObservabilityAnalyzerEngine.js';
+import { OhderTestabilityAnalyzerEngine } from './OhderTestabilityAnalyzerEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -62,6 +63,7 @@ export class ArchitectRuntime {
     this.eventOnlySyncAnalyzer = new OhderEventOnlySyncAnalyzerEngine(cwd);
     this.duplicationAnalyzer = new OhderDuplicationAnalyzerEngine(cwd);
     this.observabilityAnalyzer = new OhderObservabilityAnalyzerEngine(cwd);
+    this.testabilityAnalyzer = new OhderTestabilityAnalyzerEngine(cwd);
     this.semanticFactEngine = new OhderSemanticFactEngine();
   }
 
@@ -164,6 +166,9 @@ export class ArchitectRuntime {
     const observabilityAnalysis = this.observabilityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
+    const testabilityAnalysis = this.testabilityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
     const complexityAnalysis = this.complexityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
@@ -203,6 +208,7 @@ export class ArchitectRuntime {
       duplication: normalize(duplicationAnalysis.risk).toLowerCase(),
       duplication_risk: normalize(duplicationAnalysis.risk).toLowerCase(),
       observability_risk: normalize(observabilityAnalysis.risk).toLowerCase(),
+      testability_risk: normalize(testabilityAnalysis.risk).toLowerCase(),
       durability_integrity: durabilityIntegrity,
       srp_integrity: srpIntegrity,
       durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
@@ -247,6 +253,7 @@ export class ArchitectRuntime {
       eventOnlySyncAnalysis,
       duplicationAnalysis,
       observabilityAnalysis,
+      testabilityAnalysis,
       couplingAnalysis,
       durabilityAnalysis,
       complexityAnalysis,
@@ -310,6 +317,7 @@ export class ArchitectRuntime {
       eventOnlySyncAnalysis,
       duplicationAnalysis,
       observabilityAnalysis,
+      testabilityAnalysis,
       complexityAnalysis,
       securityAnalysis,
     });
@@ -336,6 +344,7 @@ export class ArchitectRuntime {
       eventOnlySyncAnalysis,
       duplicationAnalysis,
       observabilityAnalysis,
+      testabilityAnalysis,
       complexityAnalysis,
       securityAnalysis,
       architectureScore,
@@ -372,6 +381,14 @@ export class ArchitectRuntime {
       observabilityAnalysis: {
         risk: 'unknown',
         observabilityValid: true,
+        filesAnalyzed: [],
+        violations: [],
+        findings: [],
+        recommendations: [],
+      },
+      testabilityAnalysis: {
+        risk: 'unknown',
+        testabilityValid: true,
         filesAnalyzed: [],
         violations: [],
         findings: [],
