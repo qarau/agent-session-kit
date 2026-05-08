@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import { PolicyEngine } from './PolicyEngine.js';
+import { GovernanceBypassFindingEngine } from './GovernanceBypassFindingEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -23,6 +24,7 @@ export class CommitMessageCheckEngine {
   constructor(cwd) {
     this.cwd = cwd;
     this.policyEngine = new PolicyEngine(cwd);
+    this.bypassFindings = new GovernanceBypassFindingEngine(cwd);
   }
 
   parseFooters(message, sliceFooterKey, exemptFooterKey) {
@@ -95,6 +97,23 @@ export class CommitMessageCheckEngine {
       missing.push(`commit message missing ${sliceFooterKey} footer or ${exemptFooterKey} exemption`);
     }
 
+    let findings = [];
+    if (missing.length > 0) {
+      const findingResult = await this.bypassFindings.report({
+        bypassType: 'invalid commit provenance',
+        severity: 'critical',
+        message: missing.join('; '),
+        evidence: [
+          {
+            filePath: resolvedPath,
+            reason: `invalid commit provenance: ${missing.join('; ')}`,
+          },
+        ],
+        recommendations: [`Add ${sliceFooterKey}: <taskId> or a valid ${exemptFooterKey}: <kind> footer.`],
+      });
+      findings = Array.isArray(findingResult.findings) ? findingResult.findings : [];
+    }
+
     return {
       passed: missing.length === 0,
       missing,
@@ -103,6 +122,7 @@ export class CommitMessageCheckEngine {
       exemptFooterKey,
       sliceIds,
       exemptKinds,
+      findings,
     };
   }
 }

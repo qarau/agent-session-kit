@@ -4,6 +4,7 @@ import { EventLedger } from '../runtime/EventLedger.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 import { TaskRuntime } from './TaskRuntime.js';
 import { PlanModeHandoffRuntime } from './PlanModeHandoffRuntime.js';
+import { GovernanceBypassFindingEngine } from './GovernanceBypassFindingEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -43,6 +44,7 @@ export class ImplementationPreflightRuntime {
     this.projectionEngine = new RuntimeProjectionEngine(cwd);
     this.tasks = new TaskRuntime(cwd);
     this.planModeHandoff = new PlanModeHandoffRuntime(cwd);
+    this.bypassFindings = new GovernanceBypassFindingEngine(cwd);
   }
 
   async sessionContext() {
@@ -153,7 +155,23 @@ export class ImplementationPreflightRuntime {
         : null,
     };
 
+    let findings = [];
+    if (!passed && !advisory) {
+      const findingResult = await this.bypassFindings.report({
+        taskId: normalize(activeTask?.taskId),
+        bypassType: missing.includes('plan-mode-handoff') ? 'missing plan-mode handoff' : 'missing active ask slice',
+        severity: 'critical',
+        message: normalize(recovery?.reason) || 'implementation governance bypass detected',
+        evidence: missing.map(item => ({ reason: item })),
+        recommendations: recovery?.command ? [recovery.command] : [],
+      });
+      findings = Array.isArray(findingResult.findings) ? findingResult.findings : [];
+    }
+
     await this.appendPreflightEvent(payload);
-    return payload;
+    return {
+      ...payload,
+      findings,
+    };
   }
 }
