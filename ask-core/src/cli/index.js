@@ -16,6 +16,7 @@ import { runWorkflowProvider } from './commands/workflow-provider.js';
 import { runFreshness } from './commands/freshness.js';
 import { runIntegration } from './commands/integration.js';
 import { runIntegrationAuto } from './commands/integration-auto.js';
+import { runImplementation } from './commands/implementation.js';
 import { runRoute } from './commands/route.js';
 import { runClaim } from './commands/claim.js';
 import { runChildSession } from './commands/child-session.js';
@@ -62,6 +63,7 @@ Usage:
   ask freshness status|explain [task-id]
   ask integration plan|run|status
   ask integration-auto run|status
+  ask implementation preflight [--advisory]
   ask route recommend|status
   ask claim acquire|release|lock|status
   ask child-session spawn|status
@@ -189,6 +191,11 @@ export async function runCli(args) {
 
   if (command === 'integration-auto') {
     await runIntegrationAuto(subcommand, rest);
+    return;
+  }
+
+  if (command === 'implementation') {
+    await runImplementation(subcommand, rest);
     return;
   }
 
