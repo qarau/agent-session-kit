@@ -89,6 +89,18 @@ Architect status fields:
 
 The analyzer runtime is advisory unless the law pack or policy makes the finding blocking. The default path is score and entropy pressure, not automatic failure.
 
+## Architectural Replay Events
+
+ASK keeps existing runtime-specific events and also emits standard architectural replay aliases:
+
+- `CodeWritten`: changed files captured before slice commit.
+- `TestPassed`: slice validation passed.
+- `TestFailed`: slice validation failed.
+- `ArchitectureScoreCalculated`: OHDER architecture score was calculated.
+- `GovernanceGateBlocked`: a governance gate blocked continuation or close.
+
+These events make replay analysis less coupled to individual runtime implementation names while preserving backward-compatible projections.
+
 ## OHDER-Driven Next Actions
 
 `ask next` now maps the last decision step of the 16-step loop to an operator action. The command remains task-first: active and dependency-ready tasks are selected before OHDER fallback logic runs.

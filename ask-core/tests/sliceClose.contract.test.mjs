@@ -192,6 +192,9 @@ test('slice close auto-completes auto-commits and passes pre-push checks', () =>
   assert.ok(eventTypes.includes('EntropyImpactMeasured'));
   assert.ok(eventTypes.includes('EntropyTrendChanged'));
   assert.ok(eventTypes.includes('AutonomousLoopStepEntered'));
+  assert.ok(eventTypes.includes('CodeWritten'));
+  assert.ok(eventTypes.includes('TestPassed'));
+  assert.ok(eventTypes.includes('ArchitectureScoreCalculated'));
 
   const loopState = JSON.parse(fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'loop-state.json'), 'utf8'));
   assert.equal(loopState.status, 'completed');
@@ -305,6 +308,7 @@ test('slice close blocks before completing task when OHDER assessment blocks', (
   assert.ok(eventTypes.includes('ArchitectValidationCompleted'));
   assert.ok(eventTypes.includes('ArchitectureViolationDetected'));
   assert.ok(eventTypes.includes('AutonomousLoopStepEntered'));
+  assert.ok(eventTypes.includes('GovernanceGateBlocked'));
 
   const loopState = JSON.parse(fs.readFileSync(path.join(repoDir, '.ask', 'runtime', 'loop-state.json'), 'utf8'));
   assert.equal(loopState.status, 'failed');

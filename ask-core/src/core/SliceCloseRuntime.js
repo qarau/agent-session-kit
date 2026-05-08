@@ -416,6 +416,10 @@ export class SliceCloseRuntime {
   async emitArchitectReplayabilityEvents(session, taskId, architect) {
     const payload = this.buildArchitectEventPayload(taskId, architect);
     await this.emitRuntimeEvent('ArchitectValidationCompleted', session, taskId, payload);
+    await this.emitRuntimeEvent('ArchitectureScoreCalculated', session, taskId, {
+      ...payload,
+      architectureScore: architect?.architectureScore || {},
+    });
 
     for (const violation of payload.lawViolations) {
       await this.emitRuntimeEvent('ArchitectureViolationDetected', session, taskId, {
@@ -677,6 +681,11 @@ export class SliceCloseRuntime {
     });
     await this.emitArchitectReplayabilityEvents(session, resolvedTaskId, architect);
     if (architect.blocking === true) {
+      await this.emitRuntimeEvent('GovernanceGateBlocked', session, resolvedTaskId, {
+        gate: 'ohder-architect',
+        reason: normalize(architect?.reason),
+        architect,
+      });
       await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
         decision: 'block',
         reason: normalize(architect?.reason),
@@ -691,6 +700,14 @@ export class SliceCloseRuntime {
       });
     }
     const entropy = await this.captureEntropyImpact(session, resolvedTaskId, architect, policy);
+    const changedFiles = this.getWorkspaceChangedFiles();
+    if (changedFiles.length > 0) {
+      await this.emitRuntimeEvent('CodeWritten', session, resolvedTaskId, {
+        taskId: resolvedTaskId,
+        sliceId: resolvedTaskId,
+        touchedFiles: changedFiles,
+      });
+    }
     const refactorOutcome = this.refactorOutcomeEngine.evaluate({
       task,
       architect,
@@ -735,6 +752,11 @@ export class SliceCloseRuntime {
     });
     const verified = await this.verificationRuntime.verify(resolvedTaskId, 'pass', summary);
     if (!verified.ok) {
+      await this.emitRuntimeEvent('TestFailed', session, resolvedTaskId, {
+        taskId: resolvedTaskId,
+        sliceId: resolvedTaskId,
+        summary,
+      });
       await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
         decision: 'block',
         reason: 'verification failed',
@@ -747,6 +769,11 @@ export class SliceCloseRuntime {
         verification: verified,
       });
     }
+    await this.emitRuntimeEvent('TestPassed', session, resolvedTaskId, {
+      taskId: resolvedTaskId,
+      sliceId: resolvedTaskId,
+      summary,
+    });
     await this.enterSliceCloseLoopStep(13, session, resolvedTaskId, {
       verification: 'passed',
     });
