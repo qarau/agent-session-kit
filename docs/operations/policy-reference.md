@@ -169,7 +169,19 @@ Law classes:
 - `lawClass: "soft"` defaults to `warn` when violated.
 - explicit `outcome` still overrides the law-class default.
 
-Hard laws are architectural safety boundaries and should be used for replayability, projection authority, SSoT integrity, security boundary, layer isolation, event-only synchronization, and durability integrity. Soft laws are quality and survivability signals such as SRP drift, duplication, weak observability, testability issues, speculative abstraction, replaceability leakage, and complexity growth.
+Default hard-law categories:
+
+- `ProjectionAuthority`: `projection_authority == valid`
+- `SSoTIntegrity`: `ssot_integrity == valid`
+- `Replayability`: `replayability_risk != high`
+- `SecurityBoundary`: `security_boundary == valid`
+- `LayerIsolation`: `layer_isolation == valid`
+- `EventOnlySync`: `event_only_sync == valid`
+- `DurabilityIntegrity`: `durability_integrity == valid`
+
+Hard laws are architectural safety boundaries and block unless an active exemption applies. Soft laws are quality and survivability signals such as SRP drift, duplication, weak observability, testability issues, speculative abstraction, replaceability leakage, and complexity growth.
+
+Architect status includes `ohderFacts`, the normalized fact map evaluated by the law pack. Some facts are currently analyzer-derived (`projection_authority`, `layer_isolation`, `durability_integrity`, replayability, entropy, coupling, validation), while future slices expand deeper security, SSoT, and event-only synchronization analyzers.
 
 Architect status includes `architectureScore`, which reports `overallScore`, `grade`, weighted categories, and weights. Use it for trend visibility and refactor prioritization; do not use it to bypass hard-law blocks.
 

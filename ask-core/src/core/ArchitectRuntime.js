@@ -120,6 +120,7 @@ export class ArchitectRuntime {
         replayabilityRisk: 'unknown',
         ohderMode: normalizeOhderMode(policy?.ohder?.mode),
         findings: [],
+        ohderFacts: {},
         architectureScore: this.scoreEngine.score(),
         recommendedAction: 'continue',
         updatedAt: nowIso(),
@@ -148,6 +149,30 @@ export class ArchitectRuntime {
     const requireReplayability = policy?.architect?.require_replayability !== false;
     const blockOnViolation = policy?.architect?.block_on_violation !== false;
     const ohderMode = normalizeOhderMode(policy?.ohder?.mode);
+    const layerIsolation = Array.isArray(couplingAnalysis.crossLayerImports) && couplingAnalysis.crossLayerImports.length > 0
+      ? 'invalid'
+      : 'valid';
+    const durabilityIntegrity = normalize(durabilityAnalysis.risk).toLowerCase() === 'high'
+      ? 'at-risk'
+      : 'valid';
+    const ohderFacts = {
+      sessionId: normalize(state.sessionId),
+      operation: normalize(slice?.execution?.operation),
+      entropy_delta: entropyDelta,
+      coupling_delta: couplingDelta,
+      replayability_risk: replayabilityRisk,
+      validation_status: normalize(validation.status).toLowerCase(),
+      execution_status: normalize(execution.status).toLowerCase(),
+      execution_ok: execution.ok === true ? 'true' : 'false',
+      projection_authority: authorityAnalysis.authorityValid ? 'valid' : 'invalid',
+      ssot_integrity: 'valid',
+      security_boundary: 'valid',
+      layer_isolation: layerIsolation,
+      event_only_sync: 'valid',
+      durability_integrity: durabilityIntegrity,
+      durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
+      complexity_risk: normalize(complexityAnalysis.risk).toLowerCase(),
+    };
     const legacyFindings = [];
     if (entropyDelta > maxEntropy) {
       legacyFindings.push(`entropy delta ${String(entropyDelta)} exceeds max ${String(maxEntropy)}`);
@@ -192,19 +217,7 @@ export class ArchitectRuntime {
         })
         : [],
     };
-    const lawEvaluation = this.lawPackEngine.evaluate(lawPack, {
-      sessionId: normalize(state.sessionId),
-      operation: normalize(slice?.execution?.operation),
-      entropy_delta: entropyDelta,
-      coupling_delta: couplingDelta,
-      replayability_risk: replayabilityRisk,
-      validation_status: normalize(validation.status).toLowerCase(),
-      execution_status: normalize(execution.status).toLowerCase(),
-      execution_ok: execution.ok === true ? 'true' : 'false',
-      durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
-      projection_authority: authorityAnalysis.authorityValid ? 'valid' : 'invalid',
-      complexity_risk: normalize(complexityAnalysis.risk).toLowerCase(),
-    });
+    const lawEvaluation = this.lawPackEngine.evaluate(lawPack, ohderFacts);
     const lawFindings = lawEvaluation.violations.map(violation => {
       const detail = normalize(violation.message)
         || `${normalize(violation.metric)} ${normalize(violation.operator)} ${String(violation.expected)}`;
@@ -253,6 +266,7 @@ export class ArchitectRuntime {
       lawOutcome: lawEvaluation.outcome,
       lawViolations: lawEvaluation.violations,
       lawExemptions: lawEvaluation.exempted,
+      ohderFacts,
       couplingAnalysis,
       durabilityAnalysis,
       authorityAnalysis,
@@ -278,6 +292,7 @@ export class ArchitectRuntime {
       lawOutcome: '',
       lawViolations: [],
       lawExemptions: [],
+      ohderFacts: {},
       architectureScore: this.scoreEngine.score(),
       recommendedAction: '',
       updatedAt: '',
