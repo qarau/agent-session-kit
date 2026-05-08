@@ -82,6 +82,38 @@ test('replaceability analyzer allows current portable runtime dependencies', asy
   assert.deepEqual(result.violations, []);
 });
 
+test('replaceability analyzer ignores its own vendor keyword detector literals', async () => {
+  const repoDir = await setupRepo();
+  writeFile(
+    repoDir,
+    'ask-core/src/core/VendorSignalAnalyzer.js',
+    `export class VendorSignalAnalyzer {
+  detect(source = '') {
+    return /\\b(?:Firebase|Firestore|Supabase|Prisma|DynamoDB|S3|Stripe|OpenAI|Anthropic)[A-Za-z0-9_$]*/gu.test(source);
+  }
+}
+`
+  );
+  writeFile(
+    repoDir,
+    'ask-core/tests/vendorSignalAnalyzer.contract.test.mjs',
+    `import { VendorSignalAnalyzer } from '../src/core/VendorSignalAnalyzer.js';
+new VendorSignalAnalyzer().detect('FirebaseTaskAdapter');
+`
+  );
+
+  const result = new OhderReplaceabilityAnalyzerEngine(repoDir).analyze({
+    touchedFiles: [
+      'ask-core/src/core/VendorSignalAnalyzer.js',
+      'ask-core/tests/vendorSignalAnalyzer.contract.test.mjs',
+    ],
+  });
+
+  assert.equal(result.risk, 'low');
+  assert.equal(result.replaceabilityValid, true);
+  assert.deepEqual(result.violations, []);
+});
+
 test('architect runtime maps replaceability and YAGNI risk into semantic facts and score', async () => {
   const repoDir = await setupRepo();
   const status = await new ArchitectRuntime(repoDir).assess(baseAssessment(['ask-core/src/core/LeakyRuntime.js']));

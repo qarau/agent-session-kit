@@ -68,6 +68,10 @@ function speculativeAbstractions(source = '') {
   return matches;
 }
 
+function stripRegexLiterals(source = '') {
+  return source.replace(/\/(?:\\.|[^/\r\n])+\/[dgimsuvy]*/gu, '');
+}
+
 function riskFor(violations = [], warnings = []) {
   if (violations.length > 0) {
     return 'high';
@@ -91,9 +95,10 @@ export class OhderReplaceabilityAnalyzerEngine {
 
     for (const filePath of files) {
       const source = readFileSafe(this.cwd, filePath);
+      const decisionSource = stripRegexLiterals(source);
       const imports = importSpecifiers(source);
-      const vendors = vendorSignals(source);
-      const speculative = speculativeAbstractions(source);
+      const vendors = vendorSignals(decisionSource);
+      const speculative = speculativeAbstractions(decisionSource);
       if (isCoreFile(filePath)) {
         for (const specifier of imports.filter(leaksInfrastructure)) {
           violations.push({
