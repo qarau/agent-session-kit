@@ -33,20 +33,22 @@ Use this playbook when `ask next` returns `next.action: "create-refactor-slice"`
 2. Inspect:
    - `recommendation.confidence`
    - `recommendation.target.targetId`
+   - `recommendation.targetPortfolio[]`
    - `recommendation.target.path`
    - `recommendation.reason`
    - `recommendation.targetSignals`
    - `recommendation.acceptanceCriteria`
    - `refactorExecutionPlan.actions`
    - `refactorExecutionPlan.approvalRequired`
-3. If preview returns `suppression.reason: "no-new-refactor-target"`, do not force a generic refactor. Run governance validation, review recent entropy history, and add new evidence or a clearer refactor plan before materializing work.
-4. Materialize when acceptable:
+3. Review the ranked portfolio before creating work. Each target includes `rank`, `score`, `confidence`, `blastRadius`, `freshness`, reasons, and related slice evidence. ASK selects rank 1 deterministically, but the portfolio shows the next best alternatives.
+4. If preview returns `suppression.reason: "no-new-refactor-target"`, do not force a generic refactor. Run governance validation, review recent entropy history, and add new evidence or a clearer refactor plan before materializing work.
+5. Materialize when acceptable:
    - `node ask-core/bin/ask.js refactor create`
-5. If confidence is `medium`, approve before execution:
+6. If confidence is `medium`, approve before execution:
    - `node ask-core/bin/ask.js refactor approve <taskId> --approved-by <id>`
-6. If the recommendation is unsafe or poorly timed, reject it:
+7. If the recommendation is unsafe or poorly timed, reject it:
    - `node ask-core/bin/ask.js refactor reject <taskId> --reason "<reason>"`
-7. Execute the created task through the normal governed loop:
+8. Execute the created task through the normal governed loop:
    - `node ask-core/bin/ask.js task start <taskId>`
    - implement and validate changes
    - `node ask-core/bin/ask.js slice close <taskId>`

@@ -64,6 +64,37 @@ function normalizeTarget(target = null) {
   return normalized;
 }
 
+function normalizeTargetPortfolio(portfolio = []) {
+  if (!Array.isArray(portfolio)) {
+    return [];
+  }
+  return portfolio
+    .map(item => ({
+      rank: toNumber(item?.rank, 0),
+      selected: item?.selected === true,
+      targetId: normalize(item?.targetId),
+      type: normalize(item?.type) || 'file',
+      path: normalize(item?.path),
+      title: normalize(item?.title),
+      score: toNumber(item?.score, 0),
+      confidence: normalizeLower(item?.confidence) || 'low',
+      blastRadius: normalizeLower(item?.blastRadius) || 'low',
+      freshness: normalizeLower(item?.freshness) || 'unknown',
+      reasons: unique(item?.reasons),
+      evidence: item?.evidence && typeof item.evidence === 'object' && !Array.isArray(item.evidence)
+        ? {
+          changeCount: toNumber(item.evidence.changeCount, 0),
+          pressureEntries: toNumber(item.evidence.pressureEntries, 0),
+          relatedTasks: Array.isArray(item.evidence.relatedTasks)
+            ? unique(item.evidence.relatedTasks).sort()
+            : [],
+        }
+        : {},
+    }))
+    .filter(item => item.rank > 0 && item.targetId)
+    .sort((left, right) => left.rank - right.rank);
+}
+
 function normalizeSuppression(suppression = null, baseSignals = []) {
   if (!suppression || typeof suppression !== 'object' || Array.isArray(suppression)) {
     return {
@@ -149,6 +180,7 @@ export class OhderRefactorRecommendationEngine {
     const entropyTrend = normalizeLower(entropy.trend);
     const replayabilityRisk = normalizeLower(architect.replayabilityRisk);
     const discoveredTarget = normalizeTarget(targetDiscovery?.target);
+    const targetPortfolio = normalizeTargetPortfolio(targetDiscovery?.portfolio);
     let requiresConcreteTarget = false;
     let confidence = 'low';
     let title = 'Reduce OHDER entropy pressure';
@@ -240,6 +272,9 @@ export class OhderRefactorRecommendationEngine {
         `Targeted refactor scope is ${discoveredTarget.targetId}.`,
         ...recommendation.acceptanceCriteria,
       ];
+    }
+    if (targetPortfolio.length > 0) {
+      recommendation.targetPortfolio = targetPortfolio;
     }
 
     return {

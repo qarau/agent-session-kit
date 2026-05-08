@@ -85,6 +85,63 @@ function targetForCandidate(candidate) {
   };
 }
 
+function confidenceForCandidate(candidate) {
+  const score = toNumber(candidate?.score, 0);
+  if (score >= 10 || toNumber(candidate?.changeCount, 0) >= 3) {
+    return 'high';
+  }
+  if (score >= 5 || toNumber(candidate?.changeCount, 0) >= 2) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function blastRadiusForCandidate(candidate) {
+  const changeCount = toNumber(candidate?.changeCount, 0);
+  if (changeCount >= 5) {
+    return 'high';
+  }
+  if (changeCount >= 2) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function reasonsForCandidate(candidate) {
+  const reasons = [];
+  if (toNumber(candidate?.changeCount, 0) > 1) {
+    reasons.push(`recurrence across ${String(candidate.changeCount)} pressure changes`);
+  }
+  if (toNumber(candidate?.score, 0) > 0) {
+    reasons.push(`entropy pressure score ${String(candidate.score)}`);
+  }
+  if (Array.isArray(candidate?.relatedTasks) && candidate.relatedTasks.length > 0) {
+    reasons.push(`related slices: ${candidate.relatedTasks.join(', ')}`);
+  }
+  return reasons;
+}
+
+function portfolioForCandidates(candidates = []) {
+  return candidates.map((candidate, index) => ({
+    rank: index + 1,
+    selected: index === 0,
+    targetId: candidate.targetId,
+    type: 'file',
+    path: candidate.path,
+    title: `Refactor hotspot: ${candidate.path}`,
+    score: toNumber(candidate.score, 0),
+    confidence: confidenceForCandidate(candidate),
+    blastRadius: blastRadiusForCandidate(candidate),
+    freshness: 'fresh',
+    reasons: reasonsForCandidate(candidate),
+    evidence: {
+      changeCount: toNumber(candidate.changeCount, 0),
+      pressureEntries: toNumber(candidate.pressureEntries, 0),
+      relatedTasks: Array.isArray(candidate.relatedTasks) ? [...candidate.relatedTasks] : [],
+    },
+  }));
+}
+
 export class OhderRefactorTargetDiscoveryEngine {
   discover({ metricsHistory = [], changeSets = [], tasks = {}, policy = {} } = {}) {
     const windowSize = Math.max(1, Math.floor(toNumber(policy?.ohder_refactor?.target_history_window, 12)));
@@ -155,6 +212,7 @@ export class OhderRefactorTargetDiscoveryEngine {
 
     return {
       target: targetForCandidate(candidates[0]),
+      portfolio: portfolioForCandidates(candidates),
       candidates,
       suppression: null,
     };
