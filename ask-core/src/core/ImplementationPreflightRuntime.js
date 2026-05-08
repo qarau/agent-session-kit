@@ -92,19 +92,29 @@ export class ImplementationPreflightRuntime {
 
   async preflight(options = {}) {
     const advisory = options.advisory === true;
+    const sliceCloseTaskId = normalize(options.sliceCloseTaskId);
     const handoffState = await this.planModeHandoff.readState();
     const handoff = handoffState.latest ?? null;
     const hasHandoff = normalize(handoff?.status).toLowerCase() === 'ingested';
     const taskStatus = await this.tasks.status();
     const taskMap = taskStatus?.ok ? taskStatus.tasks ?? {} : {};
     const activeTask = chooseActiveTask(Object.values(taskMap).filter(Boolean));
+    const sliceCloseTask = sliceCloseTaskId ? taskMap[sliceCloseTaskId] ?? null : null;
+    const createdTaskIds = Array.isArray(handoff?.createdTaskIds) ? handoff.createdTaskIds.map(normalize) : [];
+    const sliceCloseAllowed = Boolean(
+      sliceCloseTaskId
+      && hasHandoff
+      && sliceCloseTask
+      && createdTaskIds.includes(sliceCloseTaskId)
+      && ['in-progress', 'completed'].includes(normalize(sliceCloseTask.status).toLowerCase())
+    );
     const missing = [];
     let recovery = null;
 
     if (!hasHandoff) {
       missing.push('plan-mode-handoff');
       recovery = this.recoveryForMissingHandoff();
-    } else if (!activeTask) {
+    } else if (!activeTask && !sliceCloseAllowed) {
       missing.push('active-ask-slice');
       recovery = this.recoveryForMissingActiveSlice(handoff);
     }
@@ -134,6 +144,13 @@ export class ImplementationPreflightRuntime {
         }
         : null,
       activeTask: taskSummary(activeTask),
+      sliceCloseProvenance: sliceCloseAllowed
+        ? {
+          taskId: sliceCloseTaskId,
+          status: normalize(sliceCloseTask.status),
+          source: 'ASK_SLICE_CLOSE_TASK_ID',
+        }
+        : null,
     };
 
     await this.appendPreflightEvent(payload);

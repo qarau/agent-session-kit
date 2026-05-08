@@ -160,10 +160,14 @@ export class SliceCloseRuntime {
     this.refactorOutcomeEngine = new OhderRefactorOutcomeEngine();
   }
 
-  runGit(args, allowFailure = false) {
+  runGit(args, allowFailure = false, env = {}) {
     const result = spawnSync('git', args, {
       cwd: this.cwd,
       encoding: 'utf8',
+      env: {
+        ...process.env,
+        ...env,
+      },
     });
     const stdout = String(result.stdout ?? '');
     const stderr = String(result.stderr ?? '');
@@ -588,7 +592,9 @@ export class SliceCloseRuntime {
 
     let lastAttempt = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      const commit = this.runGit(['commit', '-m', subject, '-m', footer], true);
+      const commit = this.runGit(['commit', '-m', subject, '-m', footer], true, {
+        ASK_SLICE_CLOSE_TASK_ID: taskId,
+      });
       lastAttempt = {
         attempt,
         ...commit,
