@@ -36,7 +36,7 @@ function baseDecision(action, reason, architect = {}, patch = {}) {
 }
 
 export class OhderNextActionEngine {
-  decide({ state = {}, architect = {}, refactorGovernance = {}, entropy = null, refactorRecommendation = null, tasks = {}, policy = {} } = {}) {
+  decide({ state = {}, architect = {}, refactorGovernance = {}, entropy = null, refactorRecommendation = null, refactorSuppression = null, tasks = {}, policy = {} } = {}) {
     if (hasEntries(tasks.active) || hasEntries(tasks.ready)) {
       return null;
     }
@@ -68,6 +68,23 @@ export class OhderNextActionEngine {
     const entropyPressure = normalizeLower(entropy?.refactorPressure);
     const entropyTrend = normalizeLower(entropy?.trend);
     if (entropyPressure === 'high' || entropyTrend === 'regressing') {
+      if (!refactorRecommendation && normalizeLower(refactorSuppression?.reason) === 'no-new-refactor-target') {
+        return baseDecision(
+          'run-governance-validation',
+          'OHDER entropy is regressing but no new concrete refactor target was found',
+          architect,
+          {
+            entropy: compactEntropy(entropy),
+            recommendedCommand: 'ask governance status',
+            refactorSuppression: {
+              reason: normalize(refactorSuppression.reason),
+              baseSignals: Array.isArray(refactorSuppression.baseSignals)
+                ? refactorSuppression.baseSignals.map(normalize).filter(Boolean)
+                : [],
+            },
+          }
+        );
+      }
       const reason = entropyTrend === 'regressing'
         ? 'OHDER entropy trend is regressing'
         : 'OHDER entropy refactor pressure is high';

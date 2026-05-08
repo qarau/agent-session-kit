@@ -37,7 +37,36 @@ function runOrThrow(command, args, options = {}) {
   return result;
 }
 
-function setupRepo() {
+function appendMetricsHistory(repoDir, entry) {
+  const historyPath = path.join(repoDir, '.ask', 'runtime', 'metrics-history.ndjson');
+  fs.mkdirSync(path.dirname(historyPath), { recursive: true });
+  fs.appendFileSync(historyPath, `${JSON.stringify(entry)}\n`, 'utf8');
+}
+
+function seedRefactorTargetEvidence(repoDir, taskId = 'slice-001', filePath = 'ask-core/src/core/Hotspot.js') {
+  const absolutePath = path.join(repoDir, filePath);
+  fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+  fs.writeFileSync(absolutePath, 'export const hotspot = true;\n', 'utf8');
+  runOrThrow('git', ['add', filePath], { cwd: repoDir });
+  runOrThrow('git', ['commit', '-m', `chore(slice): close ${taskId}`, '-m', `ASK-Slice: ${taskId}`], { cwd: repoDir });
+  appendMetricsHistory(repoDir, {
+    ts: new Date().toISOString(),
+    source: 'slice-close',
+    taskId,
+    sliceId: taskId,
+    entropyDelta: 1,
+    couplingDelta: 1,
+    replayabilityRisk: 'low',
+    architectureScore: 98,
+    architectureScoreDelta: -1,
+    entropyScore: 0.17,
+    entropyTrend: 'regressing',
+    refactorPressure: 'high',
+  });
+  return filePath;
+}
+
+function setupRepo(options = {}) {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-core-refactor-materialization-'));
   runOrThrow('git', ['init'], { cwd: tempRoot });
   runOrThrow('git', ['config', 'user.email', 'test@example.com'], { cwd: tempRoot });
@@ -70,6 +99,9 @@ function setupRepo() {
     },
     updatedAt: new Date().toISOString(),
   });
+  if (options.targetEvidence !== false) {
+    seedRefactorTargetEvidence(tempRoot);
+  }
   return tempRoot;
 }
 
@@ -109,6 +141,7 @@ test('ask refactor preview returns recommendation without mutating task state', 
   assert.equal(payload.ok, true);
   assert.equal(payload.mode, 'preview');
   assert.equal(payload.recommendation.confidence, 'high');
+  assert.equal(payload.recommendation.target.targetId, 'file:ask-core/src/core/Hotspot.js');
   assert.match(payload.recommendation.reason, /entropy trend is regressing/i);
   assert.deepEqual(after, before);
   assert.equal(readEvents(repoDir).some(event => event.type === 'RefactorSuggested'), false);
@@ -128,12 +161,28 @@ test('ask refactor create materializes governed task and emits RefactorSuggested
   assert.equal(task.status, 'created');
   assert.equal(task.title, payload.recommendation.title);
   assert.match(task.description, /OHDER entropy trend is regressing/i);
+  assert.match(task.description, /Target: file:ask-core\/src\/core\/Hotspot.js/u);
   assert.deepEqual(task.acceptanceCriteria, payload.recommendation.acceptanceCriteria);
   assert.equal(task.origin.type, 'ohder-refactor-governance');
   assert.equal(task.origin.recommendationFingerprint, payload.recommendation.fingerprint);
+  assert.equal(task.origin.targetId, payload.recommendation.target.targetId);
+  assert.equal(task.origin.target.path, 'ask-core/src/core/Hotspot.js');
   assert.equal(suggestedEvents.length, 1);
   assert.equal(suggestedEvents[0].payload.recommendationFingerprint, payload.recommendation.fingerprint);
+  assert.equal(suggestedEvents[0].payload.recommendation.target.targetId, payload.recommendation.target.targetId);
   assert.equal(suggestedEvents[0].payload.taskId, payload.task.taskId);
+});
+
+test('ask refactor preview suppresses generic recommendation when no concrete target exists', () => {
+  const repoDir = setupRepo({ targetEvidence: false });
+
+  const result = runOrThrow(process.execPath, [askBinPath, 'refactor', 'preview'], { cwd: repoDir });
+  const payload = JSON.parse(result.stdout);
+
+  assert.equal(payload.ok, true);
+  assert.equal(payload.mode, 'preview');
+  assert.equal(payload.recommendation, null);
+  assert.equal(payload.suppression.reason, 'no-new-refactor-target');
 });
 
 test('ask refactor create is idempotent for the same recommendation fingerprint', () => {

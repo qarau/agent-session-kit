@@ -92,6 +92,34 @@ function writeDriftAnalytics(repoDir, patch = {}) {
   });
 }
 
+function appendMetricsHistory(repoDir, entry) {
+  const historyPath = path.join(repoDir, '.ask', 'runtime', 'metrics-history.ndjson');
+  fs.mkdirSync(path.dirname(historyPath), { recursive: true });
+  fs.appendFileSync(historyPath, `${JSON.stringify(entry)}\n`, 'utf8');
+}
+
+function seedRefactorTargetEvidence(repoDir, taskId = 'slice-001', filePath = 'ask-core/src/core/Hotspot.js') {
+  const absolutePath = path.join(repoDir, filePath);
+  fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+  fs.writeFileSync(absolutePath, 'export const hotspot = true;\n', 'utf8');
+  runOrThrow('git', ['add', filePath], { cwd: repoDir });
+  runOrThrow('git', ['commit', '-m', `chore(slice): close ${taskId}`, '-m', `ASK-Slice: ${taskId}`], { cwd: repoDir });
+  appendMetricsHistory(repoDir, {
+    ts: new Date().toISOString(),
+    source: 'slice-close',
+    taskId,
+    sliceId: taskId,
+    entropyDelta: 1,
+    couplingDelta: 1,
+    replayabilityRisk: 'low',
+    architectureScore: 98,
+    architectureScoreDelta: -1,
+    entropyScore: 0.17,
+    entropyTrend: 'regressing',
+    refactorPressure: 'high',
+  });
+}
+
 function readEvents(repoDir) {
   const eventsPath = path.join(repoDir, '.ask', 'runtime', 'events.ndjson');
   if (!fs.existsSync(eventsPath)) {
@@ -175,6 +203,7 @@ test('ask next returns OHDER block action when no task is available', () => {
 
 test('ask next returns entropy refactor action and event summary when entropy trend regresses', () => {
   const repoDir = setupRepo();
+  seedRefactorTargetEvidence(repoDir);
   writeArchitectStatus(repoDir, {
     status: 'passed',
     blocking: false,
@@ -203,6 +232,7 @@ test('ask next returns entropy refactor action and event summary when entropy tr
   assert.equal(payload.next.action, 'create-refactor-slice');
   assert.equal(payload.next.recommendedCommand, 'ask refactor preview');
   assert.equal(payload.next.refactorRecommendation.confidence, 'high');
+  assert.equal(payload.next.refactorRecommendation.target.targetId, 'file:ask-core/src/core/Hotspot.js');
   assert.equal(typeof payload.next.refactorRecommendation.fingerprint, 'string');
   assert.equal(payload.entropy.trend, 'regressing');
   assert.equal(payload.entropy.refactorPressure, 'high');
@@ -212,6 +242,7 @@ test('ask next returns entropy refactor action and event summary when entropy tr
   assert.equal(events[0].payload.action, 'create-refactor-slice');
   assert.equal(events[0].payload.recommendedCommand, 'ask refactor preview');
   assert.equal(events[0].payload.refactorRecommendationFingerprint, payload.next.refactorRecommendation.fingerprint);
+  assert.equal(events[0].payload.refactorRecommendation.target.targetId, 'file:ask-core/src/core/Hotspot.js');
   assert.equal(events[0].payload.entropy.trend, 'regressing');
   assert.equal(events[0].payload.entropy.refactorPressure, 'high');
 });
@@ -241,6 +272,7 @@ test('ask next returns OHDER await-new-requirement action when architecture is h
 
 test('ask next does not create a refactor task while recommending preview', () => {
   const repoDir = setupRepo();
+  seedRefactorTargetEvidence(repoDir);
   writeArchitectStatus(repoDir, {
     status: 'passed',
     blocking: false,
@@ -268,4 +300,36 @@ test('ask next does not create a refactor task while recommending preview', () =
 
   assert.equal(payload.next.recommendedCommand, 'ask refactor preview');
   assert.equal(Object.keys(tasks).some(taskId => taskId.startsWith('ohder-refactor-')), false);
+});
+
+test('ask next runs governance validation when entropy regresses without a concrete refactor target', () => {
+  const repoDir = setupRepo();
+  writeArchitectStatus(repoDir, {
+    status: 'passed',
+    blocking: false,
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 98,
+    },
+  });
+  writeDriftAnalytics(repoDir, {
+    architecture: {
+      entropyTrend: 'increasing',
+      couplingTrend: 'stable',
+      replayabilityTrend: 'stable',
+      driftScore: 0.5,
+    },
+    overall: {
+      trend: 'regressing',
+      driftScore: 0.25,
+    },
+  });
+
+  const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
+  const payload = JSON.parse(result.stdout);
+
+  assert.equal(payload.next.action, 'run-governance-validation');
+  assert.equal(payload.next.reason, 'OHDER entropy is regressing but no new concrete refactor target was found');
+  assert.equal(payload.next.recommendedCommand, 'ask governance status');
+  assert.equal(payload.next.refactorSuppression.reason, 'no-new-refactor-target');
 });

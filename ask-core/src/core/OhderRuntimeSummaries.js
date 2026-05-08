@@ -11,7 +11,7 @@ export function compactRefactorRecommendation(recommendation = null) {
   if (!recommendation || typeof recommendation !== 'object' || Array.isArray(recommendation)) {
     return null;
   }
-  return {
+  const compact = {
     fingerprint: normalize(recommendation.fingerprint),
     title: normalize(recommendation.title),
     confidence: normalize(recommendation.confidence),
@@ -20,6 +20,14 @@ export function compactRefactorRecommendation(recommendation = null) {
       ? recommendation.targetSignals.map(normalize).filter(Boolean)
       : [],
   };
+  if (recommendation.target && typeof recommendation.target === 'object' && !Array.isArray(recommendation.target)) {
+    compact.target = {
+      targetId: normalize(recommendation.target.targetId),
+      type: normalize(recommendation.target.type),
+      path: normalize(recommendation.target.path),
+    };
+  }
+  return compact;
 }
 
 export function resolveRefactorCommand(recommendation = null, policy = {}) {

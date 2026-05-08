@@ -3,9 +3,11 @@ import { RuntimeStateEngine } from '../../core/RuntimeStateEngine.js';
 import { TaskRuntime } from '../../core/TaskRuntime.js';
 import { ArchitectRuntime } from '../../core/ArchitectRuntime.js';
 import { RefactorGovernanceEngine } from '../../core/RefactorGovernanceEngine.js';
+import { GitSliceChangeHistoryReader } from '../../core/GitSliceChangeHistoryReader.js';
 import { OhderNextActionEngine } from '../../core/OhderNextActionEngine.js';
 import { OhderEntropySnapshotEngine } from '../../core/OhderEntropySnapshotEngine.js';
 import { OhderRefactorRecommendationEngine } from '../../core/OhderRefactorRecommendationEngine.js';
+import { OhderRefactorTargetDiscoveryEngine } from '../../core/OhderRefactorTargetDiscoveryEngine.js';
 import { compactEntropy, compactRefactorRecommendation } from '../../core/OhderRuntimeSummaries.js';
 import { MetricsWriter } from '../../core/MetricsWriter.js';
 import { EventLedger } from '../../runtime/EventLedger.js';
@@ -72,6 +74,8 @@ export async function runNext() {
   const ohderNextActionEngine = new OhderNextActionEngine();
   const entropySnapshotEngine = new OhderEntropySnapshotEngine();
   const refactorRecommendationEngine = new OhderRefactorRecommendationEngine();
+  const refactorTargetDiscoveryEngine = new OhderRefactorTargetDiscoveryEngine();
+  const changeHistoryReader = new GitSliceChangeHistoryReader(cwd);
   const metricsWriter = new MetricsWriter(cwd);
   const ledger = new EventLedger(cwd);
   const projectionEngine = new RuntimeProjectionEngine(cwd);
@@ -104,6 +108,7 @@ export async function runNext() {
   let ohderDecision = null;
   let entropy = null;
   let refactorRecommendation = null;
+  let refactorSuppression = null;
   let next = {
     type: 'runtime-action',
     action: normalize(state.nextRecommendedAction) || 'select next task',
@@ -138,6 +143,13 @@ export async function runNext() {
       }
       : null;
     const driftAnalytics = await metricsWriter.readDriftAnalytics();
+    const changeSets = changeHistoryReader.read(toNumber(policy?.ohder_refactor?.target_commit_window, 40));
+    const targetDiscovery = refactorTargetDiscoveryEngine.discover({
+      metricsHistory: history,
+      changeSets,
+      tasks: taskMap,
+      policy,
+    });
     entropy = entropySnapshotEngine.snapshot({
       architect,
       previousArchitect,
@@ -151,18 +163,22 @@ export async function runNext() {
         title: 'ask next',
       },
     });
-    refactorRecommendation = refactorRecommendationEngine.recommend({
+    const refactorEvaluation = refactorRecommendationEngine.evaluate({
       architect,
       entropy,
       refactorGovernance,
       policy,
+      targetDiscovery,
     });
+    refactorRecommendation = refactorEvaluation.recommendation;
+    refactorSuppression = refactorEvaluation.suppression;
     ohderDecision = ohderNextActionEngine.decide({
       state,
       architect,
       refactorGovernance,
       entropy,
       refactorRecommendation,
+      refactorSuppression,
       tasks: {
         active: activeTasks,
         ready: readyTasks,
@@ -184,6 +200,7 @@ export async function runNext() {
           recommendedCommand: normalize(ohderDecision.recommendedCommand),
           refactorRecommendationFingerprint: normalize(ohderDecision.refactorRecommendation?.fingerprint),
           refactorRecommendation: compactRefactorRecommendation(ohderDecision.refactorRecommendation),
+          refactorSuppression: ohderDecision.refactorSuppression ?? null,
           entropy: compactEntropy(entropy),
         },
         meta: {
@@ -219,6 +236,7 @@ export async function runNext() {
         architectureScore: toNumber(ohderDecision.architectureScore, 0),
         recommendedCommand: normalize(ohderDecision.recommendedCommand),
         refactorRecommendation: compactRefactorRecommendation(ohderDecision.refactorRecommendation),
+        refactorSuppression: ohderDecision.refactorSuppression ?? null,
       }
       : null,
     entropy: compactEntropy(entropy),

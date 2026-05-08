@@ -59,6 +59,7 @@ export class TaskBoardProjector {
       const refactorGovernance = origin?.type === 'ohder-refactor-governance'
         ? {
           recommendationFingerprint: String(origin.recommendationFingerprint ?? ''),
+          targetId: String(origin.targetId ?? ''),
           confidence: String(origin.confidence ?? ''),
           approvalRequired: origin.approvalRequired === true,
           approvalStatus: origin.approvalRequired === true ? 'pending' : 'not-required',

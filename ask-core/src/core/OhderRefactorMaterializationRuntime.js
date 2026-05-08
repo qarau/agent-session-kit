@@ -1,8 +1,10 @@
 ﻿import { ArchitectRuntime } from './ArchitectRuntime.js';
 import { EventLedger } from '../runtime/EventLedger.js';
 import { MetricsWriter } from './MetricsWriter.js';
+import { GitSliceChangeHistoryReader } from './GitSliceChangeHistoryReader.js';
 import { OhderEntropySnapshotEngine } from './OhderEntropySnapshotEngine.js';
 import { OhderRefactorRecommendationEngine } from './OhderRefactorRecommendationEngine.js';
+import { OhderRefactorTargetDiscoveryEngine } from './OhderRefactorTargetDiscoveryEngine.js';
 import { PolicyEngine } from './PolicyEngine.js';
 import { RefactorGovernanceEngine } from './RefactorGovernanceEngine.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
@@ -26,6 +28,7 @@ function descriptionFor(recommendation) {
   return [
     normalize(recommendation.objective),
     normalize(recommendation.reason),
+    recommendation.target?.targetId ? `Target: ${normalize(recommendation.target.targetId)}` : '',
     `Target signals: ${Array.isArray(recommendation.targetSignals) ? recommendation.targetSignals.join(', ') : ''}`,
   ].filter(Boolean).join('\n\n');
 }
@@ -37,8 +40,10 @@ export class OhderRefactorMaterializationRuntime {
     this.stateEngine = new RuntimeStateEngine(cwd);
     this.architectRuntime = new ArchitectRuntime(cwd);
     this.metricsWriter = new MetricsWriter(cwd);
+    this.changeHistoryReader = new GitSliceChangeHistoryReader(cwd);
     this.entropySnapshotEngine = new OhderEntropySnapshotEngine();
     this.recommendationEngine = new OhderRefactorRecommendationEngine();
+    this.targetDiscoveryEngine = new OhderRefactorTargetDiscoveryEngine();
     this.refactorGovernanceEngine = new RefactorGovernanceEngine();
     this.taskRuntime = new TaskRuntime(cwd);
     this.ledger = new EventLedger(cwd);
@@ -59,6 +64,15 @@ export class OhderRefactorMaterializationRuntime {
       }
       : null;
     const driftAnalytics = await this.metricsWriter.readDriftAnalytics();
+    const taskStatus = await this.taskRuntime.status();
+    const tasks = taskStatus?.ok ? (taskStatus.tasks || {}) : {};
+    const changeSets = this.changeHistoryReader.read(toNumber(policy?.ohder_refactor?.target_commit_window, 40));
+    const targetDiscovery = this.targetDiscoveryEngine.discover({
+      metricsHistory: history,
+      changeSets,
+      tasks,
+      policy,
+    });
     const entropy = this.entropySnapshotEngine.snapshot({
       architect,
       previousArchitect,
@@ -78,24 +92,31 @@ export class OhderRefactorMaterializationRuntime {
       architect,
       entropy,
       refactorGovernance,
+      metricsHistory: history,
+      changeSets,
+      tasks,
+      targetDiscovery,
     };
   }
 
   async recommendationFromCurrentState() {
     const context = await this.buildContext();
-    const recommendation = this.recommendationEngine.recommend(context);
+    const evaluation = this.recommendationEngine.evaluate(context);
     return {
       ...context,
-      recommendation,
+      recommendation: evaluation.recommendation,
+      suppression: evaluation.suppression,
     };
   }
 
   async preview() {
-    const { recommendation, architect, entropy, refactorGovernance } = await this.recommendationFromCurrentState();
+    const { recommendation, suppression, architect, entropy, refactorGovernance, targetDiscovery } = await this.recommendationFromCurrentState();
     return {
       ok: true,
       mode: 'preview',
       recommendation,
+      suppression,
+      targetDiscovery,
       architect,
       entropy,
       refactorGovernance,
@@ -118,13 +139,15 @@ export class OhderRefactorMaterializationRuntime {
   }
 
   async create({ requestedBy = 'local', auto = false } = {}) {
-    const { recommendation, state, architect, entropy, refactorGovernance, policy } = await this.recommendationFromCurrentState();
+    const { recommendation, suppression, state, architect, entropy, refactorGovernance, policy, targetDiscovery } = await this.recommendationFromCurrentState();
     if (!recommendation) {
       return {
         ok: true,
         mode: 'create',
         created: false,
         recommendation: null,
+        suppression,
+        targetDiscovery,
         task: null,
         architect,
         entropy,
@@ -177,6 +200,8 @@ export class OhderRefactorMaterializationRuntime {
         origin: {
           type: 'ohder-refactor-governance',
           recommendationFingerprint: normalize(recommendation.fingerprint),
+          targetId: normalize(recommendation.target?.targetId),
+          target: recommendation.target && typeof recommendation.target === 'object' ? { ...recommendation.target } : null,
           confidence: normalize(recommendation.confidence),
           targetSignals: Array.isArray(recommendation.targetSignals) ? [...recommendation.targetSignals] : [],
           requestedBy: normalize(requestedBy),

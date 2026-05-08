@@ -13,6 +13,11 @@ test('OHDER runtime summaries compact refactor recommendation deterministically'
     confidence: 'high',
     reason: ' OHDER entropy trend is regressing. ',
     targetSignals: [' entropy.trend:regressing ', '', null],
+    target: {
+      targetId: ' file:ask-core/src/core/Hotspot.js ',
+      type: ' file ',
+      path: ' ask-core/src/core/Hotspot.js ',
+    },
     ignored: 'field',
   });
 
@@ -22,6 +27,11 @@ test('OHDER runtime summaries compact refactor recommendation deterministically'
     confidence: 'high',
     reason: 'OHDER entropy trend is regressing.',
     targetSignals: ['entropy.trend:regressing'],
+    target: {
+      targetId: 'file:ask-core/src/core/Hotspot.js',
+      type: 'file',
+      path: 'ask-core/src/core/Hotspot.js',
+    },
   });
 });
 
