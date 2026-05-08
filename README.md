@@ -255,11 +255,15 @@ Entropy history is written to `.ask/runtime/metrics-history.ndjson` and surfaced
 node ask-core/bin/ask.js metrics show --history 20
 ```
 
-Key fields are `entropyScore`, `refactorPressure`, `architectureScoreDelta`, `couplingTrend`, and `replayabilityTrend`. `ask next` uses these signals when no task is ready: high pressure or regressing trend recommends `create-refactor-slice`; medium pressure recommends `run-governance-validation`; clear entropy allows `await-new-requirement`.
+Key fields are `entropyScore`, `refactorPressure`, `architectureScoreDelta`, `couplingTrend`, and `replayabilityTrend`. `ask next` uses these signals when no task is ready: high pressure or regressing trend recommends a refactor only when ASK can identify a concrete target; medium pressure recommends `run-governance-validation`; clear entropy allows `await-new-requirement`.
 
 ## OHDER Refactor Governance Materialization
 
 OHDER Refactor Governance Materialization is the bridge between architecture pressure and executable ASK work. Entropy and architect signals no longer stop at "create a refactor slice" text; ASK can now generate a deterministic recommendation and materialize it into a normal governed task.
+
+In the targeted refactor flow, ASK does not keep repeating the same generic entropy recommendation. It reads recent slice commits, `ASK-Slice` footers, changed files, entropy history, and completed OHDER refactor tasks to select a concrete hotspot target. The recommendation fingerprint includes that target, so a new target becomes a new governed task while a completed target is skipped.
+
+If entropy is regressing but ASK cannot discover a new concrete target, `ask refactor preview` returns `recommendation: null` with `suppression.reason: "no-new-refactor-target"`. In that state, `ask next` recommends `run-governance-validation` instead of another vague refactor slice.
 
 Operator flow:
 
@@ -283,7 +287,7 @@ Replayable events:
 - `RefactorApproved`: an approval-required refactor task was approved.
 - `RefactorRejected`: a refactor task was rejected and blocked.
 
-The created task includes the recommendation title, objective, reason, target signals, acceptance criteria, confidence, and recommendation fingerprint. It still closes through `ask slice close <taskId>`, so OHDER validation, full-suite checks, auto commit, and pre-push validation remain enforced.
+The created task includes the recommendation title, objective, reason, concrete target, target signals, acceptance criteria, confidence, and recommendation fingerprint. It still closes through `ask slice close <taskId>`, so OHDER validation, full-suite checks, auto commit, and pre-push validation remain enforced.
 ## OHDER Slice-Close Governance
 
 `ask slice close <taskId>` now runs OHDER architect governance before ASK marks the task verified, completed, or committed.

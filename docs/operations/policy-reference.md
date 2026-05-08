@@ -93,6 +93,8 @@ Behavior:
 - Medium-confidence recommendations create approval-required tasks.
 - High-confidence recommendations can be created explicitly with `ask refactor create`.
 - Automatic high-confidence materialization requires `auto_materialize_high_confidence: true` and is surfaced by `ask next` as `ask refactor create --auto`.
+- Target discovery reads recent slice commits and metrics history. Optional `ohder_refactor.target_commit_window` and `ohder_refactor.target_history_window` values can bound how much history is considered.
+- If no uncompleted target is discoverable, ASK suppresses the generic recommendation and routes `ask next` to governance validation.
 ## `metrics`
 
 - `drift_window_size`: rolling history window for drift analytics

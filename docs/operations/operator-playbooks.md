@@ -18,7 +18,7 @@
 Action responses:
 
 - `resolve-architecture-block`: run `node ask-core/bin/ask.js architect status` and `node ask-core/bin/ask.js governance explain`, then fix the blocking law violation or use an approved short-lived exemption.
-- `create-refactor-slice`: run `node ask-core/bin/ask.js refactor preview`, then `node ask-core/bin/ask.js refactor create` when the recommendation is acceptable. Approve medium-confidence tasks before execution.
+- `create-refactor-slice`: run `node ask-core/bin/ask.js refactor preview`, confirm the concrete target, then `node ask-core/bin/ask.js refactor create` when the recommendation is acceptable. Approve medium-confidence tasks before execution.
 - `run-governance-validation`: run `node ask-core/bin/ask.js governance status`, `node ask-core/bin/ask.js architect status`, and relevant tests before asking for the next task again.
 - `await-new-requirement`: architecture governance is clear; add or ingest the next product requirement.
 
@@ -32,16 +32,19 @@ Use this playbook when `ask next` returns `next.action: "create-refactor-slice"`
    - `node ask-core/bin/ask.js refactor preview`
 2. Inspect:
    - `recommendation.confidence`
+   - `recommendation.target.targetId`
+   - `recommendation.target.path`
    - `recommendation.reason`
    - `recommendation.targetSignals`
    - `recommendation.acceptanceCriteria`
-3. Materialize when acceptable:
+3. If preview returns `suppression.reason: "no-new-refactor-target"`, do not force a generic refactor. Run governance validation, review recent entropy history, and add new evidence or a clearer refactor plan before materializing work.
+4. Materialize when acceptable:
    - `node ask-core/bin/ask.js refactor create`
-4. If confidence is `medium`, approve before execution:
+5. If confidence is `medium`, approve before execution:
    - `node ask-core/bin/ask.js refactor approve <taskId> --approved-by <id>`
-5. If the recommendation is unsafe or poorly timed, reject it:
+6. If the recommendation is unsafe or poorly timed, reject it:
    - `node ask-core/bin/ask.js refactor reject <taskId> --reason "<reason>"`
-6. Execute the created task through the normal governed loop:
+7. Execute the created task through the normal governed loop:
    - `node ask-core/bin/ask.js task start <taskId>`
    - implement and validate changes
    - `node ask-core/bin/ask.js slice close <taskId>`
@@ -148,7 +151,8 @@ Entropy events:
 
 Escalation rules:
 
-- If `refactorPressure` is `high`, create or ingest a focused refactor slice.
+- If `refactorPressure` is `high`, create or ingest a focused refactor slice only after ASK identifies a concrete target.
+- If target discovery is suppressed, run governance validation instead of creating a generic entropy refactor.
 - If `refactorPressure` is `medium`, run governance validation before selecting new feature work.
 - If `driftAnalytics.overall.trend` is `regressing` across multiple windows, stop feature expansion and reduce entropy first.
 

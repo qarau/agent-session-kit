@@ -93,11 +93,13 @@ Refactor materialization implements step 11 of the autonomous loop without bypas
 Flow:
 
 1. OHDER entropy or architect status identifies refactor pressure.
-2. `OhderRefactorRecommendationEngine` converts pressure into a deterministic recommendation with fingerprint, confidence, reason, target signals, and acceptance criteria.
-3. `ask next` exposes the recommendation and points to `ask refactor preview` by default.
-4. `ask refactor create` materializes the recommendation as a normal ASK task when confidence policy allows it.
-5. Approval and rejection are replayed through `RefactorApproved` and `RefactorRejected`.
-6. The refactor task still executes and closes through `ask slice close <taskId>`.
+2. `GitSliceChangeHistoryReader` and `OhderRefactorTargetDiscoveryEngine` derive concrete targets from recent `ASK-Slice` commits, changed files, entropy history, and completed OHDER refactor tasks.
+3. `OhderRefactorRecommendationEngine` converts pressure and the selected target into a deterministic recommendation with fingerprint, confidence, reason, target metadata, target signals, and acceptance criteria.
+4. `ask next` exposes the recommendation and points to `ask refactor preview` by default.
+5. `ask refactor create` materializes the recommendation as a normal ASK task when confidence policy allows it.
+6. If no new target is discoverable, the recommendation is suppressed with `no-new-refactor-target` and `ask next` falls back to governance validation.
+7. Approval and rejection are replayed through `RefactorApproved` and `RefactorRejected`.
+8. The refactor task still executes and closes through `ask slice close <taskId>`.
 
 This keeps OHDER detection, recommendation, materialization, approval, execution, and slice-close validation as separate runtime concerns.
 ## Slice-Close OHDER Gate
