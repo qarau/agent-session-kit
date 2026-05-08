@@ -36,6 +36,50 @@ function unique(values = []) {
   return Array.from(new Set(values.map(normalize).filter(Boolean)));
 }
 
+function normalizeTarget(target = null) {
+  if (!target || typeof target !== 'object' || Array.isArray(target)) {
+    return null;
+  }
+  const targetId = normalize(target.targetId);
+  if (!targetId) {
+    return null;
+  }
+  const normalized = {
+    targetId,
+    type: normalize(target.type) || 'unknown',
+    path: normalize(target.path),
+    title: normalize(target.title),
+    reason: normalize(target.reason),
+  };
+  if (target.evidence && typeof target.evidence === 'object' && !Array.isArray(target.evidence)) {
+    normalized.evidence = {
+      score: toNumber(target.evidence.score, 0),
+      changeCount: toNumber(target.evidence.changeCount, 0),
+      pressureEntries: toNumber(target.evidence.pressureEntries, 0),
+      relatedTasks: Array.isArray(target.evidence.relatedTasks)
+        ? unique(target.evidence.relatedTasks).sort()
+        : [],
+    };
+  }
+  return normalized;
+}
+
+function normalizeSuppression(suppression = null, baseSignals = []) {
+  if (!suppression || typeof suppression !== 'object' || Array.isArray(suppression)) {
+    return {
+      reason: 'no-new-refactor-target',
+      baseSignals: unique(baseSignals).sort(),
+    };
+  }
+  return {
+    reason: normalize(suppression.reason) || 'no-new-refactor-target',
+    baseSignals: unique([
+      ...(Array.isArray(suppression.baseSignals) ? suppression.baseSignals : []),
+      ...baseSignals,
+    ]).sort(),
+  };
+}
+
 function lawSignals(architect = {}) {
   if (!Array.isArray(architect.lawViolations)) {
     return [];
@@ -95,7 +139,7 @@ function rankConfidence(current, next) {
 }
 
 export class OhderRefactorRecommendationEngine {
-  recommend({ architect = {}, entropy = {}, refactorGovernance = {}, policy = {} } = {}) {
+  evaluate({ architect = {}, entropy = {}, refactorGovernance = {}, policy = {}, targetDiscovery = null } = {}) {
     const targetSignals = [];
     const reasons = [];
     const blocking = architect.blocking === true;
@@ -104,6 +148,8 @@ export class OhderRefactorRecommendationEngine {
     const entropyPressure = normalizeLower(entropy.refactorPressure);
     const entropyTrend = normalizeLower(entropy.trend);
     const replayabilityRisk = normalizeLower(architect.replayabilityRisk);
+    const discoveredTarget = normalizeTarget(targetDiscovery?.target);
+    let requiresConcreteTarget = false;
     let confidence = 'low';
     let title = 'Reduce OHDER entropy pressure';
     let objective = 'Create a governed refactor slice that reduces architecture entropy.';
@@ -126,6 +172,7 @@ export class OhderRefactorRecommendationEngine {
     }
 
     if (entropyPressure === 'high' || entropyTrend === 'regressing') {
+      requiresConcreteTarget = blocking !== true && refactorGovernance.required !== true;
       const scoreOnlyPressure = entropyTrend !== 'regressing'
         && !blocking
         && replayabilityRisk !== 'high'
@@ -165,7 +212,17 @@ export class OhderRefactorRecommendationEngine {
 
     const normalizedSignals = unique(targetSignals);
     if (normalizedSignals.length < 1) {
-      return null;
+      return {
+        recommendation: null,
+        suppression: null,
+      };
+    }
+
+    if (requiresConcreteTarget && targetDiscovery && !discoveredTarget) {
+      return {
+        recommendation: null,
+        suppression: normalizeSuppression(targetDiscovery?.suppression, normalizedSignals),
+      };
     }
 
     const recommendation = {
@@ -177,11 +234,25 @@ export class OhderRefactorRecommendationEngine {
       acceptanceCriteria: defaultAcceptanceCriteria(blocking),
       blocking,
     };
+    if (discoveredTarget) {
+      recommendation.target = discoveredTarget;
+      recommendation.acceptanceCriteria = [
+        `Targeted refactor scope is ${discoveredTarget.targetId}.`,
+        ...recommendation.acceptanceCriteria,
+      ];
+    }
 
     return {
-      fingerprint: fingerprintFor(recommendation),
-      ...recommendation,
+      recommendation: {
+        fingerprint: fingerprintFor(recommendation),
+        ...recommendation,
+      },
+      suppression: null,
     };
+  }
+
+  recommend(input = {}) {
+    return this.evaluate(input).recommendation;
   }
 }
 

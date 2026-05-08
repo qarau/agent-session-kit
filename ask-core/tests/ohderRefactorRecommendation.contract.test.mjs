@@ -40,6 +40,16 @@ test('high entropy pressure produces a deterministic high-confidence refactor re
       couplingTrend: 'increasing',
       replayabilityTrend: 'stable',
     },
+    targetDiscovery: {
+      target: {
+        targetId: 'file:ask-core/src/core/OhderNextActionEngine.js',
+        type: 'file',
+        path: 'ask-core/src/core/OhderNextActionEngine.js',
+        title: 'Refactor hotspot: ask-core/src/core/OhderNextActionEngine.js',
+        reason: 'Recent OHDER pressure repeatedly touched ask-core/src/core/OhderNextActionEngine.js.',
+      },
+      suppression: null,
+    },
   };
 
   const first = recommend(input);
@@ -50,7 +60,89 @@ test('high entropy pressure produces a deterministic high-confidence refactor re
   assert.match(first.reason, /entropy trend is regressing/i);
   assert.ok(first.targetSignals.includes('entropy.trend:regressing'));
   assert.ok(first.targetSignals.includes('entropy.refactorPressure:high'));
+  assert.equal(first.target.targetId, 'file:ask-core/src/core/OhderNextActionEngine.js');
   assert.deepEqual(first, second);
+});
+
+test('target identity changes recommendation fingerprint', () => {
+  const baseInput = {
+    entropy: {
+      trend: 'regressing',
+      refactorPressure: 'high',
+    },
+  };
+  const first = recommend({
+    ...baseInput,
+    targetDiscovery: {
+      target: {
+        targetId: 'file:ask-core/src/core/First.js',
+        type: 'file',
+        path: 'ask-core/src/core/First.js',
+      },
+    },
+  });
+  const second = recommend({
+    ...baseInput,
+    targetDiscovery: {
+      target: {
+        targetId: 'file:ask-core/src/core/Second.js',
+        type: 'file',
+        path: 'ask-core/src/core/Second.js',
+      },
+    },
+  });
+
+  assert.notEqual(first.fingerprint, second.fingerprint);
+  assert.equal(first.target.targetId, 'file:ask-core/src/core/First.js');
+  assert.equal(second.target.targetId, 'file:ask-core/src/core/Second.js');
+});
+
+test('high entropy without a discovered target is suppressed', () => {
+  const engine = new OhderRefactorRecommendationEngine();
+  const result = engine.evaluate({
+    architect: {
+      status: 'warning',
+      blocking: false,
+      replayabilityRisk: 'low',
+      architectureScore: {
+        overallScore: 91,
+      },
+    },
+    entropy: {
+      trend: 'regressing',
+      refactorPressure: 'high',
+    },
+    targetDiscovery: {
+      target: null,
+      suppression: {
+        reason: 'no-new-refactor-target',
+        baseSignals: ['entropy.trend:regressing'],
+      },
+    },
+  });
+
+  assert.equal(result.recommendation, null);
+  assert.equal(result.suppression.reason, 'no-new-refactor-target');
+  assert.equal(engine.recommend({
+    architect: {
+      status: 'warning',
+      blocking: false,
+      replayabilityRisk: 'low',
+      architectureScore: {
+        overallScore: 91,
+      },
+    },
+    entropy: {
+      trend: 'regressing',
+      refactorPressure: 'high',
+    },
+    targetDiscovery: {
+      target: null,
+      suppression: {
+        reason: 'no-new-refactor-target',
+      },
+    },
+  }), null);
 });
 
 test('blocking architecture status produces a repair recommendation with law signals', () => {
