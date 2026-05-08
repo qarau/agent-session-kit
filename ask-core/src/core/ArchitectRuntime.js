@@ -5,6 +5,7 @@ import { ArchitectureScoreEngine } from './ArchitectureScoreEngine.js';
 import { OhderCouplingAnalyzerEngine } from './OhderCouplingAnalyzerEngine.js';
 import { OhderDurabilityValidatorEngine } from './OhderDurabilityValidatorEngine.js';
 import { OhderAuthorityAnalyzerEngine } from './OhderAuthorityAnalyzerEngine.js';
+import { OhderComplexityAnalyzerEngine } from './OhderComplexityAnalyzerEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -44,6 +45,7 @@ export class ArchitectRuntime {
     this.couplingAnalyzer = new OhderCouplingAnalyzerEngine(cwd);
     this.durabilityValidator = new OhderDurabilityValidatorEngine(cwd);
     this.authorityAnalyzer = new OhderAuthorityAnalyzerEngine(cwd);
+    this.complexityAnalyzer = new OhderComplexityAnalyzerEngine(cwd);
   }
 
   entropyDelta(execution = {}, validation = {}) {
@@ -130,6 +132,9 @@ export class ArchitectRuntime {
     const authorityAnalysis = this.authorityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
+    const complexityAnalysis = this.complexityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
     const couplingDelta = Math.max(this.couplingDelta(execution), toNumber(couplingAnalysis.couplingDelta, 0));
     const replayabilityRisk = this.replayabilityRisk(state, execution);
     const maxEntropy = toNonNegativeInt(policy?.architect?.max_entropy_delta, 3);
@@ -180,6 +185,7 @@ export class ArchitectRuntime {
       execution_ok: execution.ok === true ? 'true' : 'false',
       durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
       projection_authority: authorityAnalysis.authorityValid ? 'valid' : 'invalid',
+      complexity_risk: normalize(complexityAnalysis.risk).toLowerCase(),
     });
     const lawFindings = lawEvaluation.violations.map(violation => {
       const detail = normalize(violation.message)
@@ -213,6 +219,7 @@ export class ArchitectRuntime {
       couplingAnalysis,
       durabilityAnalysis,
       authorityAnalysis,
+      complexityAnalysis,
     });
     const payload = {
       status,
@@ -230,6 +237,7 @@ export class ArchitectRuntime {
       couplingAnalysis,
       durabilityAnalysis,
       authorityAnalysis,
+      complexityAnalysis,
       architectureScore,
       recommendedAction,
       updatedAt: nowIso(),
