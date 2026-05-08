@@ -69,6 +69,12 @@ Use governed continuation for checkpointed execution:
 
 - `node ask-core/bin/ask.js continue --once`
 
+For manual interactive Codex work that was not launched through `ask codex`, record explicit checkpoint evidence before change gates:
+
+- `node ask-core/bin/ask.js codex checkpoint --operation <name> --touched-file <path>`
+
+`ask pre-commit-check`, `ask pre-push-check`, and `ask slice close` accept either governed launch evidence (`CodexGovernedLaunchStarted`, `CodexExecutionCaptured`, and a governed checkpoint) or this explicit interactive checkpoint. Direct launch exceptions remain disallowed by default for change gates.
+
 If blocked:
 
 1. Run `node ask-core/bin/ask.js governance explain`

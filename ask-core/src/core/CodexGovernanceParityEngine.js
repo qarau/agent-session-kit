@@ -87,6 +87,7 @@ export class CodexGovernanceParityEngine {
     const hasGovernedStart = types.has('CodexGovernedLaunchStarted');
     const hasExecutionCapture = types.has('CodexExecutionCaptured');
     const hasCheckpoint = types.has('CodexGovernedCheckpointCreated');
+    const hasInteractiveCheckpoint = types.has('CodexInteractiveCheckpointCreated');
     const hasDirectApproved = types.has('CodexDirectLaunchApproved');
     const hasDirectExecution = events.some(
       event =>
@@ -94,10 +95,10 @@ export class CodexGovernanceParityEngine {
         normalize(eventPayload(event).launchMode).toLowerCase() === 'direct-exception'
     );
 
-    if (requireEvidence && !(hasGovernedStart && hasExecutionCapture)) {
+    if (requireEvidence && !(hasInteractiveCheckpoint || (hasGovernedStart && hasExecutionCapture))) {
       missing.push('governed codex launch evidence required');
     }
-    if (requireCheckpoint && !hasCheckpoint) {
+    if (requireCheckpoint && !(hasCheckpoint || hasInteractiveCheckpoint)) {
       missing.push('governed codex checkpoint evidence required');
     }
     if (forbidDirect && (hasDirectApproved || hasDirectExecution)) {
@@ -110,4 +111,3 @@ export class CodexGovernanceParityEngine {
     };
   }
 }
-

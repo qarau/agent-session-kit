@@ -96,6 +96,7 @@ Usage:
   ask replay
   ask handoff create
   ask codex [launch] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--allow-fail-open] [--fail-open-reason <text>] [--approved-by <id>] [--approval-ticket <id>] [--touched-file <path>] [-- <args...>]
+  ask codex checkpoint [--operation <name>] [--touched-file <path>]
   ask codex direct --reason <text> [--approved-by <id>] [--approval-ticket <id>] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--touched-file <path>] [-- <args...>]
   ask codex context status|ensure|compact
 `);
