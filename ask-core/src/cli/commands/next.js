@@ -5,6 +5,7 @@ import { ArchitectRuntime } from '../../core/ArchitectRuntime.js';
 import { RefactorGovernanceEngine } from '../../core/RefactorGovernanceEngine.js';
 import { OhderNextActionEngine } from '../../core/OhderNextActionEngine.js';
 import { OhderEntropySnapshotEngine } from '../../core/OhderEntropySnapshotEngine.js';
+import { OhderRefactorRecommendationEngine } from '../../core/OhderRefactorRecommendationEngine.js';
 import { MetricsWriter } from '../../core/MetricsWriter.js';
 import { EventLedger } from '../../runtime/EventLedger.js';
 import { RuntimeProjectionEngine } from '../../runtime/RuntimeProjectionEngine.js';
@@ -60,6 +61,21 @@ function chooseReadyTask(tasks = []) {
   })[0];
 }
 
+function compactRefactorRecommendation(recommendation = null) {
+  if (!recommendation || typeof recommendation !== 'object' || Array.isArray(recommendation)) {
+    return null;
+  }
+  return {
+    fingerprint: normalize(recommendation.fingerprint),
+    title: normalize(recommendation.title),
+    confidence: normalize(recommendation.confidence),
+    reason: normalize(recommendation.reason),
+    targetSignals: Array.isArray(recommendation.targetSignals)
+      ? recommendation.targetSignals.map(normalize).filter(Boolean)
+      : [],
+  };
+}
+
 function compactEntropy(entropy = null) {
   if (!entropy || typeof entropy !== 'object' || Array.isArray(entropy)) {
     return null;
@@ -83,6 +99,7 @@ export async function runNext() {
   const refactorGovernanceEngine = new RefactorGovernanceEngine();
   const ohderNextActionEngine = new OhderNextActionEngine();
   const entropySnapshotEngine = new OhderEntropySnapshotEngine();
+  const refactorRecommendationEngine = new OhderRefactorRecommendationEngine();
   const metricsWriter = new MetricsWriter(cwd);
   const ledger = new EventLedger(cwd);
   const projectionEngine = new RuntimeProjectionEngine(cwd);
@@ -114,6 +131,7 @@ export async function runNext() {
   const readyTask = chooseReadyTask(readyTasks);
   let ohderDecision = null;
   let entropy = null;
+  let refactorRecommendation = null;
   let next = {
     type: 'runtime-action',
     action: normalize(state.nextRecommendedAction) || 'select next task',
@@ -161,11 +179,18 @@ export async function runNext() {
         title: 'ask next',
       },
     });
+    refactorRecommendation = refactorRecommendationEngine.recommend({
+      architect,
+      entropy,
+      refactorGovernance,
+      policy,
+    });
     ohderDecision = ohderNextActionEngine.decide({
       state,
       architect,
       refactorGovernance,
       entropy,
+      refactorRecommendation,
       tasks: {
         active: activeTasks,
         ready: readyTasks,
@@ -185,6 +210,8 @@ export async function runNext() {
           architectureScore: toNumber(ohderDecision.architectureScore, 0),
           blocking: ohderDecision.blocking === true,
           recommendedCommand: normalize(ohderDecision.recommendedCommand),
+          refactorRecommendationFingerprint: normalize(ohderDecision.refactorRecommendation?.fingerprint),
+          refactorRecommendation: compactRefactorRecommendation(ohderDecision.refactorRecommendation),
           entropy: compactEntropy(entropy),
         },
         meta: {
@@ -219,6 +246,7 @@ export async function runNext() {
         architectStatus: normalize(ohderDecision.architectStatus),
         architectureScore: toNumber(ohderDecision.architectureScore, 0),
         recommendedCommand: normalize(ohderDecision.recommendedCommand),
+        refactorRecommendation: compactRefactorRecommendation(ohderDecision.refactorRecommendation),
       }
       : null,
     entropy: compactEntropy(entropy),

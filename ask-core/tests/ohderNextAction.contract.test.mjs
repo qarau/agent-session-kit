@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import test from 'node:test';
 import { OhderNextActionEngine } from '../src/core/OhderNextActionEngine.js';
 
@@ -76,7 +76,7 @@ test('OHDER next action creates refactor slice when refactor governance is requi
   assert.equal(decision.type, 'ohder-action');
   assert.equal(decision.action, 'create-refactor-slice');
   assert.equal(decision.blocking, false);
-  assert.equal(decision.recommendedCommand, 'ask task create <refactor-task-id>');
+  assert.equal(decision.recommendedCommand, 'ask refactor preview');
   assert.match(decision.reason, /entropy-delta/u);
 });
 
@@ -148,7 +148,7 @@ test('OHDER next action creates refactor slice for high entropy pressure', () =>
   assert.equal(decision.action, 'create-refactor-slice');
   assert.match(decision.reason, /entropy/i);
   assert.equal(decision.entropy.refactorPressure, 'high');
-  assert.equal(decision.recommendedCommand, 'ask task create <refactor-task-id>');
+  assert.equal(decision.recommendedCommand, 'ask refactor preview');
 });
 
 test('OHDER next action creates refactor slice for regressing entropy trend', () => {
@@ -195,3 +195,56 @@ test('OHDER next action requests governance validation for medium entropy pressu
   assert.equal(decision.entropy.refactorPressure, 'medium');
   assert.equal(decision.recommendedCommand, 'ask governance status');
 });
+
+
+test('OHDER next action includes concrete refactor materialization command and summary', () => {
+  const decision = decide({
+    architect: {
+      status: 'passed',
+      blocking: false,
+      replayabilityRisk: 'low',
+      architectureScore: {
+        overallScore: 98,
+      },
+    },
+    entropy: {
+      refactorPressure: 'high',
+      trend: 'regressing',
+      entropyScore: 0.3,
+    },
+    refactorRecommendation: {
+      fingerprint: 'abc123',
+      title: 'Reduce OHDER entropy pressure',
+      confidence: 'high',
+      reason: 'OHDER entropy trend is regressing.',
+      targetSignals: ['entropy.trend:regressing'],
+    },
+  });
+
+  assert.equal(decision.action, 'create-refactor-slice');
+  assert.equal(decision.recommendedCommand, 'ask refactor preview');
+  assert.equal(decision.refactorRecommendation.fingerprint, 'abc123');
+  assert.equal(decision.refactorRecommendation.confidence, 'high');
+});
+
+test('OHDER next action uses automatic refactor command only when policy allows it', () => {
+  const decision = decide({
+    entropy: {
+      refactorPressure: 'high',
+      trend: 'regressing',
+    },
+    refactorRecommendation: {
+      fingerprint: 'abc123',
+      title: 'Reduce OHDER entropy pressure',
+      confidence: 'high',
+    },
+    policy: {
+      refactor_materialization: {
+        auto_materialize_high_confidence: true,
+      },
+    },
+  });
+
+  assert.equal(decision.recommendedCommand, 'ask refactor create --auto');
+});
+

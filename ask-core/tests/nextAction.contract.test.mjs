@@ -201,12 +201,17 @@ test('ask next returns entropy refactor action and event summary when entropy tr
   assert.equal(payload.ok, true);
   assert.equal(payload.next.type, 'ohder-action');
   assert.equal(payload.next.action, 'create-refactor-slice');
+  assert.equal(payload.next.recommendedCommand, 'ask refactor preview');
+  assert.equal(payload.next.refactorRecommendation.confidence, 'high');
+  assert.equal(typeof payload.next.refactorRecommendation.fingerprint, 'string');
   assert.equal(payload.entropy.trend, 'regressing');
   assert.equal(payload.entropy.refactorPressure, 'high');
 
   const events = readEvents(repoDir).filter(event => event.type === 'OhderNextActionRecommended');
   assert.equal(events.length, 1);
   assert.equal(events[0].payload.action, 'create-refactor-slice');
+  assert.equal(events[0].payload.recommendedCommand, 'ask refactor preview');
+  assert.equal(events[0].payload.refactorRecommendationFingerprint, payload.next.refactorRecommendation.fingerprint);
   assert.equal(events[0].payload.entropy.trend, 'regressing');
   assert.equal(events[0].payload.entropy.refactorPressure, 'high');
 });
@@ -231,4 +236,36 @@ test('ask next returns OHDER await-new-requirement action when architecture is h
   assert.equal(payload.next.type, 'ohder-action');
   assert.equal(payload.next.action, 'await-new-requirement');
   assert.equal(payload.ohder.action, 'await-new-requirement');
+});
+
+
+test('ask next does not create a refactor task while recommending preview', () => {
+  const repoDir = setupRepo();
+  writeArchitectStatus(repoDir, {
+    status: 'passed',
+    blocking: false,
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 98,
+    },
+  });
+  writeDriftAnalytics(repoDir, {
+    architecture: {
+      entropyTrend: 'increasing',
+      couplingTrend: 'stable',
+      replayabilityTrend: 'stable',
+      driftScore: 0.5,
+    },
+    overall: {
+      trend: 'regressing',
+      driftScore: 0.25,
+    },
+  });
+
+  const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
+  const payload = JSON.parse(result.stdout);
+  const tasks = JSON.parse(runOrThrow(process.execPath, [askBinPath, 'task', 'status'], { cwd: repoDir }).stdout).tasks;
+
+  assert.equal(payload.next.recommendedCommand, 'ask refactor preview');
+  assert.equal(Object.keys(tasks).some(taskId => taskId.startsWith('ohder-refactor-')), false);
 });
