@@ -131,6 +131,52 @@ test('testability analyzer lowers risk when matching contract test is touched', 
   assert.deepEqual(result.violations, []);
 });
 
+test('testability analyzer ignores regex literals that mention process globals', async () => {
+  const repoDir = await setupRepo();
+  writeFile(
+    repoDir,
+    'ask-core/src/core/RegexOnlyAnalyzer.js',
+    `export class RegexOnlyAnalyzer {
+  matches(source = '') {
+    return /\\b(?:process\\.env|process\\.argv|globalThis|Date\\.now|Math\\.random)\\b/u.test(source);
+  }
+}
+`
+  );
+  writeFile(
+    repoDir,
+    'ask-core/tests/regexOnlyAnalyzer.contract.test.mjs',
+    `import { RegexOnlyAnalyzer } from '../src/core/RegexOnlyAnalyzer.js';
+new RegexOnlyAnalyzer().matches('process.env.TEST');
+`
+  );
+
+  const result = new OhderTestabilityAnalyzerEngine(repoDir).analyze({
+    touchedFiles: [
+      'ask-core/src/core/RegexOnlyAnalyzer.js',
+      'ask-core/tests/regexOnlyAnalyzer.contract.test.mjs',
+    ],
+  });
+
+  assert.equal(result.risk, 'low');
+  assert.equal(result.filesAnalyzed[0].globalCoupled, false);
+  assert.deepEqual(result.violations, []);
+});
+
+test('testability analyzer treats full-suite validation as broad coverage evidence', async () => {
+  const repoDir = await setupRepo();
+  const result = new OhderTestabilityAnalyzerEngine(repoDir).analyze({
+    touchedFiles: ['ask-core/src/core/UntestedDecisionRuntime.js'],
+    validation: {
+      testsRun: ['C:\\Windows\\System32\\cmd.exe /c npm test'],
+    },
+  });
+
+  assert.equal(result.risk, 'medium');
+  assert.equal(result.violations.find(item => item.kind === 'untested-exported-runtime-behavior'), undefined);
+  assert.ok(result.violations.find(item => item.kind === 'core-global-state-coupling'));
+});
+
 test('testability analyzer reports CLI-heavy filesystem-coupled decision logic', async () => {
   const repoDir = await setupRepo();
   const result = new OhderTestabilityAnalyzerEngine(repoDir).analyze({

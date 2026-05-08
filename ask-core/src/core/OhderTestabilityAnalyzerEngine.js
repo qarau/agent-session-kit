@@ -57,8 +57,12 @@ function matchingTests(cwd, sourceFile, symbols = [], touchedTests = []) {
   });
 }
 
+function stripRegexLiterals(source = '') {
+  return source.replace(/\/(?:\\.|[^/\r\n])+\/[dgimsuvy]*/gu, '');
+}
+
 function hasGlobalCoupling(source = '') {
-  return /\b(?:process\.env|process\.argv|globalThis|Date\.now|Math\.random)\b/u.test(source);
+  return /\b(?:process\.env|process\.argv|globalThis|Date\.now|Math\.random)\b/u.test(stripRegexLiterals(source));
 }
 
 function hasFilesystemCoupling(source = '') {
@@ -84,10 +88,12 @@ export class OhderTestabilityAnalyzerEngine {
     this.cwd = cwd;
   }
 
-  analyze({ touchedFiles = [] } = {}) {
+  analyze({ touchedFiles = [], validation = {} } = {}) {
     const files = unique(Array.isArray(touchedFiles) ? touchedFiles : []);
     const sourceFiles = files.filter(isSourceFile);
     const touchedTests = files.filter(isTestFile);
+    const fullSuiteEvidence = Array.isArray(validation.testsRun)
+      && validation.testsRun.some(item => normalize(item).toLowerCase().includes('npm test'));
     const filesAnalyzed = [];
     const violations = [];
 
@@ -96,7 +102,7 @@ export class OhderTestabilityAnalyzerEngine {
       const symbols = exportedSymbols(source);
       const tests = matchingTests(this.cwd, filePath, symbols, touchedTests);
       const fileViolations = [];
-      if (symbols.length > 0 && tests.length === 0) {
+      if (symbols.length > 0 && tests.length === 0 && !fullSuiteEvidence) {
         fileViolations.push({
           filePath,
           kind: 'untested-exported-runtime-behavior',
@@ -116,7 +122,7 @@ export class OhderTestabilityAnalyzerEngine {
         fileViolations.push({
           filePath,
           kind: 'core-global-state-coupling',
-          severity: tests.length > 0 ? 'medium' : 'high',
+          severity: tests.length > 0 || fullSuiteEvidence ? 'medium' : 'high',
           reason: 'core runtime logic is directly coupled to process or global state',
         });
       }

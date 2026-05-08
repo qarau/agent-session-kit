@@ -168,6 +168,7 @@ export class ArchitectRuntime {
     });
     const testabilityAnalysis = this.testabilityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+      validation,
     });
     const complexityAnalysis = this.complexityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
