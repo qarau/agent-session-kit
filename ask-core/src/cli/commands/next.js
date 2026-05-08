@@ -10,6 +10,7 @@ import { OhderRefactorRecommendationEngine } from '../../core/OhderRefactorRecom
 import { OhderRefactorTargetDiscoveryEngine } from '../../core/OhderRefactorTargetDiscoveryEngine.js';
 import { compactEntropy, compactRefactorRecommendation } from '../../core/OhderRuntimeSummaries.js';
 import { MetricsWriter } from '../../core/MetricsWriter.js';
+import { PlanModeHandoffRuntime } from '../../core/PlanModeHandoffRuntime.js';
 import { EventLedger } from '../../runtime/EventLedger.js';
 import { RuntimeProjectionEngine } from '../../runtime/RuntimeProjectionEngine.js';
 
@@ -64,6 +65,39 @@ function chooseReadyTask(tasks = []) {
   })[0];
 }
 
+function compactPlanModeHandoff(state = {}) {
+  const latest = state?.latest ?? null;
+  if (!latest) {
+    return null;
+  }
+  return {
+    status: normalize(latest.status),
+    title: normalize(latest.title),
+    taskId: normalize(latest.taskId),
+    runId: normalize(latest.runId),
+    planBatchId: normalize(latest.planBatchId),
+    sourceMarkdownPath: normalize(latest.sourceMarkdownPath),
+    planJsonPath: normalize(latest.planJsonPath),
+    createdTaskIds: Array.isArray(latest.createdTaskIds) ? [...latest.createdTaskIds] : [],
+    nextTaskId: normalize(latest.nextTaskId),
+    error: latest.error ?? null,
+  };
+}
+
+function pendingPlanModeNext(handoff = null) {
+  if (!handoff || normalize(handoff.status).toLowerCase() === 'ingested') {
+    return null;
+  }
+  const command = handoff.taskId && handoff.runId && handoff.planJsonPath
+    ? `ask plan validate --task ${handoff.taskId} --run-id ${handoff.runId} --path ${handoff.planJsonPath}`
+    : 'ask plan-mode handoff --title <title> --source <md> --plan-json <json>';
+  return {
+    type: 'plan-mode-handoff',
+    action: command,
+    reason: normalize(handoff.error?.message) || `plan-mode handoff status is ${normalize(handoff.status)}`,
+  };
+}
+
 export async function runNext() {
   const cwd = process.cwd();
   const policyEngine = new PolicyEngine(cwd);
@@ -75,6 +109,7 @@ export async function runNext() {
   const entropySnapshotEngine = new OhderEntropySnapshotEngine();
   const refactorRecommendationEngine = new OhderRefactorRecommendationEngine();
   const refactorTargetDiscoveryEngine = new OhderRefactorTargetDiscoveryEngine();
+  const planModeHandoffRuntime = new PlanModeHandoffRuntime(cwd);
   const changeHistoryReader = new GitSliceChangeHistoryReader(cwd);
   const metricsWriter = new MetricsWriter(cwd);
   const ledger = new EventLedger(cwd);
@@ -84,6 +119,7 @@ export async function runNext() {
   const taskStatus = await taskRuntime.status();
   const taskMap = taskStatus?.ok ? (taskStatus.tasks || {}) : {};
   const tasks = Object.values(taskMap).filter(Boolean);
+  const planModeHandoff = compactPlanModeHandoff(await planModeHandoffRuntime.readState());
 
   const activeTasks = tasks
     .filter(task => normalize(task.status).toLowerCase() === 'in-progress')
@@ -114,14 +150,19 @@ export async function runNext() {
     action: normalize(state.nextRecommendedAction) || 'select next task',
     reason: 'no ready created tasks available',
   };
+  const pendingHandoffNext = pendingPlanModeNext(planModeHandoff);
 
-  if (readyTask) {
+  if (pendingHandoffNext) {
+    next = pendingHandoffNext;
+  } else if (readyTask) {
     next = {
       type: 'task-start',
       taskId: readyTask.taskId,
       title: readyTask.title,
       action: `ask task start ${readyTask.taskId}`,
-      reason: 'dependency-ready created task',
+      reason: Array.isArray(planModeHandoff?.createdTaskIds) && planModeHandoff.createdTaskIds.includes(readyTask.taskId)
+        ? 'plan-mode handoff ready; start generated ASK slice'
+        : 'dependency-ready created task',
     };
   } else if (currentTask) {
     next = {
@@ -227,6 +268,7 @@ export async function runNext() {
       ready: readyTasks,
       blockedByDependencies,
     },
+    planModeHandoff,
     ohder: ohderDecision
       ? {
         action: normalize(ohderDecision.action),
