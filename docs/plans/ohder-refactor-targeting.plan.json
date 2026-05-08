@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ohtarget",
+  "planTitle": "OHDER Refactor Recommendation Targeting",
+  "slices": [
+    {
+      "sliceId": "ohder-refactor-target-discovery",
+      "title": "Add OHDER refactor target discovery engine",
+      "description": "Create a deterministic pure engine that converts recent runtime evidence into concrete refactor target candidates and skips completed OHDER refactor targets.",
+      "acceptanceCriteria": [
+        "The engine derives target candidates from recent high-pressure metrics history and changed files.",
+        "Candidate scoring is deterministic for the same inputs.",
+        "Completed OHDER refactor targets are excluded from future candidate selection.",
+        "When no candidate remains, the engine returns a suppression reason instead of a generic target."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-refactor-targeted-recommendations",
+      "title": "Integrate refactor targets into recommendation fingerprints",
+      "description": "Extend OHDER refactor recommendations with target metadata and include target identity in the deterministic recommendation fingerprint.",
+      "dependsOn": [
+        "ohder-refactor-target-discovery"
+      ],
+      "acceptanceCriteria": [
+        "Recommendations include a target object when target discovery succeeds.",
+        "Different targets produce different recommendation fingerprints.",
+        "High entropy without a target returns no recommendation plus suppression metadata.",
+        "Existing blocking and refactor governance recommendation behavior remains deterministic."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-refactor-target-materialization-next",
+      "title": "Persist refactor targets through materialization and ask next",
+      "description": "Pass runtime target evidence into refactor preview/create and ask next, store target metadata on materialized task origin, and suppress repeated generic next-action refactor commands.",
+      "dependsOn": [
+        "ohder-refactor-targeted-recommendations"
+      ],
+      "acceptanceCriteria": [
+        "Refactor preview exposes target metadata or suppression metadata without mutating task state.",
+        "Refactor create stores targetId and target metadata in task origin and RefactorSuggested payload.",
+        "ask next recommends governance validation instead of create-refactor-slice when no new concrete target exists.",
+        "Compact refactor summaries include target identity for operator visibility."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-refactor-targeting-docs",
+      "title": "Document targeted OHDER refactor governance",
+      "description": "Update README and operations documentation so operators understand targeted refactor recommendations, completed-target suppression, and the validation fallback.",
+      "dependsOn": [
+        "ohder-refactor-target-materialization-next"
+      ],
+      "acceptanceCriteria": [
+        "README explains that ASK targets concrete OHDER refactor hotspots rather than repeating generic entropy recommendations.",
+        "Runtime architecture docs describe target discovery evidence and suppression behavior.",
+        "Operator playbooks explain what to do when refactor preview is suppressed.",
+        "Full test suite and ASK gates pass after documentation updates."
+      ],
+      "queueClass": "reviewer"
+    }
+  ]
+}
