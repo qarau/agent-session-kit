@@ -2,6 +2,7 @@ import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
 import { OhderLawPackEngine } from './OhderLawPackEngine.js';
 import { ArchitectureScoreEngine } from './ArchitectureScoreEngine.js';
+import { OhderCouplingAnalyzerEngine } from './OhderCouplingAnalyzerEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -38,6 +39,7 @@ export class ArchitectRuntime {
     this.store = new FileStore();
     this.lawPackEngine = new OhderLawPackEngine(cwd);
     this.scoreEngine = new ArchitectureScoreEngine();
+    this.couplingAnalyzer = new OhderCouplingAnalyzerEngine(cwd);
   }
 
   entropyDelta(execution = {}, validation = {}) {
@@ -115,7 +117,10 @@ export class ArchitectRuntime {
     }
 
     const entropyDelta = this.entropyDelta(execution, validation);
-    const couplingDelta = this.couplingDelta(execution);
+    const couplingAnalysis = this.couplingAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const couplingDelta = Math.max(this.couplingDelta(execution), toNumber(couplingAnalysis.couplingDelta, 0));
     const replayabilityRisk = this.replayabilityRisk(state, execution);
     const maxEntropy = toNonNegativeInt(policy?.architect?.max_entropy_delta, 3);
     const maxCoupling = toNonNegativeInt(policy?.architect?.max_coupling_delta, 2);
@@ -193,6 +198,7 @@ export class ArchitectRuntime {
       couplingDelta,
       replayabilityRisk,
       lawEvaluation,
+      couplingAnalysis,
     });
     const payload = {
       status,
@@ -207,6 +213,7 @@ export class ArchitectRuntime {
       lawOutcome: lawEvaluation.outcome,
       lawViolations: lawEvaluation.violations,
       lawExemptions: lawEvaluation.exempted,
+      couplingAnalysis,
       architectureScore,
       recommendedAction,
       updatedAt: nowIso(),

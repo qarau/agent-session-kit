@@ -93,7 +93,7 @@ function violationPenalty(violation = {}) {
 }
 
 export class ArchitectureScoreEngine {
-  score({ entropyDelta = 0, couplingDelta = 0, replayabilityRisk = 'low', lawEvaluation = {} } = {}) {
+  score({ entropyDelta = 0, couplingDelta = 0, replayabilityRisk = 'low', lawEvaluation = {}, couplingAnalysis = null } = {}) {
     const categories = initialCategories();
     const violations = Array.isArray(lawEvaluation.violations) ? lawEvaluation.violations : [];
 
@@ -103,6 +103,11 @@ export class ArchitectureScoreEngine {
 
     applyPenalty(categories, 'durability', Math.min(20, toNumber(entropyDelta, 0) * 4));
     applyPenalty(categories, 'layerDiscipline', Math.min(20, toNumber(couplingDelta, 0) * 5));
+    if (couplingAnalysis?.risk === 'high') {
+      applyPenalty(categories, 'layerDiscipline', 18);
+    } else if (couplingAnalysis?.risk === 'medium') {
+      applyPenalty(categories, 'layerDiscipline', 8);
+    }
 
     const replayability = normalize(replayabilityRisk);
     if (replayability === 'high') {
