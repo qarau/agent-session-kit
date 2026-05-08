@@ -65,6 +65,23 @@ function chooseReadyTask(tasks = []) {
   })[0];
 }
 
+function choosePlanModeReadyTask(tasks = [], handoff = null) {
+  if (!handoff || normalize(handoff.status).toLowerCase() !== 'ingested') {
+    return null;
+  }
+  const preferredIds = [
+    normalize(handoff.nextTaskId),
+    ...(Array.isArray(handoff.createdTaskIds) ? handoff.createdTaskIds.map(normalize) : []),
+  ].filter(Boolean);
+  for (const taskId of preferredIds) {
+    const match = tasks.find(task => normalize(task.taskId) === taskId);
+    if (match) {
+      return match;
+    }
+  }
+  return null;
+}
+
 function compactPlanModeHandoff(state = {}) {
   const latest = state?.latest ?? null;
   if (!latest) {
@@ -140,7 +157,8 @@ export async function runNext() {
     .map(taskSummary);
 
   const currentTask = chooseCurrentTask(activeTasks);
-  const readyTask = chooseReadyTask(readyTasks);
+  const planModeReadyTask = choosePlanModeReadyTask(readyTasks, planModeHandoff);
+  const readyTask = planModeReadyTask ?? chooseReadyTask(readyTasks);
   let ohderDecision = null;
   let entropy = null;
   let refactorRecommendation = null;
