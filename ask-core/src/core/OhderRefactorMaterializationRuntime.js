@@ -102,14 +102,44 @@ export class OhderRefactorMaterializationRuntime {
     };
   }
 
-  async create({ requestedBy = 'local' } = {}) {
-    const { recommendation, state, architect, entropy, refactorGovernance } = await this.recommendationFromCurrentState();
+  resolveConfidenceDecision(recommendation, policy, auto = false) {
+    const confidence = normalize(recommendation?.confidence).toLowerCase();
+    const settings = policy?.refactor_materialization ?? {};
+    if (confidence === 'low') {
+      return { create: false, decision: 'suggest-only', approvalRequired: false };
+    }
+    if (auto && confidence === 'high' && settings.auto_materialize_high_confidence !== true) {
+      return { create: false, decision: 'auto-disabled', approvalRequired: false };
+    }
+    if (confidence === 'medium' && settings.require_approval_for_medium_confidence !== false) {
+      return { create: true, decision: 'approval-required', approvalRequired: true };
+    }
+    return { create: true, decision: 'create', approvalRequired: false };
+  }
+
+  async create({ requestedBy = 'local', auto = false } = {}) {
+    const { recommendation, state, architect, entropy, refactorGovernance, policy } = await this.recommendationFromCurrentState();
     if (!recommendation) {
       return {
         ok: true,
         mode: 'create',
         created: false,
         recommendation: null,
+        task: null,
+        architect,
+        entropy,
+        refactorGovernance,
+      };
+    }
+
+    const decision = this.resolveConfidenceDecision(recommendation, policy, auto);
+    if (!decision.create) {
+      return {
+        ok: true,
+        mode: 'create',
+        created: false,
+        decision: decision.decision,
+        recommendation,
         task: null,
         architect,
         entropy,
@@ -124,6 +154,7 @@ export class OhderRefactorMaterializationRuntime {
         ok: true,
         mode: 'create',
         created: false,
+        decision: 'existing',
         recommendation,
         task: existing,
         architect,
@@ -149,6 +180,7 @@ export class OhderRefactorMaterializationRuntime {
           confidence: normalize(recommendation.confidence),
           targetSignals: Array.isArray(recommendation.targetSignals) ? [...recommendation.targetSignals] : [],
           requestedBy: normalize(requestedBy),
+          approvalRequired: decision.approvalRequired,
         },
       },
       { source: 'ohder-refactor-materialization-runtime' }
@@ -178,6 +210,7 @@ export class OhderRefactorMaterializationRuntime {
       ok: true,
       mode: 'create',
       created: true,
+      decision: decision.decision,
       recommendation,
       task: created,
       events: [suggested],
@@ -185,5 +218,65 @@ export class OhderRefactorMaterializationRuntime {
       entropy,
       refactorGovernance,
     };
+  }
+  async approve(taskId, { approvedBy = 'local' } = {}) {
+    const resolvedTaskId = normalize(taskId);
+    const task = await this.taskRuntime.getTask(resolvedTaskId);
+    if (!task) {
+      return { ok: false, code: 'task-not-found', message: `task not found: ${resolvedTaskId}`, taskId: resolvedTaskId };
+    }
+    if (normalize(task?.refactorGovernance?.approvalStatus) === 'approved') {
+      return { ok: true, task, event: null, idempotent: true };
+    }
+    const context = await this.taskRuntime.getActiveSessionContext();
+    const event = await this.ledger.append({
+      type: 'RefactorApproved',
+      sessionId: context.sessionId,
+      taskId: resolvedTaskId,
+      actor: normalize(approvedBy) || context.actor,
+      payload: {
+        taskId: resolvedTaskId,
+        approvedBy: normalize(approvedBy) || context.actor,
+        recommendationFingerprint: normalize(task?.origin?.recommendationFingerprint || task?.refactorGovernance?.recommendationFingerprint),
+      },
+      meta: {
+        source: 'ohder-refactor-materialization-runtime',
+        schemaVersion: 1,
+      },
+    });
+    await this.projectionEngine.projectIncremental();
+    const updated = await this.taskRuntime.getTask(resolvedTaskId);
+    return { ok: true, task: updated, event, idempotent: false };
+  }
+
+  async reject(taskId, { reason = '', rejectedBy = 'local' } = {}) {
+    const resolvedTaskId = normalize(taskId);
+    const task = await this.taskRuntime.getTask(resolvedTaskId);
+    if (!task) {
+      return { ok: false, code: 'task-not-found', message: `task not found: ${resolvedTaskId}`, taskId: resolvedTaskId };
+    }
+    if (normalize(task?.refactorGovernance?.approvalStatus) === 'rejected') {
+      return { ok: true, task, event: null, idempotent: true };
+    }
+    const context = await this.taskRuntime.getActiveSessionContext();
+    const event = await this.ledger.append({
+      type: 'RefactorRejected',
+      sessionId: context.sessionId,
+      taskId: resolvedTaskId,
+      actor: normalize(rejectedBy) || context.actor,
+      payload: {
+        taskId: resolvedTaskId,
+        reason: normalize(reason),
+        rejectedBy: normalize(rejectedBy) || context.actor,
+        recommendationFingerprint: normalize(task?.origin?.recommendationFingerprint || task?.refactorGovernance?.recommendationFingerprint),
+      },
+      meta: {
+        source: 'ohder-refactor-materialization-runtime',
+        schemaVersion: 1,
+      },
+    });
+    await this.projectionEngine.projectIncremental();
+    const updated = await this.taskRuntime.getTask(resolvedTaskId);
+    return { ok: true, task: updated, event, idempotent: false };
   }
 }

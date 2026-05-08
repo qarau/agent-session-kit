@@ -14,7 +14,7 @@ function getArgValue(args, name) {
 }
 
 function printUsage() {
-  console.log('Usage: ask refactor preview|create');
+  console.log('Usage: ask refactor preview|create|approve|reject');
 }
 
 function printResult(result) {
@@ -34,9 +34,26 @@ export async function runRefactor(subcommand, args = []) {
 
   if (subcommand === 'create') {
     const requestedBy = getArgValue(args, '--requested-by') || 'local';
-    printResult(await runtime.create({ requestedBy }));
+    const auto = args.includes('--auto');
+    printResult(await runtime.create({ requestedBy, auto }));
+    return;
+  }
+
+  if (subcommand === 'approve') {
+    const taskId = args[0] ?? '';
+    const approvedBy = getArgValue(args, '--approved-by') || 'local';
+    printResult(await runtime.approve(taskId, { approvedBy }));
+    return;
+  }
+
+  if (subcommand === 'reject') {
+    const taskId = args[0] ?? '';
+    const reason = getArgValue(args, '--reason');
+    const rejectedBy = getArgValue(args, '--rejected-by') || 'local';
+    printResult(await runtime.reject(taskId, { reason, rejectedBy }));
     return;
   }
 
   printUsage();
 }
+

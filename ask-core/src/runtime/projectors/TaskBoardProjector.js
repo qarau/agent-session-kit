@@ -12,6 +12,9 @@ function createTaskBase(taskId, event, previous) {
     origin: previous?.origin && typeof previous.origin === 'object' ? { ...previous.origin } : null,
     acceptanceCriteria: Array.isArray(previous?.acceptanceCriteria) ? [...previous.acceptanceCriteria] : [],
     queueClassHint: String(previous?.queueClassHint ?? ''),
+    refactorGovernance: previous?.refactorGovernance && typeof previous.refactorGovernance === 'object'
+      ? { ...previous.refactorGovernance }
+      : null,
     owner: String(previous?.owner ?? ''),
     dependencies: Array.isArray(previous?.dependencies) ? [...previous.dependencies] : [],
     createdAt: previous?.createdAt || String(event.ts ?? ''),
@@ -53,6 +56,16 @@ export class TaskBoardProjector {
       const acceptanceCriteria = Array.isArray(event.payload?.acceptanceCriteria)
         ? event.payload.acceptanceCriteria.map(value => String(value ?? '').trim()).filter(Boolean)
         : base.acceptanceCriteria;
+      const refactorGovernance = origin?.type === 'ohder-refactor-governance'
+        ? {
+          recommendationFingerprint: String(origin.recommendationFingerprint ?? ''),
+          confidence: String(origin.confidence ?? ''),
+          approvalRequired: origin.approvalRequired === true,
+          approvalStatus: origin.approvalRequired === true ? 'pending' : 'not-required',
+          approvedBy: '',
+          rejectedReason: '',
+        }
+        : base.refactorGovernance;
       return withTask(state, taskId, {
         ...base,
         status: 'created',
@@ -61,6 +74,7 @@ export class TaskBoardProjector {
         origin,
         acceptanceCriteria,
         queueClassHint: String(event.payload?.queueClassHint ?? base.queueClassHint),
+        refactorGovernance,
       });
     }
 
@@ -96,6 +110,32 @@ export class TaskBoardProjector {
       return withTask(state, taskId, {
         ...base,
         status: 'blocked',
+      });
+    }
+
+    if (type === 'RefactorApproved') {
+      return withTask(state, taskId, {
+        ...base,
+        refactorGovernance: {
+          ...(base.refactorGovernance ?? {}),
+          approvalStatus: 'approved',
+          approvalRequired: false,
+          approvedBy: String(event.payload?.approvedBy ?? ''),
+          approvedAt: String(event.ts ?? ''),
+        },
+      });
+    }
+
+    if (type === 'RefactorRejected') {
+      return withTask(state, taskId, {
+        ...base,
+        status: 'blocked',
+        refactorGovernance: {
+          ...(base.refactorGovernance ?? {}),
+          approvalStatus: 'rejected',
+          rejectedReason: String(event.payload?.reason ?? ''),
+          rejectedAt: String(event.ts ?? ''),
+        },
       });
     }
 

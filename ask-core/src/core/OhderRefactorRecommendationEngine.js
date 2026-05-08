@@ -126,15 +126,27 @@ export class OhderRefactorRecommendationEngine {
     }
 
     if (entropyPressure === 'high' || entropyTrend === 'regressing') {
-      confidence = 'high';
+      const scoreOnlyPressure = entropyTrend !== 'regressing'
+        && !blocking
+        && replayabilityRisk !== 'high'
+        && score > 0
+        && score < minimumScore;
+      confidence = scoreOnlyPressure ? rankConfidence(confidence, 'medium') : 'high';
       targetSignals.push(...entropySignals(entropy));
       reasons.push(entropyTrend === 'regressing'
         ? 'OHDER entropy trend is regressing.'
         : 'OHDER entropy refactor pressure is high.');
     } else if (entropyPressure === 'medium') {
-      confidence = rankConfidence(confidence, 'medium');
+      const lowPressure = toNumber(entropy.entropyScore, 0) < 0.2
+        && replayabilityRisk !== 'medium'
+        && replayabilityRisk !== 'high'
+        && score >= minimumScore
+        && refactorGovernance.required !== true;
+      confidence = rankConfidence(confidence, lowPressure ? 'low' : 'medium');
       targetSignals.push(...entropySignals(entropy));
-      reasons.push('OHDER entropy refactor pressure is medium.');
+      reasons.push(lowPressure
+        ? 'OHDER entropy refactor pressure is low.'
+        : 'OHDER entropy refactor pressure is medium.');
     }
 
     if (score > 0 && score < minimumScore) {
@@ -172,3 +184,4 @@ export class OhderRefactorRecommendationEngine {
     };
   }
 }
+

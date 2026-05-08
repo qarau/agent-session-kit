@@ -149,3 +149,148 @@ test('ask refactor create is idempotent for the same recommendation fingerprint'
   assert.equal(second.recommendation.fingerprint, first.recommendation.fingerprint);
   assert.equal(suggestedEvents.length, 1);
 });
+
+test('low confidence refactor recommendations are suggest-only', () => {
+  const repoDir = setupRepo();
+  writeJson(path.join(repoDir, '.ask', 'runtime', 'architect-status.json'), {
+    status: 'warning',
+    blocking: false,
+    reason: 'minor architecture drift detected',
+    entropyDelta: 1,
+    couplingDelta: 0,
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 97,
+    },
+  });
+  writeJson(path.join(repoDir, '.ask', 'runtime', 'drift-analytics.json'), {
+    architecture: {
+      entropyTrend: 'stable',
+      couplingTrend: 'stable',
+      replayabilityTrend: 'stable',
+      driftScore: 0,
+    },
+    behavior: {
+      driftScore: 0,
+    },
+    overall: {
+      trend: 'stable',
+      driftScore: 0,
+    },
+  });
+
+  const payload = JSON.parse(runOrThrow(process.execPath, [askBinPath, 'refactor', 'create'], { cwd: repoDir }).stdout);
+
+  assert.equal(payload.ok, true);
+  assert.equal(payload.created, false);
+  assert.equal(payload.recommendation.confidence, 'low');
+  assert.equal(payload.decision, 'suggest-only');
+  assert.equal(payload.task, null);
+});
+
+test('medium confidence refactor recommendations create approval-required tasks', () => {
+  const repoDir = setupRepo();
+  writeJson(path.join(repoDir, '.ask', 'runtime', 'architect-status.json'), {
+    status: 'warning',
+    blocking: false,
+    reason: 'architecture score under target',
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 65,
+    },
+  });
+  writeJson(path.join(repoDir, '.ask', 'runtime', 'drift-analytics.json'), {
+    architecture: {
+      entropyTrend: 'stable',
+      couplingTrend: 'stable',
+      replayabilityTrend: 'stable',
+      driftScore: 0,
+    },
+    behavior: {
+      driftScore: 0,
+    },
+    overall: {
+      trend: 'stable',
+      driftScore: 0,
+    },
+  });
+
+  const payload = JSON.parse(runOrThrow(process.execPath, [askBinPath, 'refactor', 'create'], { cwd: repoDir }).stdout);
+  const task = taskStatus(repoDir, payload.task.taskId).task;
+
+  assert.equal(payload.ok, true);
+  assert.equal(payload.recommendation.confidence, 'medium');
+  assert.equal(task.refactorGovernance.approvalRequired, true);
+  assert.equal(task.refactorGovernance.approvalStatus, 'pending');
+});
+
+test('refactor approve and reject emit replayable governance events', () => {
+  const approvedRepo = setupRepo();
+  writeJson(path.join(approvedRepo, '.ask', 'runtime', 'architect-status.json'), {
+    status: 'warning',
+    blocking: false,
+    reason: 'architecture score under target',
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 65,
+    },
+  });
+  writeJson(path.join(approvedRepo, '.ask', 'runtime', 'drift-analytics.json'), {
+    overall: {
+      trend: 'stable',
+      driftScore: 0,
+    },
+  });
+  const created = JSON.parse(runOrThrow(process.execPath, [askBinPath, 'refactor', 'create'], { cwd: approvedRepo }).stdout);
+  const approved = JSON.parse(runOrThrow(process.execPath, [askBinPath, 'refactor', 'approve', created.task.taskId, '--approved-by', 'architect'], { cwd: approvedRepo }).stdout);
+  const approvedTask = taskStatus(approvedRepo, created.task.taskId).task;
+  const approvedEvents = readEvents(approvedRepo).filter(event => event.type === 'RefactorApproved');
+
+  assert.equal(approved.ok, true);
+  assert.equal(approvedTask.refactorGovernance.approvalStatus, 'approved');
+  assert.equal(approvedEvents.length, 1);
+  assert.equal(approvedEvents[0].payload.approvedBy, 'architect');
+
+  const rejectedRepo = setupRepo();
+  writeJson(path.join(rejectedRepo, '.ask', 'runtime', 'architect-status.json'), {
+    status: 'warning',
+    blocking: false,
+    reason: 'architecture score under target',
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 65,
+    },
+  });
+  writeJson(path.join(rejectedRepo, '.ask', 'runtime', 'drift-analytics.json'), {
+    overall: {
+      trend: 'stable',
+      driftScore: 0,
+    },
+  });
+  const rejectedCreated = JSON.parse(runOrThrow(process.execPath, [askBinPath, 'refactor', 'create'], { cwd: rejectedRepo }).stdout);
+  const rejected = JSON.parse(runOrThrow(process.execPath, [askBinPath, 'refactor', 'reject', rejectedCreated.task.taskId, '--reason', 'too risky'], { cwd: rejectedRepo }).stdout);
+  const rejectedTask = taskStatus(rejectedRepo, rejectedCreated.task.taskId).task;
+  const rejectedEvents = readEvents(rejectedRepo).filter(event => event.type === 'RefactorRejected');
+
+  assert.equal(rejected.ok, true);
+  assert.equal(rejectedTask.status, 'blocked');
+  assert.equal(rejectedTask.refactorGovernance.approvalStatus, 'rejected');
+  assert.equal(rejectedEvents.length, 1);
+  assert.equal(rejectedEvents[0].payload.reason, 'too risky');
+});
+
+test('automatic high-confidence creation is controlled by policy', () => {
+  const disabledRepo = setupRepo();
+  fs.appendFileSync(path.join(disabledRepo, '.ask', 'policy', 'runtime-policy.yaml'), '\nrefactor_materialization:\n  auto_materialize_high_confidence: false\n');
+  const disabled = JSON.parse(runOrThrow(process.execPath, [askBinPath, 'refactor', 'create', '--auto'], { cwd: disabledRepo }).stdout);
+  assert.equal(disabled.ok, true);
+  assert.equal(disabled.created, false);
+  assert.equal(disabled.decision, 'auto-disabled');
+
+  const enabledRepo = setupRepo();
+  fs.appendFileSync(path.join(enabledRepo, '.ask', 'policy', 'runtime-policy.yaml'), '\nrefactor_materialization:\n  auto_materialize_high_confidence: true\n');
+  const enabled = JSON.parse(runOrThrow(process.execPath, [askBinPath, 'refactor', 'create', '--auto'], { cwd: enabledRepo }).stdout);
+  assert.equal(enabled.ok, true);
+  assert.equal(enabled.created, true);
+  assert.equal(enabled.recommendation.confidence, 'high');
+});
