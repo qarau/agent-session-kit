@@ -5,6 +5,7 @@ import { GitSliceChangeHistoryReader } from './GitSliceChangeHistoryReader.js';
 import { OhderEntropySnapshotEngine } from './OhderEntropySnapshotEngine.js';
 import { OhderRefactorRecommendationEngine } from './OhderRefactorRecommendationEngine.js';
 import { OhderRefactorTargetDiscoveryEngine } from './OhderRefactorTargetDiscoveryEngine.js';
+import { OhderRefactorExecutionPlannerEngine } from './OhderRefactorExecutionPlannerEngine.js';
 import { PolicyEngine } from './PolicyEngine.js';
 import { RefactorGovernanceEngine } from './RefactorGovernanceEngine.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
@@ -44,6 +45,7 @@ export class OhderRefactorMaterializationRuntime {
     this.entropySnapshotEngine = new OhderEntropySnapshotEngine();
     this.recommendationEngine = new OhderRefactorRecommendationEngine();
     this.targetDiscoveryEngine = new OhderRefactorTargetDiscoveryEngine();
+    this.executionPlanner = new OhderRefactorExecutionPlannerEngine();
     this.refactorGovernanceEngine = new RefactorGovernanceEngine();
     this.taskRuntime = new TaskRuntime(cwd);
     this.ledger = new EventLedger(cwd);
@@ -111,10 +113,14 @@ export class OhderRefactorMaterializationRuntime {
 
   async preview() {
     const { recommendation, suppression, architect, entropy, refactorGovernance, targetDiscovery } = await this.recommendationFromCurrentState();
+    const refactorExecutionPlan = recommendation
+      ? this.executionPlanner.plan({ recommendation, architect })
+      : null;
     return {
       ok: true,
       mode: 'preview',
       recommendation,
+      refactorExecutionPlan,
       suppression,
       targetDiscovery,
       architect,
@@ -155,7 +161,9 @@ export class OhderRefactorMaterializationRuntime {
       };
     }
 
+    const refactorExecutionPlan = this.executionPlanner.plan({ recommendation, architect });
     const decision = this.resolveConfidenceDecision(recommendation, policy, auto);
+    const approvalRequired = decision.approvalRequired === true || refactorExecutionPlan.approvalRequired === true;
     if (!decision.create) {
       return {
         ok: true,
@@ -163,6 +171,7 @@ export class OhderRefactorMaterializationRuntime {
         created: false,
         decision: decision.decision,
         recommendation,
+        refactorExecutionPlan,
         task: null,
         architect,
         entropy,
@@ -205,7 +214,8 @@ export class OhderRefactorMaterializationRuntime {
           confidence: normalize(recommendation.confidence),
           targetSignals: Array.isArray(recommendation.targetSignals) ? [...recommendation.targetSignals] : [],
           requestedBy: normalize(requestedBy),
-          approvalRequired: decision.approvalRequired,
+          approvalRequired,
+          refactorExecutionPlan,
         },
       },
       { source: 'ohder-refactor-materialization-runtime' }
@@ -237,6 +247,7 @@ export class OhderRefactorMaterializationRuntime {
       created: true,
       decision: decision.decision,
       recommendation,
+      refactorExecutionPlan,
       task: created,
       events: [suggested],
       architect,

@@ -65,6 +65,9 @@ export class TaskBoardProjector {
           approvalStatus: origin.approvalRequired === true ? 'pending' : 'not-required',
           approvedBy: '',
           rejectedReason: '',
+          executionPlan: origin.refactorExecutionPlan && typeof origin.refactorExecutionPlan === 'object'
+            ? { ...origin.refactorExecutionPlan }
+            : null,
         }
         : base.refactorGovernance;
       return withTask(state, taskId, {
