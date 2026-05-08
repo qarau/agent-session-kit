@@ -27,6 +27,13 @@ Use this playbook when `ask architect status` shows analyzer warnings but no har
 - Move duplicate snapshot, projection, ledger, sequence, or policy writes behind the approved runtime authority instead of adding another writer.
 - In strict mode, `ssot_integrity: invalid` is a hard-law violation and must be fixed or explicitly exempted before close.
 
+## Event-Only Sync Warnings
+
+- Inspect `eventOnlySyncAnalysis.violations` and the `event_only_sync` semantic fact.
+- Route sync/state mutations through `EventLedger`, replayable projection, snapshot, or sequence authorities.
+- Avoid direct cloud/database overwrite paths from core runtime code.
+- In strict mode, `event_only_sync: invalid` is a hard-law violation and blocks close unless explicitly exempted.
+
 ## Security Boundary Warnings
 
 - Inspect `securityAnalysis.filesAnalyzed` and `securityAnalysis.findings`.

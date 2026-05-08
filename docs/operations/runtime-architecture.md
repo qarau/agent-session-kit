@@ -81,6 +81,7 @@ Analyzer responsibilities:
 - `OhderDurabilityValidatorEngine`: detects projector, snapshot, ledger, sequence, policy, and migration touchpoints.
 - `OhderAuthorityAnalyzerEngine`: detects direct governed-state writes outside approved snapshot, projection, ledger, sequence, file-store, or scaffold authorities.
 - `OhderSsotAnalyzerEngine`: detects duplicate governed-state authorities for the same projection, snapshot, ledger, sequence, policy, or runtime state target.
+- `OhderEventOnlySyncAnalyzerEngine`: detects direct synchronization or state overwrite paths that bypass event-ledger or projection authority.
 - `OhderSecurityBoundaryAnalyzerEngine`: detects auth, token, permission, secret, session, and bypass-sensitive changes that lack matching test guardrails.
 - `OhderComplexityAnalyzerEngine`: detects large files, branch-heavy code, mixed concerns, and SRP risk.
 
@@ -90,6 +91,7 @@ Architect status fields:
 - `durabilityAnalysis`
 - `authorityAnalysis`
 - `ssotAnalysis`
+- `eventOnlySyncAnalysis`
 - `securityAnalysis`
 - `complexityAnalysis`
 - `semanticFacts`

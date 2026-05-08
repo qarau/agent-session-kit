@@ -151,6 +151,7 @@ export class OhderSemanticFactEngine {
     ohderFacts = {},
     authorityAnalysis = {},
     ssotAnalysis = {},
+    eventOnlySyncAnalysis = {},
     couplingAnalysis = {},
     durabilityAnalysis = {},
     complexityAnalysis = {},
@@ -171,6 +172,21 @@ export class OhderSemanticFactEngine {
           }))
           : [],
         recommendations: authorityAnalysis.recommendations,
+      },
+      {
+        factId: 'event-only-sync',
+        metric: 'event_only_sync',
+        value: ohderFacts.event_only_sync,
+        confidence: confidenceForFact(ohderFacts.event_only_sync, eventOnlySyncAnalysis.risk),
+        severity: severityForFact(ohderFacts.event_only_sync),
+        source: 'OhderEventOnlySyncAnalyzerEngine',
+        evidence: Array.isArray(eventOnlySyncAnalysis.violations)
+          ? eventOnlySyncAnalysis.violations.map(item => ({
+            filePath: item.filePath,
+            reason: item.reason || item.kind,
+          }))
+          : [],
+        recommendations: eventOnlySyncAnalysis.recommendations,
       },
       {
         factId: 'ssot-integrity',

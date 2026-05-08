@@ -9,6 +9,7 @@ import { OhderComplexityAnalyzerEngine } from './OhderComplexityAnalyzerEngine.j
 import { OhderSecurityBoundaryAnalyzerEngine } from './OhderSecurityBoundaryAnalyzerEngine.js';
 import { OhderSemanticFactEngine } from './OhderSemanticFactEngine.js';
 import { OhderSsotAnalyzerEngine } from './OhderSsotAnalyzerEngine.js';
+import { OhderEventOnlySyncAnalyzerEngine } from './OhderEventOnlySyncAnalyzerEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -56,6 +57,7 @@ export class ArchitectRuntime {
     this.complexityAnalyzer = new OhderComplexityAnalyzerEngine(cwd);
     this.securityAnalyzer = new OhderSecurityBoundaryAnalyzerEngine(cwd);
     this.ssotAnalyzer = new OhderSsotAnalyzerEngine(cwd);
+    this.eventOnlySyncAnalyzer = new OhderEventOnlySyncAnalyzerEngine(cwd);
     this.semanticFactEngine = new OhderSemanticFactEngine();
   }
 
@@ -149,6 +151,9 @@ export class ArchitectRuntime {
     const ssotAnalysis = this.ssotAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
+    const eventOnlySyncAnalysis = this.eventOnlySyncAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
     const complexityAnalysis = this.complexityAnalyzer.analyze({
       touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
     });
@@ -184,7 +189,7 @@ export class ArchitectRuntime {
       ssot_integrity: ssotAnalysis.ssotValid ? 'valid' : 'invalid',
       security_boundary: securityAnalysis.boundaryValid ? 'valid' : 'invalid',
       layer_isolation: layerIsolation,
-      event_only_sync: 'valid',
+      event_only_sync: eventOnlySyncAnalysis.eventOnlySyncValid ? 'valid' : 'invalid',
       durability_integrity: durabilityIntegrity,
       srp_integrity: srpIntegrity,
       durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
@@ -207,6 +212,9 @@ export class ArchitectRuntime {
       if (ssotAnalysis.ssotValid === false) {
         legacyFindings.push('SSoT integrity invalid: duplicate governed-state authority detected');
       }
+      if (eventOnlySyncAnalysis.eventOnlySyncValid === false) {
+        legacyFindings.push('event-only sync invalid: direct sync mutation bypasses event ledger');
+      }
       if (Array.isArray(couplingAnalysis.crossLayerImports) && couplingAnalysis.crossLayerImports.length > 0) {
         legacyFindings.push('layer isolation invalid: cross-layer import direction risk detected');
       }
@@ -223,6 +231,7 @@ export class ArchitectRuntime {
       ohderFacts,
       authorityAnalysis,
       ssotAnalysis,
+      eventOnlySyncAnalysis,
       couplingAnalysis,
       durabilityAnalysis,
       complexityAnalysis,
@@ -283,6 +292,7 @@ export class ArchitectRuntime {
       durabilityAnalysis,
       authorityAnalysis,
       ssotAnalysis,
+      eventOnlySyncAnalysis,
       complexityAnalysis,
       securityAnalysis,
     });
@@ -306,6 +316,7 @@ export class ArchitectRuntime {
       durabilityAnalysis,
       authorityAnalysis,
       ssotAnalysis,
+      eventOnlySyncAnalysis,
       complexityAnalysis,
       securityAnalysis,
       architectureScore,
