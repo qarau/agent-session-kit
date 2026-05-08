@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { Scaffolder } from '../src/fs/Scaffolder.js';
 import { ArchitectRuntime } from '../src/core/ArchitectRuntime.js';
+import { OhderSecurityBoundaryAnalyzerEngine } from '../src/core/OhderSecurityBoundaryAnalyzerEngine.js';
 
 function writeFile(repoDir, filePath, source) {
   const absolute = path.join(repoDir, filePath);
@@ -74,4 +75,64 @@ test('architect runtime blocks strict-mode security boundary violations', async 
   assert.equal(status.architectureScore.categories.security < 100, true);
   assert.equal(status.blocking, true);
   assert.ok(status.lawViolations.find(item => item.id === 'ohder-security-boundary'));
+});
+
+test('security analyzer categorizes role and scope authorization changes without authz tests', async () => {
+  const repoDir = await setupRepo();
+  writeFile(
+    repoDir,
+    'src/security/RoleScopePolicy.js',
+    "export function canManageBilling(user) { return user.role === 'admin' && user.scope.includes('billing:write'); }\n"
+  );
+
+  const result = new OhderSecurityBoundaryAnalyzerEngine(repoDir).analyze({
+    touchedFiles: ['src/security/RoleScopePolicy.js'],
+  });
+
+  assert.equal(result.risk, 'high');
+  assert.equal(result.boundaryValid, false);
+  assert.ok(result.filesAnalyzed[0].categories.includes('authz'));
+  assert.ok(result.filesAnalyzed[0].findings.find(item => /authorization evidence/u.test(item)));
+});
+
+test('security analyzer categorizes hardcoded token and secret evidence', async () => {
+  const repoDir = await setupRepo();
+  writeFile(
+    repoDir,
+    'src/auth/TokenIssuer.js',
+    "export function issue() { return { token: 'secret-token-123', refreshToken: 'refresh-secret-456' }; }\n"
+  );
+
+  const result = new OhderSecurityBoundaryAnalyzerEngine(repoDir).analyze({
+    touchedFiles: ['src/auth/TokenIssuer.js'],
+  });
+
+  assert.equal(result.risk, 'high');
+  assert.ok(result.filesAnalyzed[0].categories.includes('secret'));
+  assert.ok(result.filesAnalyzed[0].findings.find(item => /hardcoded credential/u.test(item)));
+});
+
+test('security analyzer lowers risk when matching authorization contract test is touched', async () => {
+  const repoDir = await setupRepo();
+  writeFile(
+    repoDir,
+    'src/security/RoleScopePolicy.js',
+    "export function canManageBilling(user) { return user.role === 'admin' && user.scope.includes('billing:write'); }\n"
+  );
+  writeFile(
+    repoDir,
+    'tests/RoleScopePolicy.authz.test.js',
+    "import { canManageBilling } from '../src/security/RoleScopePolicy.js';\nassert.equal(canManageBilling({ role: 'admin', scope: ['billing:write'] }), true);\n"
+  );
+
+  const result = new OhderSecurityBoundaryAnalyzerEngine(repoDir).analyze({
+    touchedFiles: [
+      'src/security/RoleScopePolicy.js',
+      'tests/RoleScopePolicy.authz.test.js',
+    ],
+  });
+
+  assert.equal(result.risk, 'low');
+  assert.equal(result.boundaryValid, true);
+  assert.deepEqual(result.findings, []);
 });

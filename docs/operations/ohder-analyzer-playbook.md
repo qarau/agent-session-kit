@@ -65,7 +65,10 @@ Use this playbook when `ask architect status` shows analyzer warnings but no har
 ## Security Boundary Warnings
 
 - Inspect `securityAnalysis.filesAnalyzed` and `securityAnalysis.findings`.
+- Review `securityAnalysis.filesAnalyzed[*].categories` for explicit `auth`, `authz`, `secret`, and `session` evidence.
 - Add matching tests for auth, token, permission, session, credential, or bypass-sensitive changes.
+- Add explicit authorization tests when role, permission, scope, RBAC, or ACL behavior changes.
+- Remove hardcoded token, secret, password, API key, private key, or refresh/access token evidence before close.
 - Treat `securityAnalysis.boundaryValid: false` as a hard-law issue in strict mode; fix the guardrail gap before closing the slice.
 
 ## Complexity And SRP Warnings

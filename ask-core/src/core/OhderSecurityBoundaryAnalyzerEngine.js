@@ -48,6 +48,28 @@ function securitySignals(source = '') {
     .map(([signal]) => signal);
 }
 
+function categoriesFor(signals = [], filePath = '') {
+  const categories = new Set();
+  const normalizedPath = normalizePath(filePath);
+  if (/auth|oauth|jwt/iu.test(normalizedPath) || signals.includes('auth-bypass')) {
+    categories.add('auth');
+  }
+  if (signals.includes('permission-change') || /permission|role|scope|rbac|acl/iu.test(normalizedPath)) {
+    categories.add('authz');
+  }
+  if (signals.includes('credential-or-secret') || /token|secret|credential|password/iu.test(normalizedPath)) {
+    categories.add('secret');
+  }
+  if (signals.includes('session-mutation') || /session|cookie/iu.test(normalizedPath)) {
+    categories.add('session');
+  }
+  return Array.from(categories);
+}
+
+function hardcodedCredentialEvidence(source = '') {
+  return /(?:token|secret|password|apiKey|privateKey|refreshToken|accessToken)\s*[:=]\s*['"`][^'"`]{8,}['"`]/iu.test(source);
+}
+
 function matchingTestFiles(filePath, touchedFiles) {
   const normalized = normalizePath(filePath);
   const basename = path.basename(normalized).replace(/\.(?:mjs|js|cjs|ts|tsx|jsx)$/u, '');
@@ -60,6 +82,7 @@ function matchingTestFiles(filePath, touchedFiles) {
 function analyzeFile(cwd, filePath, touchedFiles) {
   const source = readFileSafe(cwd, filePath);
   const signals = securitySignals(source);
+  const categories = categoriesFor(signals, filePath);
   const sensitive = isSecuritySensitivePath(filePath) || signals.length > 0;
   const tests = matchingTestFiles(filePath, touchedFiles);
   const findings = [];
@@ -67,10 +90,15 @@ function analyzeFile(cwd, filePath, touchedFiles) {
   if (sensitive && tests.length === 0) {
     findings.push(`security-sensitive change lacks matching test coverage: ${filePath}`);
   }
+  if (categories.includes('authz') && tests.length === 0) {
+    findings.push(`authorization evidence missing for role, permission, or scope change: ${filePath}`);
+  }
   if (signals.includes('auth-bypass')) {
     findings.push(`auth bypass signal detected: ${filePath}`);
   }
-  if (signals.includes('credential-or-secret') && /process\.env|['"`][^'"`]*(?:secret|token|password)[^'"`]*['"`]/iu.test(source)) {
+  if (signals.includes('credential-or-secret') && hardcodedCredentialEvidence(source)) {
+    findings.push(`hardcoded credential or token evidence detected: ${filePath}`);
+  } else if (signals.includes('credential-or-secret') && /process\.env/iu.test(source)) {
     findings.push(`credential or token handling changed: ${filePath}`);
   }
 
@@ -78,6 +106,7 @@ function analyzeFile(cwd, filePath, touchedFiles) {
     filePath,
     sensitive,
     signals,
+    categories,
     matchingTests: tests,
     findings,
   };
@@ -85,7 +114,12 @@ function analyzeFile(cwd, filePath, touchedFiles) {
 
 function riskFor(filesAnalyzed) {
   const findingCount = filesAnalyzed.reduce((total, item) => total + item.findings.length, 0);
-  if (filesAnalyzed.some(item => item.signals.includes('auth-bypass')) || findingCount >= 2) {
+  if (
+    filesAnalyzed.some(item => item.signals.includes('auth-bypass'))
+    || filesAnalyzed.some(item => item.categories.includes('authz') && item.matchingTests.length === 0)
+    || filesAnalyzed.some(item => item.findings.some(finding => /hardcoded credential/u.test(finding)))
+    || findingCount >= 2
+  ) {
     return 'high';
   }
   if (findingCount === 1) {
