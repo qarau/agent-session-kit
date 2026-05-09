@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "rpc",
+  "planTitle": "ASK Ready-Plan Commit",
+  "planSummary": "Add a ready-plan commit provenance beat between plan preparation and handoff so git history shows the session intent before per-slice commits.",
+  "slices": [
+    {
+      "sliceId": "ready-plan-commit-runtime",
+      "title": "Ready-Plan Commit Runtime",
+      "description": "Create ask ready-plan commit to commit only prepared ASK plan artifacts with first-class ASK-Plan provenance.",
+      "acceptanceCriteria": [
+        "ask ready-plan commit --title <title> --source <md> --plan-json <json> exists",
+        "The runtime validates both files exist and are under docs/plans",
+        "The runtime stages only the markdown and JSON plan artifacts",
+        "The runtime creates a commit with ASK-Plan, ASK-Plan-Markdown, and ASK-Plan-JSON footers",
+        "If the plan artifacts are already committed and the worktree is clean, the runtime returns a non-mutating success result"
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ask-plan-commit-governance",
+      "title": "ASK-Plan Commit Governance",
+      "description": "Extend commit-message and pre-push governance so plan commits are accepted with ASK-Plan provenance and constrained to docs/plans artifacts.",
+      "acceptanceCriteria": [
+        "commit-msg-check accepts exactly one ASK-Plan: <planId> footer",
+        "Commit messages cannot mix ASK-Plan, ASK-Slice, or ASK-Exempt",
+        "Pre-push accepts ASK-Plan commits only when changed files are plan artifacts under docs/plans",
+        "Pre-push rejects ASK-Plan commits that include implementation files"
+      ],
+      "dependsOn": [
+        "ready-plan-commit-runtime"
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "implementation-begin-integration",
+      "title": "Implementation Begin Integration",
+      "description": "Teach ask implementation begin to run ready-plan commit after prepare and before handoff.",
+      "acceptanceCriteria": [
+        "ask implementation begin calls ready-plan commit after prepare succeeds",
+        "The begin payload includes ready-plan commit metadata",
+        "Handoff still ingests slices and returns ask task start <taskId>",
+        "If the ready-plan commit already exists, implementation begin continues without duplicating the commit"
+      ],
+      "dependsOn": [
+        "ask-plan-commit-governance"
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "docs-and-e2e-history-contract",
+      "title": "Docs And E2E History Contract",
+      "description": "Document and prove the complete git history shape from raw plan to ready-plan commit to slice-close commit.",
+      "acceptanceCriteria": [
+        "README or operations docs show prepare -> ready-plan commit -> handoff -> slice close",
+        "The docs show the intended git log shape with a plan commit before slice commits",
+        "E2E test starts from a raw markdown plan and runs ask implementation begin",
+        "E2E test verifies git log has a ready-plan commit before the slice-close commit",
+        "E2E test verifies the slice-close commit still carries ASK-Slice"
+      ],
+      "dependsOn": [
+        "implementation-begin-integration"
+      ],
+      "queueClass": "integrator"
+    }
+  ]
+}

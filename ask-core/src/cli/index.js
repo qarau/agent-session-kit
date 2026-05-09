@@ -42,6 +42,7 @@ import { runGovernance } from './commands/governance.js';
 import { runDesign } from './commands/design.js';
 import { runPlan } from './commands/plan.js';
 import { runPlanMode } from './commands/planMode.js';
+import { runReadyPlan } from './commands/readyPlan.js';
 import { runRefactor } from './commands/refactor.js';
 
 function printHelp() {
@@ -98,6 +99,7 @@ Usage:
   ask plan ingest|validate|batch show
   ask plan-mode prepare --title <text> --source <md> [--prefix <prefix>]
   ask plan-mode handoff --title <text> --source <md> --plan-json <json>
+  ask ready-plan commit --title <text> --source <md> --plan-json <json>
   ask refactor preview|create
   ask next
   ask resume-packet show
@@ -315,6 +317,11 @@ export async function runCli(args) {
 
   if (command === 'plan-mode') {
     await runPlanMode(subcommand, rest);
+    return;
+  }
+
+  if (command === 'ready-plan') {
+    await runReadyPlan(subcommand, rest);
     return;
   }
 
