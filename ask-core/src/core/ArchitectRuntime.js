@@ -40,7 +40,8 @@ function uniqueDirs(paths = []) {
   const dirs = new Set();
   for (const filePath of paths) {
     const normalized = normalize(filePath).replace(/\\/gu, '/');
-    const top = normalized.split('/').filter(Boolean)[0] || '';
+    const parts = normalized.split('/').filter(Boolean);
+    const top = parts.length > 1 ? parts[0] : 'root';
     if (top) {
       dirs.add(top);
     }

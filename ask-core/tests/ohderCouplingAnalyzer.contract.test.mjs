@@ -82,3 +82,20 @@ test('architect runtime exposes coupling analysis and score penalty', async () =
   assert.equal(status.couplingDelta >= 1, true);
   assert.equal(status.architectureScore.categories.layerDiscipline < 100, true);
 });
+
+test('architect runtime treats root tooling files as one coupling boundary', () => {
+  const repoDir = setupRepo();
+  const architect = new ArchitectRuntime(repoDir);
+
+  const delta = architect.couplingDelta({
+    touchedFiles: [
+      '.gitignore',
+      'package.json',
+      'package-lock.json',
+      'tsconfig.json',
+      'ask-core/src/contracts/index.ts',
+    ],
+  });
+
+  assert.equal(delta, 1);
+});

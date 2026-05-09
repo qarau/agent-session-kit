@@ -1,4 +1,5 @@
 node_modules/
+dist/
 docs/ASK_Runtime/
 .worktrees/
 .ask/

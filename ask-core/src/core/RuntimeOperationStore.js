@@ -9,6 +9,7 @@ export class RuntimeOperationStore {
   constructor(cwd) {
     this.paths = new AskPaths(cwd);
     this.store = new FileStore();
+    this.writeQueue = Promise.resolve();
   }
 
   async read(fallback = null) {
@@ -20,7 +21,10 @@ export class RuntimeOperationStore {
       ...state,
       updatedAt: state.updatedAt || nowIso(),
     };
-    await this.store.writeJson(this.paths.lastOperation(), payload);
-    return payload;
+    this.writeQueue = this.writeQueue.then(async () => {
+      await this.store.writeJson(this.paths.lastOperation(), payload);
+      return payload;
+    });
+    return this.writeQueue;
   }
 }
