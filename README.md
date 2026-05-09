@@ -20,7 +20,7 @@ ASK Forge works best as the governance layer in a three-part autonomous developm
 
 In this model, ASK does not replace Codex or Superpowers. ASK governs the software delivery lifecycle so Codex can implement with clear boundaries and Superpowers can provide repeatable development practices.
 
-When a user chooses "Implement the plan", the implementation boundary is `ask implementation begin --plan <md> --title <title>` before Codex edits code.
+When a user chooses "Implement the plan", the implementation boundary is `ask implementation begin --plan <md> --title <title>` before Codex edits code. That command prepares the plan, creates the ready-plan commit with `ASK-Plan` provenance, hands the plan to ASK, and returns the next governed slice.
 
 ## Why 5.0.0 Is Special
 
@@ -124,9 +124,31 @@ node ask-core/bin/ask.js --help
 node ask-core/bin/ask.js preflight
 node ask-core/bin/ask.js can-commit
 node ask-core/bin/ask.js implementation begin --plan <md> --title <title>
+node ask-core/bin/ask.js ready-plan commit --title <title> --source <md> --plan-json <json>
 node ask-core/bin/ask.js plan-mode handoff --title <title> --source <md> --plan-json <json>
 node ask-core/bin/ask.js implementation preflight
 # shorthand: ask plan-mode handoff
+```
+
+Plan-to-commit flow:
+
+```text
+ask implementation begin --plan <md> --title <title>
+  -> ask plan-mode prepare
+  -> ask ready-plan commit
+  -> ask plan-mode handoff
+  -> ask task start <taskId>
+  -> ask slice close <taskId>
+```
+
+Expected git history:
+
+```text
+chore(plan): ready <title>
+ASK-Plan: <planId>
+
+chore(slice): close <taskId>
+ASK-Slice: <taskId>
 ```
 
 Enable hooks:

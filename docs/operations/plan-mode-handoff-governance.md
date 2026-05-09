@@ -24,21 +24,55 @@ The adapter entrypoint for automation is:
 node scripts/session/runAskImplementationBeginAdapter.mjs --plan <md> --title <title>
 ```
 
-This command prepares canonical markdown and JSON plan artifacts, hands them to ASK, ingests governed slices, and returns the next `ask task start <taskId>` command. Direct editing before this boundary remains a governance bypass.
+This command prepares canonical markdown and JSON plan artifacts, commits those artifacts as the session's ready-plan commit, hands them to ASK, ingests governed slices, and returns the next `ask task start <taskId>` command. Direct editing before this boundary remains a governance bypass.
 
 ## Governed Flow
 
 1. Write or receive the plan as markdown.
 2. Run `ask implementation begin --plan <md> --title <title>` before editing.
 3. ASK converts the plan into canonical markdown and structured ASK plan JSON artifacts.
-4. ASK hands both artifacts to Plan Mode handoff.
-5. ASK records workflow artifacts, validates the plan, and ingests slices.
-6. Run `ask next` to see the next governed slice.
-7. Start the slice with `ask task start <taskId>`.
-8. Codex implements the slice.
-9. Run validation as needed during development.
-10. Close with `ask slice close <taskId>` so ASK runs full suite validation, OHDER governance, task completion, commit creation, and pre-push validation.
-11. The resulting commit carries `ASK-Slice: <taskId>` provenance.
+4. ASK runs `ask ready-plan commit --title <title> --source <md> --plan-json <json>` against the canonical artifacts.
+5. Git records the ready-plan commit with `ASK-Plan: <planId>` provenance.
+6. ASK hands both artifacts to Plan Mode handoff.
+7. ASK records workflow artifacts, validates the plan, and ingests slices.
+8. Run `ask next` to see the next governed slice.
+9. Start the slice with `ask task start <taskId>`.
+10. Codex implements the slice.
+11. Run validation as needed during development.
+12. Close with `ask slice close <taskId>` so ASK runs full suite validation, OHDER governance, task completion, commit creation, and pre-push validation.
+13. The resulting implementation commit carries `ASK-Slice: <taskId>` provenance.
+
+## Ready-Plan Commit
+
+The ready-plan commit is the historical marker for what the development session was about before implementation starts. It commits only the canonical markdown plan and its `.plan.json` artifact under `docs/plans/`.
+
+```bash
+node ask-core/bin/ask.js ready-plan commit --title <title> --source <md> --plan-json <json>
+```
+
+The commit message shape is:
+
+```text
+chore(plan): ready <title>
+
+ASK-Plan: <planId>
+ASK-Plan-Markdown: docs/plans/<plan>.md
+ASK-Plan-JSON: docs/plans/<plan>.plan.json
+```
+
+`ask implementation begin` runs this command automatically after prepare and before handoff. Re-running it does not create a duplicate commit when the canonical artifacts are unchanged.
+
+The intended git history shape is:
+
+```text
+chore(plan): ready <title>
+ASK-Plan: <planId>
+
+chore(slice): close <taskId>
+ASK-Slice: <taskId>
+```
+
+That history makes each session readable: first the plan intent, then each governed slice that implemented it.
 
 ## Example Handoff
 
@@ -110,7 +144,7 @@ Install hooks with:
 npm run session:hooks:install
 ```
 
-The pre-commit gate checks implementation handoff state when Plan Mode governance is active. The commit-msg gate requires `ASK-Slice: <taskId>` or a valid `ASK-Exempt: <kind>` footer. The pre-push gate validates outgoing commit lineage before remote publication.
+The pre-commit gate checks implementation handoff state when Plan Mode governance is active. The commit-msg gate requires exactly one of `ASK-Plan: <planId>`, `ASK-Slice: <taskId>`, or a valid `ASK-Exempt: <kind>` footer. The pre-push gate validates outgoing commit lineage before remote publication and only allows `ASK-Plan` commits to change plan artifacts under `docs/plans/`.
 
 ## Recovery
 
@@ -136,10 +170,16 @@ node ask-core/bin/ask.js task start <taskId>
 If commit provenance is missing:
 
 ```text
+ASK-Plan: <planId>
+```
+
+for ready-plan commits, or:
+
+```text
 ASK-Slice: <taskId>
 ```
 
-or, for approved maintenance-only commits:
+for implementation slice commits, or for approved maintenance-only commits:
 
 ```text
 ASK-Exempt: meta

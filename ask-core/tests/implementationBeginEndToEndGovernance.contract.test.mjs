@@ -146,6 +146,7 @@ test('implementation begin governs raw plan through active slice and slice-close
   const beginPayload = JSON.parse(begin.stdout);
   assert.equal(beginPayload.prepare.markdownPath, 'docs/plans/2026-05-09-raw-governed-plan.md');
   assert.equal(beginPayload.prepare.planJsonPath, 'docs/plans/2026-05-09-raw-governed-plan.plan.json');
+  assert.equal(beginPayload.readyPlanCommit.footer, 'ASK-Plan: raw-governed-plan');
   assert.deepEqual(beginPayload.createdTaskIds, ['rgp-001']);
   assert.equal(beginPayload.nextAction, 'ask task start rgp-001');
 
@@ -167,4 +168,13 @@ test('implementation begin governs raw plan through active slice and slice-close
 
   const commitMessage = runOrThrow('git', ['log', '-1', '--pretty=%B'], { cwd: repoDir }).stdout;
   assert.match(commitMessage, /ASK-Slice:\s*rgp-001/i);
+
+  const history = runOrThrow('git', ['log', '--reverse', '--pretty=%s%n%b%n---END---'], { cwd: repoDir }).stdout;
+  const planCommitIndex = history.indexOf('chore(plan): ready Raw Governed Plan');
+  const sliceCommitIndex = history.indexOf('chore(slice): close rgp-001');
+  assert.notEqual(planCommitIndex, -1);
+  assert.notEqual(sliceCommitIndex, -1);
+  assert.equal(planCommitIndex < sliceCommitIndex, true);
+  assert.match(history, /ASK-Plan:\s*raw-governed-plan/i);
+  assert.match(history, /ASK-Slice:\s*rgp-001/i);
 });

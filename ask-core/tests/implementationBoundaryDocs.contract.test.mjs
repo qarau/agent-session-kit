@@ -22,11 +22,17 @@ test('implementation begin adapter and docs define the required plan-to-implemen
 
   const operationsDoc = readRepoFile('docs/operations/plan-mode-handoff-governance.md');
   assert.match(operationsDoc, /ask implementation begin --plan <md> --title <title>/);
+  assert.match(operationsDoc, /ask ready-plan commit --title <title> --source <md> --plan-json <json>/);
+  assert.match(operationsDoc, /ASK-Plan: <planId>/);
+  assert.match(operationsDoc, /chore\(plan\): ready <title>/);
+  assert.match(operationsDoc, /chore\(slice\): close <taskId>/);
   assert.match(operationsDoc, /Implement the plan/);
   assert.match(operationsDoc, /before editing/);
 
   const readme = readRepoFile('README.md');
   assert.match(readme, /ask implementation begin --plan <md> --title <title>/);
+  assert.match(readme, /ready-plan commit/);
+  assert.match(readme, /ASK-Plan/);
   assert.match(readme, /ASK Forge = Governance Constitution/);
   assert.match(readme, /Codex = Implementation Engine/);
   assert.match(readme, /Superpowers = Workflow Discipline/);
