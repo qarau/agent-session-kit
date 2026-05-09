@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ask-adapter",
+  "planTitle": "ASK Forge Adapter Runtime Activation",
+  "planSummary": "Generated from docs/plans/2026-05-09-ask-forge-adapter-runtime-activation-source.md",
+  "slices": [
+    {
+      "sliceId": "ask-forge-adapter-runtime-activation",
+      "title": "ASK Forge Adapter Runtime Activation",
+      "description": "Implement ASK Forge Adapter Runtime Activation.",
+      "acceptanceCriteria": [
+        "ASK Forge Adapter Runtime Activation is implemented"
+      ],
+      "queueClass": "integrator"
+    }
+  ]
+}
