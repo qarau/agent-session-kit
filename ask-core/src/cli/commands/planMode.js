@@ -1,4 +1,5 @@
 import { PlanModeHandoffRuntime } from '../../core/PlanModeHandoffRuntime.js';
+import { PlanModePrepareRuntime } from '../../core/PlanModePrepareRuntime.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -22,7 +23,7 @@ function hasFlag(args, name) {
 }
 
 function printUsage() {
-  console.log('Usage: ask plan-mode handoff --title <text> --source <md> --plan-json <json> [--task <taskId>] [--run-id <runId>] [--workflow <name>] [--skill <name>] [--force-new-batch] [--dry-run]');
+  console.log('Usage: ask plan-mode prepare --title <text> --source <md> [--prefix <prefix>] [--date <YYYY-MM-DD>]\n       ask plan-mode handoff --title <text> --source <md> --plan-json <json> [--task <taskId>] [--run-id <runId>] [--workflow <name>] [--skill <name>] [--force-new-batch] [--dry-run]');
 }
 
 function printResult(payload) {
@@ -33,6 +34,18 @@ function printResult(payload) {
 }
 
 export async function runPlanMode(subcommand, args = []) {
+  if (normalize(subcommand) === 'prepare') {
+    const runtime = new PlanModePrepareRuntime(process.cwd());
+    const result = await runtime.prepare({
+      title: getArgValue(args, '--title'),
+      sourceMarkdownPath: getArgValue(args, '--source'),
+      planPrefix: getArgValue(args, '--prefix'),
+      date: getArgValue(args, '--date'),
+    });
+    printResult(result);
+    return;
+  }
+
   if (normalize(subcommand) === 'handoff') {
     const runtime = new PlanModeHandoffRuntime(process.cwd());
     const result = await runtime.handoff({

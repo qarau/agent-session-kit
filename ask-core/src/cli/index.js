@@ -95,6 +95,7 @@ Usage:
   ask design promote <region-id> --to <stage> --reason <text> [--approved-by <id>] [--approval-ticket <id>]
   ask governance status|explain|validate
   ask plan ingest|validate|batch show
+  ask plan-mode prepare --title <text> --source <md> [--prefix <prefix>]
   ask plan-mode handoff --title <text> --source <md> --plan-json <json>
   ask refactor preview|create
   ask next
