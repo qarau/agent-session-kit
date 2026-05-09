@@ -10,3 +10,6 @@ export * from './governance.js';
 export * from './governanceFixtures.js';
 export * from './adapter.js';
 export * from './adapterFixtures.js';
+export * from './profiles.js';
+export * from './lawPacks.js';
+export * from './profileLawFixtures.js';

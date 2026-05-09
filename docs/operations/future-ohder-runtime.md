@@ -27,6 +27,7 @@ Partial capabilities are implemented enough to guide governed development, but s
 - Refactor target discovery reads slice commits, changed files, entropy history, and completed refactor tasks. It does not yet perform whole-program architectural clustering.
 - Entropy measurement tracks deterministic architecture and behavior dimensions. It does not yet forecast long-horizon maintainability cost.
 - Runtime modes (`fast`, `strict`, `refactor`) are policy-visible and affect governance behavior, but they are not yet full strategy profiles with separate analyzer thresholds per subsystem.
+- Project profile and law-pack TypeScript shapes are v6 foundation contracts for composing language, framework, and governance boundaries. They are not active multi-language adapter implementations and do not change enforcement behavior by themselves.
 
 Operator rule: use partial capabilities as governance evidence, not as proof that every architectural concern has been exhaustively analyzed.
 
