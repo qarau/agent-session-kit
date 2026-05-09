@@ -29,6 +29,7 @@ import { runPromote } from './commands/promote.js';
 import { runRollout } from './commands/rollout.js';
 import { runRollback } from './commands/rollback.js';
 import { runContinue } from './commands/continue.js';
+import { runProject } from './commands/project.js';
 import { runProjectState } from './commands/project-state.js';
 import { runIntent } from './commands/intent.js';
 import { runSlice } from './commands/slice.js';
@@ -79,6 +80,7 @@ Usage:
   ask rollout start|phase|status
   ask rollback trigger
   ask continue [--once] [--max-slices <n>] [--until blocked|complete]
+  ask project detect
   ask project-state
   ask intent preview
   ask slice preview [--command <bin>] [--command-arg <arg>] [--operation <name>] [--allowed-command <cmd>]
@@ -262,6 +264,11 @@ export async function runCli(args) {
 
   if (command === 'continue') {
     await runContinue([subcommand, ...rest].filter(Boolean));
+    return;
+  }
+
+  if (command === 'project') {
+    await runProject(subcommand, rest);
     return;
   }
 
