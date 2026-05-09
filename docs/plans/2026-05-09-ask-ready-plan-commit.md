@@ -55,3 +55,7 @@ Acceptance criteria:
 - E2E test starts from a raw markdown plan and runs `ask implementation begin`.
 - E2E test verifies git log has a ready-plan commit before the slice-close commit.
 - E2E test verifies the slice-close commit still carries `ASK-Slice`.
+
+## Git History Audit Note
+
+This plan was initially bootstrapped before `ask ready-plan commit` existed, so the first copy of these artifacts landed inside `rpc-001`. This recovery update records the plan artifacts through the new first-class ready-plan commit path so the session has explicit `ASK-Plan` provenance in git history from this point forward.

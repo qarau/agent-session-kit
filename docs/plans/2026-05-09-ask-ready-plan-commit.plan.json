@@ -3,6 +3,7 @@
   "planPrefix": "rpc",
   "planTitle": "ASK Ready-Plan Commit",
   "planSummary": "Add a ready-plan commit provenance beat between plan preparation and handoff so git history shows the session intent before per-slice commits.",
+  "historyAuditNote": "Initial artifacts were bootstrapped in rpc-001 before ask ready-plan commit existed; this update records the plan through first-class ASK-Plan provenance.",
   "slices": [
     {
       "sliceId": "ready-plan-commit-runtime",
