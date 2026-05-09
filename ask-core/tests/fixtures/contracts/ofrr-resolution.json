@@ -1,0 +1,10 @@
+{
+  "findingId": "ohder-finding-example",
+  "decision": "false-positive",
+  "reason": "Analyzer evidence does not match inspected runtime behavior.",
+  "approvedBy": "local",
+  "expiresAt": "",
+  "taskId": "ask-ts-009",
+  "notes": "Contract fixture only.",
+  "status": "suppressed"
+}

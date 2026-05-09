@@ -1,0 +1,16 @@
+{
+  "seq": 1,
+  "type": "TaskCreated",
+  "sessionId": "sess_contract",
+  "taskId": "ask-ts-009",
+  "actor": "local",
+  "payload": {
+    "taskId": "ask-ts-009",
+    "title": "Contract Fixture Test Suite"
+  },
+  "meta": {
+    "source": "contract-fixture",
+    "schemaVersion": 1
+  },
+  "createdAt": "2026-05-09T00:00:00.000Z"
+}

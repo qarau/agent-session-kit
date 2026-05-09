@@ -1,0 +1,16 @@
+{
+  "id": "ohder-finding-example",
+  "status": "open",
+  "severity": "low",
+  "confidence": "low",
+  "metric": "durability_integrity",
+  "analyzerId": "OhderDurabilityValidatorEngine",
+  "lawId": "",
+  "scope": "runtime",
+  "blocking": false,
+  "createdAt": "2026-05-09T00:00:00.000Z",
+  "updatedAt": "2026-05-09T00:00:00.000Z",
+  "evidenceRef": ".ask/runtime/findings/evidence/ohder-finding-example.json",
+  "resolution": null,
+  "history": []
+}
