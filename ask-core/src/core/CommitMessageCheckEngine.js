@@ -27,12 +27,14 @@ export class CommitMessageCheckEngine {
     this.bypassFindings = new GovernanceBypassFindingEngine(cwd);
   }
 
-  parseFooters(message, sliceFooterKey, exemptFooterKey) {
+  parseFooters(message, sliceFooterKey, exemptFooterKey, planFooterKey) {
     const text = String(message ?? '');
     const slicePattern = new RegExp(`^\\s*${escapeRegExp(sliceFooterKey)}:\\s*(\\S+)\\s*$`, 'gmi');
     const exemptPattern = new RegExp(`^\\s*${escapeRegExp(exemptFooterKey)}:\\s*(\\S+)\\s*$`, 'gmi');
+    const planPattern = new RegExp(`^\\s*${escapeRegExp(planFooterKey)}:\\s*(\\S+)\\s*$`, 'gmi');
     return {
       sliceIds: Array.from(text.matchAll(slicePattern)).map(match => normalize(match[1])),
+      planIds: Array.from(text.matchAll(planPattern)).map(match => normalize(match[1])),
       exemptKinds: Array.from(text.matchAll(exemptPattern)).map(match => normalize(match[1]).toLowerCase()),
     };
   }
@@ -45,6 +47,7 @@ export class CommitMessageCheckEngine {
         missing: ['commit message file is required'],
         checks: ['commit-message-provenance'],
         sliceIds: [],
+        planIds: [],
         exemptKinds: [],
       };
     }
@@ -54,6 +57,7 @@ export class CommitMessageCheckEngine {
         missing: [`commit message file not found: ${resolvedPath}`],
         checks: ['commit-message-provenance'],
         sliceIds: [],
+        planIds: [],
         exemptKinds: [],
       };
     }
@@ -66,6 +70,7 @@ export class CommitMessageCheckEngine {
         missing: [],
         checks: ['commit-message-provenance'],
         sliceIds: [],
+        planIds: [],
         exemptKinds: [],
         disabled: true,
       };
@@ -73,28 +78,40 @@ export class CommitMessageCheckEngine {
 
     const sliceFooterKey = normalize(section.footer_key) || 'ASK-Slice';
     const exemptFooterKey = normalize(section.exempt_footer_key) || 'ASK-Exempt';
+    const planFooterKey = normalize(section.plan_footer_key) || 'ASK-Plan';
     const allowedExemptions = new Set(parseList(section.allowed_exemptions, ['release', 'meta']));
     const message = fs.readFileSync(resolvedPath, 'utf8');
-    const { sliceIds, exemptKinds } = this.parseFooters(message, sliceFooterKey, exemptFooterKey);
+    const { sliceIds, planIds, exemptKinds } = this.parseFooters(message, sliceFooterKey, exemptFooterKey, planFooterKey);
     const missing = [];
 
     if (sliceIds.length > 1) {
       missing.push(`commit message has multiple ${sliceFooterKey} footers`);
     }
+    if (planIds.length > 1) {
+      missing.push(`commit message has multiple ${planFooterKey} footers`);
+    }
     if (exemptKinds.length > 1) {
       missing.push(`commit message has multiple ${exemptFooterKey} footers`);
     }
-    if (sliceIds.length > 0 && exemptKinds.length > 0) {
-      missing.push(`commit message cannot include both ${sliceFooterKey} and ${exemptFooterKey}`);
+    const provenanceKinds = [
+      sliceIds.length > 0 ? sliceFooterKey : '',
+      planIds.length > 0 ? planFooterKey : '',
+      exemptKinds.length > 0 ? exemptFooterKey : '',
+    ].filter(Boolean);
+    if (provenanceKinds.length > 1) {
+      missing.push(`commit message cannot include both provenance types and cannot include more than one provenance footer (${sliceFooterKey}, ${planFooterKey}, or ${exemptFooterKey})`);
     }
     if (sliceIds.length === 1 && !sliceIds[0]) {
       missing.push(`commit message has invalid ${sliceFooterKey} value`);
     }
+    if (planIds.length === 1 && !planIds[0]) {
+      missing.push(`commit message has invalid ${planFooterKey} value`);
+    }
     if (exemptKinds.length === 1 && !allowedExemptions.has(exemptKinds[0])) {
       missing.push(`commit message has invalid ${exemptFooterKey} value: ${exemptKinds[0]}`);
     }
-    if (sliceIds.length === 0 && exemptKinds.length === 0) {
-      missing.push(`commit message missing ${sliceFooterKey} footer or ${exemptFooterKey} exemption`);
+    if (sliceIds.length === 0 && planIds.length === 0 && exemptKinds.length === 0) {
+      missing.push(`commit message missing ${sliceFooterKey} footer, ${planFooterKey} footer, or ${exemptFooterKey} exemption`);
     }
 
     let findings = [];
@@ -109,7 +126,7 @@ export class CommitMessageCheckEngine {
             reason: `invalid commit provenance: ${missing.join('; ')}`,
           },
         ],
-        recommendations: [`Add ${sliceFooterKey}: <taskId> or a valid ${exemptFooterKey}: <kind> footer.`],
+        recommendations: [`Add ${sliceFooterKey}: <taskId>, ${planFooterKey}: <planId>, or a valid ${exemptFooterKey}: <kind> footer.`],
       });
       findings = Array.isArray(findingResult.findings) ? findingResult.findings : [];
     }
@@ -119,8 +136,10 @@ export class CommitMessageCheckEngine {
       missing,
       checks: ['commit-message-provenance'],
       sliceFooterKey,
+      planFooterKey,
       exemptFooterKey,
       sliceIds,
+      planIds,
       exemptKinds,
       findings,
     };

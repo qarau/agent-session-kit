@@ -100,6 +100,34 @@ test('commit-msg-check accepts scoped maintenance exemption and rejects mixed pr
   assert.match(JSON.stringify(JSON.parse(mixed.stdout).missing), /cannot include both/i);
 });
 
+test('commit-msg-check accepts ASK-Plan footer and rejects mixed plan provenance', () => {
+  const repoDir = setupRepo();
+  const valid = runOrThrow(process.execPath, [
+    askBinPath,
+    'commit-msg-check',
+    writeMessage(repoDir, 'chore(plan): ready runtime plan\n\nASK-Plan: runtime-plan\n'),
+  ], { cwd: repoDir });
+  const validPayload = JSON.parse(valid.stdout);
+  assert.equal(validPayload.passed, true);
+  assert.deepEqual(validPayload.planIds, ['runtime-plan']);
+
+  const mixedSlice = run(process.execPath, [
+    askBinPath,
+    'commit-msg-check',
+    writeMessage(repoDir, 'bad: mixed plan slice\n\nASK-Plan: runtime-plan\nASK-Slice: rpc-001\n'),
+  ], { cwd: repoDir });
+  assert.equal(mixedSlice.status, 1, mixedSlice.stdout + mixedSlice.stderr);
+  assert.match(JSON.stringify(JSON.parse(mixedSlice.stdout).missing), /cannot include more than one provenance footer/i);
+
+  const mixedExempt = run(process.execPath, [
+    askBinPath,
+    'commit-msg-check',
+    writeMessage(repoDir, 'bad: mixed plan exemption\n\nASK-Plan: runtime-plan\nASK-Exempt: meta\n'),
+  ], { cwd: repoDir });
+  assert.equal(mixedExempt.status, 1, mixedExempt.stdout + mixedExempt.stderr);
+  assert.match(JSON.stringify(JSON.parse(mixedExempt.stdout).missing), /cannot include more than one provenance footer/i);
+});
+
 test('commit-msg hook adapter and installHooks wire commit-msg enforcement', () => {
   const repoDir = setupRepo();
   const validPath = writeMessage(repoDir, 'chore: governed\n\nASK-Slice: pmh-004\n');

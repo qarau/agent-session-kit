@@ -16,7 +16,11 @@ const GOVERNANCE_MODE_MAINTAINER = 'maintainer';
 const GOVERNANCE_MODE_PROJECT = 'project';
 
 function normalize(pathValue) {
-  return pathValue.replaceAll('\\', '/').trim();
+  return String(pathValue ?? '').replaceAll('\\', '/').trim();
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 }
 
 function parseBoolean(value, fallback) {
@@ -249,21 +253,26 @@ export class PrePushCheckEngine {
     return this.parseFileList(raw);
   }
 
-  parseSliceCommitFooters(message, sliceFooterKey, exemptFooterKey) {
+  parseSliceCommitFooters(message, sliceFooterKey, exemptFooterKey, planFooterKey) {
     const text = String(message ?? '');
-    const slicePattern = new RegExp(`^\\s*${sliceFooterKey}:\\s*(\\S+)\\s*$`, 'gmi');
-    const exemptPattern = new RegExp(`^\\s*${exemptFooterKey}:\\s*(\\S+)\\s*$`, 'gmi');
+    const slicePattern = new RegExp(`^\\s*${escapeRegExp(sliceFooterKey)}:\\s*(\\S+)\\s*$`, 'gmi');
+    const exemptPattern = new RegExp(`^\\s*${escapeRegExp(exemptFooterKey)}:\\s*(\\S+)\\s*$`, 'gmi');
+    const planPattern = new RegExp(`^\\s*${escapeRegExp(planFooterKey)}:\\s*(\\S+)\\s*$`, 'gmi');
     const sliceIds = [];
+    const planIds = [];
     const exemptKinds = [];
 
     for (const match of text.matchAll(slicePattern)) {
       sliceIds.push(normalize(match[1]));
     }
+    for (const match of text.matchAll(planPattern)) {
+      planIds.push(normalize(match[1]));
+    }
     for (const match of text.matchAll(exemptPattern)) {
       exemptKinds.push(normalize(match[1]).toLowerCase());
     }
 
-    return { sliceIds, exemptKinds };
+    return { sliceIds, planIds, exemptKinds };
   }
 
   isExemptionScopeValid(files, allowedPrefixes, allowedExactFiles) {
@@ -286,6 +295,16 @@ export class PrePushCheckEngine {
     return true;
   }
 
+  isPlanScopeValid(files) {
+    if (!Array.isArray(files) || files.length === 0) {
+      return false;
+    }
+    return files.every(file => {
+      const normalized = normalize(file).toLowerCase();
+      return normalized.startsWith('docs/plans/') && (normalized.endsWith('.md') || normalized.endsWith('.plan.json'));
+    });
+  }
+
   evaluateSliceCommitGovernance(policy = {}) {
     const section = policy.slice_commit ?? {};
     const enabled = section.enabled !== false;
@@ -295,6 +314,7 @@ export class PrePushCheckEngine {
 
     const sliceFooterKey = normalize(section.footer_key) || 'ASK-Slice';
     const exemptFooterKey = normalize(section.exempt_footer_key) || 'ASK-Exempt';
+    const planFooterKey = normalize(section.plan_footer_key) || 'ASK-Plan';
     const allowedExemptions = new Set(parseList(section.allowed_exemptions, ['release', 'meta']));
     const allowedExemptPrefixes = parseList(section.exempt_allowed_path_prefixes, [
       'docs/releases/',
@@ -319,10 +339,11 @@ export class PrePushCheckEngine {
     for (const sha of commits) {
       const message = this.getCommitMessage(sha);
       const files = this.getCommitFiles(sha);
-      const { sliceIds, exemptKinds } = this.parseSliceCommitFooters(message, sliceFooterKey, exemptFooterKey);
+      const { sliceIds, planIds, exemptKinds } = this.parseSliceCommitFooters(message, sliceFooterKey, exemptFooterKey, planFooterKey);
       checkedCommits.push({
         sha,
         sliceIds,
+        planIds,
         exemptKinds,
         files,
       });
@@ -331,9 +352,22 @@ export class PrePushCheckEngine {
         missing.push(`commit ${sha} has multiple ${sliceFooterKey} footers`);
         continue;
       }
+      if (planIds.length > 1) {
+        missing.push(`commit ${sha} has multiple ${planFooterKey} footers`);
+        continue;
+      }
+      if (exemptKinds.length > 1) {
+        missing.push(`commit ${sha} has multiple ${exemptFooterKey} footers`);
+        continue;
+      }
 
-      if (sliceIds.length > 0 && exemptKinds.length > 0) {
-        missing.push(`commit ${sha} cannot include both ${sliceFooterKey} and ${exemptFooterKey}`);
+      const provenanceKinds = [
+        sliceIds.length > 0 ? sliceFooterKey : '',
+        planIds.length > 0 ? planFooterKey : '',
+        exemptKinds.length > 0 ? exemptFooterKey : '',
+      ].filter(Boolean);
+      if (provenanceKinds.length > 1) {
+        missing.push(`commit ${sha} cannot include both provenance types and cannot include more than one provenance footer (${sliceFooterKey}, ${planFooterKey}, or ${exemptFooterKey})`);
         continue;
       }
 
@@ -351,10 +385,18 @@ export class PrePushCheckEngine {
         continue;
       }
 
-      if (exemptKinds.length > 1) {
-        missing.push(`commit ${sha} has multiple ${exemptFooterKey} footers`);
+      if (planIds.length === 1) {
+        const planId = planIds[0];
+        if (!planId) {
+          missing.push(`commit ${sha} has invalid ${planFooterKey} value`);
+          continue;
+        }
+        if (!this.isPlanScopeValid(files)) {
+          missing.push(`commit ${sha} ${planFooterKey} commit must only change docs/plans artifacts`);
+        }
         continue;
       }
+
       if (exemptKinds.length === 1) {
         const kind = exemptKinds[0];
         if (!allowedExemptions.has(kind)) {
@@ -367,7 +409,7 @@ export class PrePushCheckEngine {
         continue;
       }
 
-      missing.push(`commit ${sha} missing ${sliceFooterKey} footer or ${exemptFooterKey} exemption`);
+      missing.push(`commit ${sha} missing ${sliceFooterKey} footer, ${planFooterKey} footer, or ${exemptFooterKey} exemption`);
     }
 
     return {
