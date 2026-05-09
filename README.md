@@ -24,6 +24,8 @@ In this model, ASK does not replace Codex or Superpowers. ASK governs the softwa
 
 When a user chooses "Implement the plan", the implementation boundary is `ask implementation begin --plan <md> --title <title>` before Codex edits code. That command prepares the plan, creates the ready-plan commit with `ASK-Plan` provenance, hands the plan to ASK, and returns the next governed slice.
 
+The approved plan is the canonical source. Do not regenerate or rewrite the approved plan after approval unless the user asks for a revision; that extra planning pass is YAGNI and can degrade slice fidelity before ASK ingestion.
+
 ## Why 5.0.0 Is Special
 
 `v5.0.0` is the release where ASK moves from "runtime checks around coding" to a governed autonomous delivery loop.
@@ -154,13 +156,28 @@ node ask-core/bin/ask.js implementation preflight
 Plan-to-commit flow:
 
 ```text
+final plan
+  -> approved plan is the canonical source
 ask implementation begin --plan <md> --title <title>
   -> ask plan-mode prepare
   -> ask ready-plan commit
   -> ask plan-mode handoff
+  -> governed slice execution
   -> ask task start <taskId>
   -> ask slice close <taskId>
 ```
+
+Accepted plan slice headings:
+
+```markdown
+## Slice N: Title
+## Slice 001 - Title
+
+## Slices
+### Title
+```
+
+If a plan looks multi-slice but cannot be parsed, ASK fails with `plan-slice-extraction-ambiguous` rather than creating one generic slice.
 
 Expected git history:
 

@@ -26,21 +26,36 @@ node scripts/session/runAskImplementationBeginAdapter.mjs --plan <md> --title <t
 
 This command prepares canonical markdown and JSON plan artifacts, commits those artifacts as the session's ready-plan commit, hands them to ASK, ingests governed slices, and returns the next `ask task start <taskId>` command. Direct editing before this boundary remains a governance bypass.
 
+The approved plan is the canonical source for this boundary. Do not regenerate or rewrite the approved plan after the user accepts it unless the user explicitly asks for a revision. Replanning after approval is YAGNI: it risks degrading a detailed conversational plan into a weaker artifact and creates unnecessary ready-plan churn.
+
+Accepted slice heading formats are:
+
+```markdown
+## Slice N: Title
+## Slice 001 - Title
+
+## Slices
+### Title
+```
+
+If a plan appears to contain multiple slices but ASK cannot parse them, preparation fails with `plan-slice-extraction-ambiguous` instead of silently creating one generic slice.
+
 ## Governed Flow
 
-1. Write or receive the plan as markdown.
+1. Produce the final plan.
 2. Run `ask implementation begin --plan <md> --title <title>` before editing.
-3. ASK converts the plan into canonical markdown and structured ASK plan JSON artifacts.
+3. ASK converts the final plan into canonical markdown and structured ASK plan JSON artifacts.
 4. ASK runs `ask ready-plan commit --title <title> --source <md> --plan-json <json>` against the canonical artifacts.
-5. Git records the ready-plan commit with `ASK-Plan: <planId>` provenance.
-6. ASK hands both artifacts to Plan Mode handoff.
-7. ASK records workflow artifacts, validates the plan, and ingests slices.
-8. Run `ask next` to see the next governed slice.
-9. Start the slice with `ask task start <taskId>`.
-10. Codex implements the slice.
-11. Run validation as needed during development.
-12. Close with `ask slice close <taskId>` so ASK runs full suite validation, OHDER governance, task completion, commit creation, and pre-push validation.
-13. The resulting implementation commit carries `ASK-Slice: <taskId>` provenance.
+5. ASK hands both artifacts to Plan Mode handoff.
+6. ASK records workflow artifacts, validates the plan, and ingests slices.
+7. Run `ask next` to see the next governed slice.
+8. Start the slice with `ask task start <taskId>`.
+9. Codex performs governed slice execution.
+10. Run validation as needed during development.
+11. Close with `ask slice close <taskId>` so ASK runs full suite validation, OHDER governance, task completion, commit creation, and pre-push validation.
+12. The resulting implementation commit carries `ASK-Slice: <taskId>` provenance.
+
+In short: final plan -> `ask implementation begin` -> ready-plan commit -> handoff -> governed slice execution.
 
 ## Ready-Plan Commit
 
