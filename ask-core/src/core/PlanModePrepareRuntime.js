@@ -39,12 +39,28 @@ function stripSlicePrefix(value) {
   return normalize(value).replace(/^slice\s+\d+\s*[-:]?\s*/iu, '').trim();
 }
 
+function readHeading(line) {
+  const match = normalize(line).match(/^(#{1,6})\s+(.+)$/u);
+  if (!match) {
+    return null;
+  }
+  return {
+    level: match[1].length,
+    title: normalize(match[2]),
+  };
+}
+
 function isSliceHeading(line) {
   return /^#{2,3}\s+slice\s+\d+\s*[-:]?\s+\S/iu.test(normalize(line));
 }
 
 function readHeadingTitle(line) {
-  return stripSlicePrefix(normalize(line).replace(/^#{2,3}\s+/u, ''));
+  return stripSlicePrefix(readHeading(line)?.title ?? '');
+}
+
+function isSliceContainerHeading(line) {
+  const heading = readHeading(line);
+  return heading?.level === 2 && /^(?:implementation\s+)?slices$/iu.test(heading.title);
 }
 
 function isAcceptanceMarker(line) {
@@ -67,6 +83,20 @@ function uniqueSliceId(base, seen) {
   }
   seen.add(candidate);
   return candidate;
+}
+
+function findBlockEnd(lines, startIndex, candidateIndexes) {
+  const startLevel = readHeading(lines[startIndex])?.level ?? 6;
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    if (candidateIndexes.includes(index)) {
+      return index;
+    }
+    const heading = readHeading(lines[index]);
+    if (heading && heading.level <= startLevel) {
+      return index;
+    }
+  }
+  return lines.length;
 }
 
 function parseSliceBlock(lines, startIndex, endIndex, previousSliceId, seen) {
@@ -112,10 +142,35 @@ function parseSliceBlock(lines, startIndex, endIndex, previousSliceId, seen) {
 
 function extractSlices(markdown, title) {
   const lines = String(markdown ?? '').split(/\r?\n/u);
-  const headingIndexes = [];
+  let headingIndexes = [];
   for (let index = 0; index < lines.length; index += 1) {
     if (isSliceHeading(lines[index])) {
       headingIndexes.push(index);
+    }
+  }
+
+  if (headingIndexes.length < 1) {
+    for (let index = 0; index < lines.length; index += 1) {
+      if (!isSliceContainerHeading(lines[index])) {
+        continue;
+      }
+      const containerLevel = readHeading(lines[index])?.level ?? 2;
+      const childLevel = containerLevel + 1;
+      for (let childIndex = index + 1; childIndex < lines.length; childIndex += 1) {
+        const heading = readHeading(lines[childIndex]);
+        if (!heading) {
+          continue;
+        }
+        if (heading.level <= containerLevel) {
+          break;
+        }
+        if (heading.level === childLevel) {
+          headingIndexes.push(childIndex);
+        }
+      }
+      if (headingIndexes.length > 0) {
+        break;
+      }
     }
   }
 
@@ -133,7 +188,7 @@ function extractSlices(markdown, title) {
   const slices = [];
   for (let index = 0; index < headingIndexes.length; index += 1) {
     const start = headingIndexes[index];
-    const end = headingIndexes[index + 1] ?? lines.length;
+    const end = findBlockEnd(lines, start, headingIndexes);
     const previousSliceId = slices.at(-1)?.sliceId ?? '';
     slices.push(parseSliceBlock(lines, start, end, previousSliceId, seen));
   }

@@ -126,3 +126,61 @@ test('plan-mode prepare writes canonical markdown and ASK plan JSON artifacts', 
   ], { cwd: repoDir });
   assert.deepEqual(JSON.parse(handoff.stdout).createdTaskIds, ['gfp-001', 'gfp-002']);
 });
+
+test('plan-mode prepare extracts conversational slices from a Slices section', () => {
+  const repoDir = setupRepo();
+  writeText(path.join(repoDir, 'incoming', 'conversation-plan.md'), [
+    '# Conversational Feature Plan',
+    '',
+    '## Summary',
+    '',
+    'Use a natural plan shape that a plan-mode conversation commonly produces.',
+    '',
+    '## Slices',
+    '',
+    '### Parser Runtime',
+    '',
+    'Teach the runtime to recognize grouped child headings.',
+    '',
+    'Acceptance criteria:',
+    '',
+    '- parser child heading is extracted',
+    '- parser description is preserved',
+    '',
+    '### Guard Runtime',
+    '',
+    'Prevent silent fallback when the plan looks sliced.',
+    '',
+    'Acceptance criteria:',
+    '',
+    '- guard child heading is extracted',
+  ].join('\n'));
+
+  const result = run(process.execPath, [
+    askBinPath,
+    'plan-mode',
+    'prepare',
+    '--title',
+    'Conversational Feature Plan',
+    '--source',
+    'incoming/conversation-plan.md',
+    '--prefix',
+    'cfp',
+    '--date',
+    '2026-05-09',
+  ], { cwd: repoDir });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+
+  const plan = JSON.parse(fs.readFileSync(path.join(repoDir, payload.planJsonPath), 'utf8'));
+  assert.equal(plan.slices.length, 2);
+  assert.equal(plan.slices[0].sliceId, 'parser-runtime');
+  assert.equal(plan.slices[0].title, 'Parser Runtime');
+  assert.equal(plan.slices[0].description, 'Teach the runtime to recognize grouped child headings.');
+  assert.deepEqual(plan.slices[0].acceptanceCriteria, [
+    'parser child heading is extracted',
+    'parser description is preserved',
+  ]);
+  assert.deepEqual(plan.slices[1].dependsOn, ['parser-runtime']);
+});
