@@ -1,5 +1,6 @@
 import { PlanModePrepareRuntime } from './PlanModePrepareRuntime.js';
 import { PlanModeHandoffRuntime } from './PlanModeHandoffRuntime.js';
+import { ReadyPlanCommitRuntime } from './ReadyPlanCommitRuntime.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -26,6 +27,7 @@ export class ImplementationBeginRuntime {
   constructor(cwd) {
     this.cwd = cwd;
     this.prepareRuntime = new PlanModePrepareRuntime(cwd);
+    this.readyPlanCommitRuntime = new ReadyPlanCommitRuntime(cwd);
     this.handoffRuntime = new PlanModeHandoffRuntime(cwd);
   }
 
@@ -71,6 +73,20 @@ export class ImplementationBeginRuntime {
       };
     }
 
+    const readyPlanCommit = await this.readyPlanCommitRuntime.commit({
+      title: input.title,
+      sourceMarkdownPath: prepared.markdownPath,
+      planJsonPath: prepared.planJsonPath,
+      planId: input.taskId,
+    });
+    if (!readyPlanCommit.ok) {
+      return {
+        ...readyPlanCommit,
+        phase: 'ready-plan-commit',
+        prepare: prepared,
+      };
+    }
+
     const handoff = await this.handoffRuntime.handoff({
       title: input.title,
       sourceMarkdownPath: prepared.markdownPath,
@@ -82,10 +98,26 @@ export class ImplementationBeginRuntime {
       forceNewBatch: input.forceNewBatch,
     });
     if (!handoff.ok) {
+      if (handoff.code === 'E_PLAN_DUPLICATE_INGEST' && readyPlanCommit.committed === false) {
+        return {
+          ok: true,
+          title: input.title,
+          prepare: prepared,
+          readyPlanCommit,
+          handoff: {
+            ...handoff,
+            duplicate: true,
+          },
+          createdTaskIds: [],
+          nextTask: null,
+          nextAction: 'ask next',
+        };
+      }
       return {
         ...handoff,
         phase: 'handoff',
         prepare: prepared,
+        readyPlanCommit,
       };
     }
 
@@ -93,6 +125,7 @@ export class ImplementationBeginRuntime {
       ok: true,
       title: input.title,
       prepare: prepared,
+      readyPlanCommit,
       handoff,
       createdTaskIds: Array.isArray(handoff.createdTaskIds) ? [...handoff.createdTaskIds] : [],
       nextTask: handoff.nextTask ?? null,

@@ -88,6 +88,8 @@ test('implementation begin prepares artifacts hands them to ASK and returns next
   assert.equal(payload.ok, true);
   assert.equal(payload.prepare.markdownPath, 'docs/plans/2026-05-09-runtime-begin-plan.md');
   assert.equal(payload.prepare.planJsonPath, 'docs/plans/2026-05-09-runtime-begin-plan.plan.json');
+  assert.equal(payload.readyPlanCommit.committed, true);
+  assert.equal(payload.readyPlanCommit.footer, 'ASK-Plan: runtime-begin-plan');
   assert.deepEqual(payload.createdTaskIds, ['rbp-001']);
   assert.equal(payload.nextTask.taskId, 'rbp-001');
   assert.equal(payload.nextAction, 'ask task start rbp-001');
@@ -99,4 +101,32 @@ test('implementation begin prepares artifacts hands them to ASK and returns next
   const preflight = run(process.execPath, [askBinPath, 'implementation', 'preflight'], { cwd: repoDir });
   assert.equal(preflight.status, 1, preflight.stdout + preflight.stderr);
   assert.equal(JSON.parse(preflight.stdout).recovery.command, 'ask task start rbp-001');
+
+  const commitMessage = runOrThrow('git', ['log', '-1', '--pretty=%B'], { cwd: repoDir }).stdout;
+  assert.match(commitMessage, /chore\(plan\): ready Runtime Begin Plan/i);
+  assert.match(commitMessage, /ASK-Plan:\s*runtime-begin-plan/i);
+  assert.match(commitMessage, /ASK-Plan-Markdown:\s*docs\/plans\/2026-05-09-runtime-begin-plan\.md/i);
+  assert.match(commitMessage, /ASK-Plan-JSON:\s*docs\/plans\/2026-05-09-runtime-begin-plan\.plan\.json/i);
+
+  const rerun = run(process.execPath, [
+    askBinPath,
+    'implementation',
+    'begin',
+    '--title',
+    'Runtime Begin Plan',
+    '--plan',
+    'raw-plan.md',
+    '--prefix',
+    'rbp',
+    '--date',
+    '2026-05-09',
+    '--task',
+    'runtime-begin-plan',
+    '--run-id',
+    'runtime-begin-run',
+  ], { cwd: repoDir });
+  assert.equal(rerun.status, 0, rerun.stdout + rerun.stderr);
+  const rerunPayload = JSON.parse(rerun.stdout);
+  assert.equal(rerunPayload.readyPlanCommit.committed, false);
+  assert.equal(runOrThrow('git', ['rev-list', '--count', 'HEAD'], { cwd: repoDir }).stdout.trim(), '1');
 });
