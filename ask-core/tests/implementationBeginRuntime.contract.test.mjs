@@ -130,3 +130,44 @@ test('implementation begin prepares artifacts hands them to ASK and returns next
   assert.equal(rerunPayload.readyPlanCommit.committed, false);
   assert.equal(runOrThrow('git', ['rev-list', '--count', 'HEAD'], { cwd: repoDir }).stdout.trim(), '1');
 });
+
+test('implementation begin stops before ready-plan commit when slice extraction is ambiguous', () => {
+  const repoDir = setupRepo();
+  writeText(path.join(repoDir, 'ambiguous-plan.md'), [
+    '# Ambiguous Runtime Begin Plan',
+    '',
+    '## Summary',
+    '',
+    'The plan is intended to be sliced but uses unparseable slice notation.',
+    '',
+    '## Slices',
+    '',
+    '- Parser Runtime',
+    '- Guard Runtime',
+  ].join('\n'));
+
+  const result = run(process.execPath, [
+    askBinPath,
+    'implementation',
+    'begin',
+    '--title',
+    'Ambiguous Runtime Begin Plan',
+    '--plan',
+    'ambiguous-plan.md',
+    '--prefix',
+    'arbp',
+    '--date',
+    '2026-05-09',
+    '--task',
+    'ambiguous-runtime-begin-plan',
+    '--run-id',
+    'ambiguous-runtime-begin-run',
+  ], { cwd: repoDir });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.phase, 'prepare');
+  assert.equal(payload.code, 'plan-slice-extraction-ambiguous');
+  assert.notEqual(run('git', ['rev-parse', '--verify', 'HEAD'], { cwd: repoDir }).status, 0);
+  assert.equal(fs.existsSync(path.join(repoDir, 'docs', 'plans', '2026-05-09-ambiguous-runtime-begin-plan.md')), false);
+});

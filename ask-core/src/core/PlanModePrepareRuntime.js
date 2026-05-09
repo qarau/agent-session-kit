@@ -140,9 +140,43 @@ function parseSliceBlock(lines, startIndex, endIndex, previousSliceId, seen) {
   return slice;
 }
 
+function fallbackSlice(title, seen) {
+  return {
+    sliceId: uniqueSliceId(title, seen),
+    title,
+    description: `Implement ${title}.`,
+    acceptanceCriteria: [`${title} is implemented`],
+    queueClass: 'integrator',
+  };
+}
+
+function countSliceContainerItems(lines) {
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!isSliceContainerHeading(lines[index])) {
+      continue;
+    }
+    const containerLevel = readHeading(lines[index])?.level ?? 2;
+    let itemCount = 0;
+    for (let childIndex = index + 1; childIndex < lines.length; childIndex += 1) {
+      const line = normalize(lines[childIndex]);
+      const heading = readHeading(line);
+      if (heading && heading.level <= containerLevel) {
+        break;
+      }
+      if (readBullet(line)) {
+        itemCount += 1;
+      }
+    }
+    return itemCount;
+  }
+  return 0;
+}
+
 function extractSlices(markdown, title) {
   const lines = String(markdown ?? '').split(/\r?\n/u);
   let headingIndexes = [];
+  let sourceFormat = 'ask-slice-headings';
+  const warnings = [];
   for (let index = 0; index < lines.length; index += 1) {
     if (isSliceHeading(lines[index])) {
       headingIndexes.push(index);
@@ -150,6 +184,7 @@ function extractSlices(markdown, title) {
   }
 
   if (headingIndexes.length < 1) {
+    sourceFormat = 'slices-section-child-headings';
     for (let index = 0; index < lines.length; index += 1) {
       if (!isSliceContainerHeading(lines[index])) {
         continue;
@@ -176,13 +211,19 @@ function extractSlices(markdown, title) {
 
   const seen = new Set();
   if (headingIndexes.length < 1) {
-    return [{
-      sliceId: uniqueSliceId(title, seen),
-      title,
-      description: `Implement ${title}.`,
-      acceptanceCriteria: [`${title} is implemented`],
-      queueClass: 'integrator',
-    }];
+    if (countSliceContainerItems(lines) > 1) {
+      return fail(
+        'plan-slice-extraction-ambiguous',
+        'Plan appears to contain multiple slices but ASK could not parse them. Use headings like `## Slice N: Title` or `## Slices` followed by child headings such as `### Title`.'
+      );
+    }
+    const slice = fallbackSlice(title, seen);
+    return {
+      ok: true,
+      slices: [slice],
+      sourceFormat: 'fallback-single-slice',
+      warnings,
+    };
   }
 
   const slices = [];
@@ -192,7 +233,12 @@ function extractSlices(markdown, title) {
     const previousSliceId = slices.at(-1)?.sliceId ?? '';
     slices.push(parseSliceBlock(lines, start, end, previousSliceId, seen));
   }
-  return slices;
+  return {
+    ok: true,
+    slices,
+    sourceFormat,
+    warnings,
+  };
 }
 
 export class PlanModePrepareRuntime {
@@ -242,12 +288,17 @@ export class PlanModePrepareRuntime {
     const planJsonPath = path.join('docs', 'plans', `${baseName}.plan.json`);
     const markdownAbsolutePath = path.join(this.cwd, markdownPath);
     const planJsonAbsolutePath = path.join(this.cwd, planJsonPath);
+    const extraction = extractSlices(markdown, input.title);
+    if (!extraction.ok) {
+      return extraction;
+    }
+
     const plan = {
       schemaVersion: 2,
       planPrefix: input.planPrefix,
       planTitle: input.title,
       planSummary: `Generated from ${toRelativeSlash(this.cwd, input.sourceAbsolutePath)}`,
-      slices: extractSlices(markdown, input.title),
+      slices: extraction.slices,
     };
 
     fs.mkdirSync(path.dirname(markdownAbsolutePath), { recursive: true });
@@ -263,6 +314,9 @@ export class PlanModePrepareRuntime {
       markdownPath: markdownRelativePath,
       planJsonPath: planJsonRelativePath,
       sliceCount: plan.slices.length,
+      sliceTitles: plan.slices.map(slice => slice.title),
+      sourceFormat: extraction.sourceFormat,
+      warnings: extraction.warnings,
       slices: plan.slices.map(slice => ({
         sliceId: slice.sliceId,
         title: slice.title,

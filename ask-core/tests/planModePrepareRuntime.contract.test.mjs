@@ -184,3 +184,40 @@ test('plan-mode prepare extracts conversational slices from a Slices section', (
   ]);
   assert.deepEqual(plan.slices[1].dependsOn, ['parser-runtime']);
 });
+
+test('plan-mode prepare rejects ambiguous multi-slice-looking plans before fallback', () => {
+  const repoDir = setupRepo();
+  writeText(path.join(repoDir, 'incoming', 'ambiguous-plan.md'), [
+    '# Ambiguous Feature Plan',
+    '',
+    '## Summary',
+    '',
+    'This plan says it has slices but does not use parseable slice headings.',
+    '',
+    '## Slices',
+    '',
+    '- Parser Runtime',
+    '- Guard Runtime',
+  ].join('\n'));
+
+  const result = run(process.execPath, [
+    askBinPath,
+    'plan-mode',
+    'prepare',
+    '--title',
+    'Ambiguous Feature Plan',
+    '--source',
+    'incoming/ambiguous-plan.md',
+    '--prefix',
+    'afp',
+    '--date',
+    '2026-05-09',
+  ], { cwd: repoDir });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.code, 'plan-slice-extraction-ambiguous');
+  assert.match(payload.message, /## Slice N: Title/i);
+  assert.match(payload.message, /## Slices/i);
+  assert.equal(fs.existsSync(path.join(repoDir, 'docs', 'plans', '2026-05-09-ambiguous-feature-plan.md')), false);
+});
