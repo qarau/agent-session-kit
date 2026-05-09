@@ -13,6 +13,8 @@ The adapter activation work from the original spec was completed under a separat
 
 do not duplicate the completed adapter work. The next true unfinished area is governance/OFRR runtime typing, not adapter detection duplication.
 
+The adapter wrapper, project detection, and adapter resolution are already complete. They should be referenced as completed capabilities, not regenerated under new TypeScript migration slice IDs.
+
 ## Reconciliation Map
 
 | Spec Slice | Current Status | Evidence |
@@ -29,9 +31,9 @@ do not duplicate the completed adapter work. The next true unfinished area is go
 | `ask-ts-010` Node adapter wrapper | Completed by adapter runtime activation | `ask-core/src/adapters/language/node/index.js` |
 | `ask-ts-011` Project detection | Completed by `ask-adapter-002` and `ask-adapter-003` | `ask project detect`, `projectDetectCli.contract.test.mjs` |
 | `ask-ts-012` Active adapter resolution | Completed by `ask-adapter-004` | `ask adapter resolve`, `adapterResolveCli.contract.test.mjs` |
-| `ask-ts-013` Governance findings typing | Partial | Governance contracts exist; runtime boundary typing remains |
-| `ask-ts-014` OFRR resolutions typing | Partial | OFRR contracts exist; runtime boundary typing remains |
-| `ask-ts-015` Governance explain output typing | Partial | Governance surface tests exist; stable contract fixture coverage remains |
+| `ask-ts-013` Governance findings typing | Completed foundation | Governance contracts and the TypeScript-facing runtime boundary exist; deeper runtime conversion remains |
+| `ask-ts-014` OFRR resolutions typing | Completed foundation | OFRR contracts and the TypeScript-facing runtime boundary exist; OFRR remains record-only |
+| `ask-ts-015` Governance explain output typing | Completed foundation | Governance explain report contract, fixture coverage, and additive CLI `recommendedActions` exist |
 | `ask-ts-016` Law pack runtime contract/loading | Partial | Law-pack contracts exist; runtime loading remains JavaScript |
 | `ask-ts-017` Project profile runtime contract/loading | Partial | Profile contracts exist; runtime profile helper remains minimal |
 | `ask-ts-018` CLI entrypoint TypeScript conversion | Remaining | CLI remains JavaScript |
@@ -42,13 +44,26 @@ do not duplicate the completed adapter work. The next true unfinished area is go
 
 ## Next Implementation Area
 
-The next build order should continue with governance/OFRR runtime typing:
+The governance/OFRR contract foundation from this plan is now in place:
 
 1. Audit current OHDER finding, OFRR resolution, and governance explain outputs against `ask-core/src/contracts/governance.ts`.
 2. Add a small TypeScript-facing governance boundary for current finding and resolution shapes.
 3. Stabilize `ask governance explain` fixture coverage.
 4. Only then continue into deeper runtime conversion or strictness work.
 
+Do not claim full TypeScript runtime migration is complete. ASK Forge v6 remains contracts first, runtime conversion later, strictness last.
+
+## Next Recommended Implementation Sequence
+
+1. governance runtime decomposition: split `ask-core/src/cli/commands/governance.js` and large governance contract fixtures into smaller modules before adding more behavior.
+2. event ledger runtime conversion: convert append/read boundaries to TypeScript after the current event contracts have stayed stable.
+3. projection cursor runtime conversion: type the projection cursor and replay state after event ledger conversion lands.
+4. Task, plan, law-pack, and profile runtime conversion: move each runtime behind its existing contract fixture coverage.
+5. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable.
+6. Strictness ratchet: apply stricter TypeScript settings last, first to contracts, then runtime core, then the full package.
+
 ## Guardrail
 
 Completed adapter capabilities must not be recreated under new slice IDs. Future plans should reference the completed `ask-adapter-*` slices when discussing `ask-ts-011` or `ask-ts-012`.
+
+ASK ready-plan and slice-close governance remain required for this continuation. Every future implementation plan should be committed as ASK-ready markdown and JSON before handoff, and every implementation slice should close through `ask slice close` after validation.
