@@ -5,4 +5,6 @@ export * from './events.js';
 export * from './eventFixtures.js';
 export * from './tasks.js';
 export * from './taskPlanFixtures.js';
-
+export * from './checks.js';
+export * from './governance.js';
+export * from './governanceFixtures.js';
