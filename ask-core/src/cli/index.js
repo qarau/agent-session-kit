@@ -21,6 +21,7 @@ import { runImplementation } from './commands/implementation.js';
 import { runRoute } from './commands/route.js';
 import { runClaim } from './commands/claim.js';
 import { runChildSession } from './commands/child-session.js';
+import { runAdapter } from './commands/adapter.js';
 import { runAgent } from './commands/agent.js';
 import { runPolicy } from './commands/policy.js';
 import { runFeature } from './commands/feature.js';
@@ -72,6 +73,7 @@ Usage:
   ask route recommend|status
   ask claim acquire|release|lock|status
   ask child-session spawn|status
+  ask adapter resolve [--adapter node]
   ask agent register|status|dispatch
   ask policy classify|apply|status|schema|migrate
   ask feature create|link-task|status
@@ -224,6 +226,11 @@ export async function runCli(args) {
 
   if (command === 'child-session') {
     await runChildSession(subcommand, rest);
+    return;
+  }
+
+  if (command === 'adapter') {
+    await runAdapter(subcommand, rest);
     return;
   }
 
