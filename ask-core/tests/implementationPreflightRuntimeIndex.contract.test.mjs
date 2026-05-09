@@ -98,7 +98,7 @@ test('implementation preflight blocks missing handoff but advisory mode is non-b
   assert.equal(blockedPayload.ok, false);
   assert.equal(blockedPayload.code, 'implementation-preflight-blocked');
   assert.ok(blockedPayload.missing.includes('plan-mode-handoff'));
-  assert.equal(blockedPayload.recovery.command, 'ask plan-mode handoff --title <title> --source <md> --plan-json <json>');
+  assert.equal(blockedPayload.recovery.command, 'ask implementation begin --plan <md> --title <title>');
 
   const advisory = runOrThrow(process.execPath, [askBinPath, 'implementation', 'preflight', '--advisory'], { cwd: repoDir });
   const advisoryPayload = JSON.parse(advisory.stdout);

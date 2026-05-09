@@ -10,18 +10,35 @@ ASK Forge uses Plan Mode handoff to prevent implementation from starting from an
 
 ASK does not replace Codex or Superpowers. ASK makes their output governable, replayable, and auditable.
 
+## Automatic Implementation Boundary
+
+When the operator chooses **Implement the plan**, Codex or Superpowers must call ASK before editing:
+
+```bash
+node ask-core/bin/ask.js implementation begin --plan <md> --title <title>
+```
+
+The adapter entrypoint for automation is:
+
+```bash
+node scripts/session/runAskImplementationBeginAdapter.mjs --plan <md> --title <title>
+```
+
+This command prepares canonical markdown and JSON plan artifacts, hands them to ASK, ingests governed slices, and returns the next `ask task start <taskId>` command. Direct editing before this boundary remains a governance bypass.
+
 ## Governed Flow
 
 1. Write or receive the plan as markdown.
-2. Convert the plan into a structured ASK plan JSON artifact.
-3. Hand both artifacts to ASK with `ask plan-mode handoff`.
-4. ASK records workflow artifacts, validates the plan, and ingests slices.
-5. Run `ask next` to see the next governed slice.
-6. Start the slice with `ask task start <taskId>`.
-7. Codex implements the slice.
-8. Run validation as needed during development.
-9. Close with `ask slice close <taskId>` so ASK runs full suite validation, OHDER governance, task completion, commit creation, and pre-push validation.
-10. The resulting commit carries `ASK-Slice: <taskId>` provenance.
+2. Run `ask implementation begin --plan <md> --title <title>` before editing.
+3. ASK converts the plan into canonical markdown and structured ASK plan JSON artifacts.
+4. ASK hands both artifacts to Plan Mode handoff.
+5. ASK records workflow artifacts, validates the plan, and ingests slices.
+6. Run `ask next` to see the next governed slice.
+7. Start the slice with `ask task start <taskId>`.
+8. Codex implements the slice.
+9. Run validation as needed during development.
+10. Close with `ask slice close <taskId>` so ASK runs full suite validation, OHDER governance, task completion, commit creation, and pre-push validation.
+11. The resulting commit carries `ASK-Slice: <taskId>` provenance.
 
 ## Example Handoff
 
@@ -34,6 +51,8 @@ node ask-core/bin/ask.js plan ingest --task plan-source --run-id plan-run --path
 ```
 
 The explicit validation and ingestion commands are `ask plan validate` and `ask plan ingest`. The shorter operator command does the same lifecycle in one place:
+
+Shorthand: `ask plan-mode handoff`.
 
 ```bash
 node ask-core/bin/ask.js plan-mode handoff \
@@ -98,7 +117,7 @@ The pre-commit gate checks implementation handoff state when Plan Mode governanc
 If handoff is missing:
 
 ```bash
-node ask-core/bin/ask.js plan-mode handoff --title <title> --source <md> --plan-json <json>
+node ask-core/bin/ask.js implementation begin --plan <md> --title <title>
 ```
 
 If the plan artifact is invalid:

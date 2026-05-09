@@ -76,9 +76,9 @@ export class ImplementationPreflightRuntime {
 
   recoveryForMissingHandoff() {
     return {
-      type: 'plan-mode-handoff',
-      command: 'ask plan-mode handoff --title <title> --source <md> --plan-json <json>',
-      reason: 'implementation requires an ASK-ingested plan handoff before development starts',
+      type: 'implementation-begin',
+      command: 'ask implementation begin --plan <md> --title <title>',
+      reason: 'implementation requires ASK to prepare, ingest, and govern the plan before development starts',
     };
   }
 

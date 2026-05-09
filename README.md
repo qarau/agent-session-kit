@@ -20,6 +20,8 @@ ASK Forge works best as the governance layer in a three-part autonomous developm
 
 In this model, ASK does not replace Codex or Superpowers. ASK governs the software delivery lifecycle so Codex can implement with clear boundaries and Superpowers can provide repeatable development practices.
 
+When a user chooses "Implement the plan", the implementation boundary is `ask implementation begin --plan <md> --title <title>` before Codex edits code.
+
 ## Why 5.0.0 Is Special
 
 `v5.0.0` is the release where ASK moves from "runtime checks around coding" to a governed autonomous delivery loop.
@@ -121,6 +123,7 @@ npm test
 node ask-core/bin/ask.js --help
 node ask-core/bin/ask.js preflight
 node ask-core/bin/ask.js can-commit
+node ask-core/bin/ask.js implementation begin --plan <md> --title <title>
 node ask-core/bin/ask.js plan-mode handoff --title <title> --source <md> --plan-json <json>
 node ask-core/bin/ask.js implementation preflight
 # shorthand: ask plan-mode handoff
