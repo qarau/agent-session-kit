@@ -39,6 +39,21 @@ function compactFinding(finding = {}) {
   };
 }
 
+function recommendedActions({ decision = {}, loop = {}, findings = [] } = {}) {
+  const actions = [];
+  if (normalize(decision.recommendedCommand)) {
+    actions.push(normalize(decision.recommendedCommand));
+  }
+  if (normalize(loop.next?.recommendedCommand)) {
+    actions.push(normalize(loop.next.recommendedCommand));
+  }
+  if (findings.some(finding => finding.blocking === true)) {
+    actions.push('ask architect finding list');
+  }
+  actions.push('ask next');
+  return [...new Set(actions.filter(Boolean))];
+}
+
 function explainDecision(state = {}) {
   const decision = state.governanceDecision || {};
   const loop = state.loop || {};
@@ -84,6 +99,7 @@ function explainDecision(state = {}) {
       .filter(finding => normalize(finding.resolution?.decision).toLowerCase() === 'tune-analyzer')
       .map(compactFinding),
     analyzerHealthWarnings: [],
+    recommendedActions: recommendedActions({ decision, loop, findings }),
     lastStep: compactSteps.length > 0 ? compactSteps[compactSteps.length - 1] : null,
     steps: compactSteps,
   };

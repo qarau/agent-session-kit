@@ -133,3 +133,39 @@ export interface AskGovernanceDecisionState {
   reason?: string;
   [key: string]: unknown;
 }
+
+export interface AskGovernanceExplainStep {
+  index?: number;
+  name?: string;
+  details?: JsonObject;
+  [key: string]: unknown;
+}
+
+export interface AskGovernanceExplainDetails {
+  decision: string;
+  blocking: boolean;
+  reasons: string[];
+  loopId?: string;
+  loopStatus?: string;
+  ohderMode: string;
+  modeBehavior: string;
+  unresolvedBlockingFindings: AskOhderFinding[];
+  acceptedRisks: AskOhderFinding[];
+  temporaryExemptions: AskOhderFinding[];
+  recentSuppressions: AskOhderFinding[];
+  lawTuningRequests: AskOhderFinding[];
+  analyzerTuningRequests: AskOhderFinding[];
+  analyzerHealthWarnings: JsonObject[];
+  recommendedActions: string[];
+  lastStep: AskGovernanceExplainStep | null;
+  steps: AskGovernanceExplainStep[];
+  [key: string]: unknown;
+}
+
+export interface AskGovernanceExplainReport {
+  ok: boolean;
+  sessionId: string;
+  ohderMode: string;
+  explanation: AskGovernanceExplainDetails;
+  [key: string]: unknown;
+}

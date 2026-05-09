@@ -20,6 +20,7 @@ test('contract JSON fixtures cover current runtime artifact families', () => {
     'pre-push-result.json',
     'ohder-finding.json',
     'ofrr-resolution.json',
+    'governance-explain-report.json',
   ];
   for (const fileName of required) {
     assert.equal(fs.existsSync(path.join(fixturesDir, fileName)), true, fileName);
@@ -55,4 +56,9 @@ test('contract JSON fixtures preserve representative runtime field names', () =>
   assert.equal(typeof resolution.findingId, 'string');
   assert.equal(typeof resolution.decision, 'string');
   assert.equal(typeof resolution.approvedBy, 'string');
+
+  const explain = readFixture('governance-explain-report.json');
+  assert.equal(typeof explain.ok, 'boolean');
+  assert.equal(typeof explain.explanation.decision, 'string');
+  assert.equal(Array.isArray(explain.explanation.recommendedActions), true);
 });
