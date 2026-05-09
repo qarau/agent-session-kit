@@ -65,6 +65,7 @@ Usage:
   ask freshness status|explain [task-id]
   ask integration plan|run|status
   ask integration-auto run|status
+  ask implementation begin --title <text> --plan <md> [--prefix <prefix>]
   ask implementation preflight [--advisory]
   ask route recommend|status
   ask claim acquire|release|lock|status

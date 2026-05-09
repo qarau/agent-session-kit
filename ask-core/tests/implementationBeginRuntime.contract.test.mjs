@@ -1,0 +1,102 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+const thisFilePath = fileURLToPath(import.meta.url);
+const testsDir = path.dirname(thisFilePath);
+const askCoreRoot = path.resolve(testsDir, '..');
+const askBinPath = path.join(askCoreRoot, 'bin', 'ask.js');
+
+function run(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    cwd: options.cwd,
+    encoding: 'utf8',
+  });
+  return {
+    status: result.status,
+    stdout: result.stdout ?? '',
+    stderr: result.stderr ?? '',
+  };
+}
+
+function runOrThrow(command, args, options = {}) {
+  const result = run(command, args, options);
+  if (result.status !== 0) {
+    throw new Error([
+      `Command failed: ${command} ${args.join(' ')}`,
+      `status=${String(result.status)}`,
+      result.stdout,
+      result.stderr,
+    ].join('\n'));
+  }
+  return result;
+}
+
+function writeText(filePath, content) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, 'utf8');
+}
+
+function setupRepo() {
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-core-implementation-begin-'));
+  runOrThrow('git', ['init'], { cwd: repoDir });
+  runOrThrow('git', ['config', 'user.email', 'test@example.com'], { cwd: repoDir });
+  runOrThrow('git', ['config', 'user.name', 'Test User'], { cwd: repoDir });
+  runOrThrow('git', ['checkout', '-b', 'ask-runtime'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'init'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'session', 'start'], { cwd: repoDir });
+  return repoDir;
+}
+
+test('implementation begin prepares artifacts hands them to ASK and returns next task start', () => {
+  const repoDir = setupRepo();
+  writeText(path.join(repoDir, 'raw-plan.md'), [
+    '# Runtime Begin Plan',
+    '',
+    '## Slice 001 - First Governed Slice',
+    '',
+    'Build the first slice.',
+    '',
+    'Acceptance criteria:',
+    '',
+    '- first slice is governed',
+  ].join('\n'));
+
+  const result = run(process.execPath, [
+    askBinPath,
+    'implementation',
+    'begin',
+    '--title',
+    'Runtime Begin Plan',
+    '--plan',
+    'raw-plan.md',
+    '--prefix',
+    'rbp',
+    '--date',
+    '2026-05-09',
+    '--task',
+    'runtime-begin-plan',
+    '--run-id',
+    'runtime-begin-run',
+  ], { cwd: repoDir });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.prepare.markdownPath, 'docs/plans/2026-05-09-runtime-begin-plan.md');
+  assert.equal(payload.prepare.planJsonPath, 'docs/plans/2026-05-09-runtime-begin-plan.plan.json');
+  assert.deepEqual(payload.createdTaskIds, ['rbp-001']);
+  assert.equal(payload.nextTask.taskId, 'rbp-001');
+  assert.equal(payload.nextAction, 'ask task start rbp-001');
+  assert.equal(payload.handoff.state.status, 'ingested');
+
+  assert.equal(fs.existsSync(path.join(repoDir, payload.prepare.markdownPath)), true);
+  assert.equal(fs.existsSync(path.join(repoDir, payload.prepare.planJsonPath)), true);
+
+  const preflight = run(process.execPath, [askBinPath, 'implementation', 'preflight'], { cwd: repoDir });
+  assert.equal(preflight.status, 1, preflight.stdout + preflight.stderr);
+  assert.equal(JSON.parse(preflight.stdout).recovery.command, 'ask task start rbp-001');
+});
