@@ -6,6 +6,8 @@ Governed Autonomous Software Development
 
 Current release line: `v5.1.0`
 
+Next release draft: `v6.0.0`
+
 ASK Forge is a Developer-Agent Runtime for governing long-running implementation sessions before code reaches remote CI. It enforces session and policy checks at commit/push boundaries and keeps runtime state reconstructable through an event ledger.
 
 ASK is implemented in `ask-core/` and integrated through git hooks and session adapter wrappers.
@@ -49,6 +51,23 @@ What changed:
 
 In short: 5.0 made ASK Forge an execution control plane; 5.1 makes OHDER smarter, more semantic, and more explicit about the boundary between task autonomy and future patch autonomy.
 
+## Why ASK Forge v6.0.0 Is Special
+
+ASK Forge v6 is the TypeScript contracts foundation for language-agnostic ASK Forge.
+
+v5.1 made OHDER smarter: semantic facts, ranked refactor targets, finding resolution, and patch-readiness boundaries. v6 starts a different layer of work. It gives the runtime explicit TypeScript contracts for events, tasks, plan batches, hook checks, OHDER governance results, language adapters, project profiles, law packs, workers, queues, and portable JSON fixtures.
+
+The shift is not "more Node commands." The shift is contract clarity:
+
+- current ASK runtime shapes become named, compiled TypeScript contracts
+- future language adapters get a stable interface before implementations are added
+- project profiles and law packs can describe language/framework governance boundaries without changing enforcement behavior
+- fixture samples make runtime field names visible for consumers and future migrations
+
+Node/JavaScript remains the first supported adapter target. The v6 foundation describes where Python, PHP, .NET, Java, C++, Go, Rust, and other adapters can fit later, but non-Node adapters do not exist yet.
+
+In short: 5.1 makes ASK Forge semantically smarter; 6.0 starts making ASK Forge portable.
+
 ## What Changed in 5.0.0 (from 4.x)
 
 ASK 4.x established a runtime-first governance layer (`ask-core`) with hook-enforced policy gates and governed execution controls.
@@ -88,15 +107,16 @@ Developer outcomes:
 - faster resume/recovery for long-running sessions
 - clearer evidence trail for merge readiness
 
-## ASK Forge 5 Architecture at a Glance
+## ASK Forge 6 Architecture at a Glance
 
 - `ask-core/`: runtime engine + CLI command surface
+- `ask-core/src/contracts/`: TypeScript contract layer for current runtime artifacts and future adapter/profile boundaries
 - `.ask/`: runtime state directory generated at execution time
 - `.githooks/pre-commit`, `.githooks/commit-msg`, and `.githooks/pre-push`: enforcement entrypoints
 - `scripts/session/runAskCorePreCommitAdapter.mjs`, `scripts/session/runAskCoreCommitMsgAdapter.mjs`, and `scripts/session/runAskCorePrePushAdapter.mjs`: wrapper adapters called by hooks
 - `scripts/session/installHooks.mjs`: hook activation helper (`core.hooksPath=.githooks`)
 
-Core runtime layers active in v5:
+Core runtime layers active in v6:
 
 - ASK runtime: session lifecycle, task/slice orchestration, continuation state
 - Projection runtime: event replay, snapshot hydration, continuity proofs
@@ -109,6 +129,7 @@ Core runtime layers active in v5:
 - Ingestion runtime: plan-to-slice materialization and batch traceability
 - Refactor execution planner: concrete, approval-aware refactor plans derived from OHDER findings
 - OHDER semantic autonomy runtime: ranked `targetPortfolio`, `ohder_autonomy`, `OhderPatchReadinessGate`, and `council-lite` architecture review
+- TypeScript contract foundation: current runtime artifact, event, task, plan, check, governance, adapter, profile, law-pack, worker, queue, and fixture contracts
 - Delivery runtime: feature/release/promotion/rollout governance
 
 ## Prerequisites

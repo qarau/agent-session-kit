@@ -11,6 +11,14 @@ ASK Forge runtime behavior is split across cooperating concerns:
 - Flow runtime: behavior continuity, protected/hard-flow guardrails
 - Design runtime: visual continuity, pattern consistency, and brand drift detection
 
+## Release Boundary: v5.1 vs v6
+
+v5.1 OHDER semantic autonomy is the runtime intelligence layer: semantic facts, governance validation, finding resolution, ranked refactor targets, patch readiness, and council-lite architecture review.
+
+v6 contract foundation is the portability layer: TypeScript contracts for current runtime artifacts plus future language adapter, project profile, law-pack, worker, and queue boundaries.
+
+Node/JavaScript remains the first supported adapter target. The v6 contract foundation does not mean Python, PHP, .NET, Java, C++, Go, Rust, or other non-Node adapters exist yet.
+
 ## Core Runtime Directories
 
 Generated control plane state lives under `.ask/`:
