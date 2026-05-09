@@ -221,3 +221,33 @@ test('plan-mode prepare rejects ambiguous multi-slice-looking plans before fallb
   assert.match(payload.message, /## Slices/i);
   assert.equal(fs.existsSync(path.join(repoDir, 'docs', 'plans', '2026-05-09-ambiguous-feature-plan.md')), false);
 });
+
+test('plan-mode prepare explains intentional single-slice fallback with diagnostics', () => {
+  const repoDir = setupRepo();
+  writeText(path.join(repoDir, 'incoming', 'single-plan.md'), [
+    '# Single Feature Plan',
+    '',
+    'Implement one small governed change.',
+  ].join('\n'));
+
+  const result = run(process.execPath, [
+    askBinPath,
+    'plan-mode',
+    'prepare',
+    '--title',
+    'Single Feature Plan',
+    '--source',
+    'incoming/single-plan.md',
+    '--prefix',
+    'sfp',
+    '--date',
+    '2026-05-09',
+  ], { cwd: repoDir });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.sliceCount, 1);
+  assert.deepEqual(payload.sliceTitles, ['Single Feature Plan']);
+  assert.equal(payload.sourceFormat, 'fallback-single-slice');
+  assert.match(payload.warnings.join('\n'), /single-slice fallback/i);
+});

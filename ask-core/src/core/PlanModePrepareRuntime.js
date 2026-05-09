@@ -222,7 +222,7 @@ function extractSlices(markdown, title) {
       ok: true,
       slices: [slice],
       sourceFormat: 'fallback-single-slice',
-      warnings,
+      warnings: ['single-slice fallback used because no parseable slice headings were found'],
     };
   }
 

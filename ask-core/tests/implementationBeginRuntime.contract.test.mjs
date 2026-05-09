@@ -171,3 +171,57 @@ test('implementation begin stops before ready-plan commit when slice extraction 
   assert.notEqual(run('git', ['rev-parse', '--verify', 'HEAD'], { cwd: repoDir }).status, 0);
   assert.equal(fs.existsSync(path.join(repoDir, 'docs', 'plans', '2026-05-09-ambiguous-runtime-begin-plan.md')), false);
 });
+
+test('implementation begin creates multiple tasks from conversational Slices sections', () => {
+  const repoDir = setupRepo();
+  writeText(path.join(repoDir, 'conversation-plan.md'), [
+    '# Conversational Runtime Begin Plan',
+    '',
+    '## Summary',
+    '',
+    'This is the plan shape produced by a normal planning conversation.',
+    '',
+    '## Slices',
+    '',
+    '### Parser Runtime',
+    '',
+    'Add parser support.',
+    '',
+    'Acceptance criteria:',
+    '',
+    '- parser task exists',
+    '',
+    '### Guard Runtime',
+    '',
+    'Add guard support.',
+    '',
+    'Acceptance criteria:',
+    '',
+    '- guard task depends on parser task',
+  ].join('\n'));
+
+  const result = run(process.execPath, [
+    askBinPath,
+    'implementation',
+    'begin',
+    '--title',
+    'Conversational Runtime Begin Plan',
+    '--plan',
+    'conversation-plan.md',
+    '--prefix',
+    'crbp',
+    '--date',
+    '2026-05-09',
+    '--task',
+    'conversational-runtime-begin-plan',
+    '--run-id',
+    'conversational-runtime-begin-run',
+  ], { cwd: repoDir });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.prepare.sourceFormat, 'slices-section-child-headings');
+  assert.deepEqual(payload.prepare.sliceTitles, ['Parser Runtime', 'Guard Runtime']);
+  assert.deepEqual(payload.createdTaskIds, ['crbp-001', 'crbp-002']);
+  assert.equal(payload.nextTask.taskId, 'crbp-001');
+});
