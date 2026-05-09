@@ -10,6 +10,10 @@ import type {
   AskOhderFindingResolution,
   AskOhderSemanticFact,
 } from './governance.js';
+import {
+  defineAskOhderFinding,
+  defineAskOhderFindingResolution,
+} from './governanceRuntimeBoundary.js';
 
 export const askPreCommitCheckResultFixture = {
   passed: true,
@@ -59,15 +63,15 @@ export const askOhderSemanticFactFixture = {
   recommendations: [],
 } satisfies AskOhderSemanticFact;
 
-export const askOhderFindingResolutionFixture = {
+export const askOhderFindingResolutionFixture = defineAskOhderFindingResolution({
   findingId: 'ohder-finding-example',
   decision: 'false-positive',
   reason: 'Analyzer evidence does not match the inspected runtime behavior.',
   approvedBy: 'local',
   status: 'suppressed',
-} satisfies AskOhderFindingResolution;
+} satisfies AskOhderFindingResolution);
 
-export const askOhderFindingFixture = {
+export const askOhderFindingFixture = defineAskOhderFinding({
   id: 'ohder-finding-example',
   status: 'suppressed',
   severity: 'low',
@@ -84,7 +88,7 @@ export const askOhderFindingFixture = {
   history: [],
   semanticFact: askOhderSemanticFactFixture,
   lawViolation: null,
-} satisfies AskOhderFinding;
+} satisfies AskOhderFinding);
 
 export const askArchitectValidationResultFixture = {
   status: 'warning',
