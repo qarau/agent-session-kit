@@ -7,6 +7,12 @@ import { FileStore } from '../fs/FileStore.js';
 import { EventLedger } from '../runtime/EventLedger.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 import { QueueClassRegistry } from '../policy/QueueClassRegistry.js';
+import {
+  allocatePlanBatchId as allocatePlanBatchRegistryId,
+  buildPlanBatchBase,
+  mergePlanBatchState,
+  normalizePlanBatchRegistry,
+} from './PlanBatchRegistryRuntime.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -39,11 +45,6 @@ function nowIso() {
 
 function buildHash(text) {
   return `sha256:${crypto.createHash('sha256').update(String(text), 'utf8').digest('hex')}`;
-}
-
-function shortHash(sha) {
-  const value = normalize(sha).replace(/^sha256:/u, '');
-  return value.slice(0, 6).toLowerCase();
 }
 
 function parsePlanJson(raw) {
@@ -135,67 +136,21 @@ export class PlanIngestRuntime {
       batches: {},
       artifactHashes: {},
     });
-    if (
-      !payload
-      || typeof payload !== 'object'
-      || Array.isArray(payload)
-      || typeof payload.batches !== 'object'
-      || payload.batches === null
-      || Array.isArray(payload.batches)
-      || typeof payload.artifactHashes !== 'object'
-      || payload.artifactHashes === null
-      || Array.isArray(payload.artifactHashes)
-    ) {
-      return fail('E_PLAN_BATCH_INVALID', 'plan batch registry is invalid');
+    const decision = normalizePlanBatchRegistry(payload);
+    if (!decision.ok) {
+      return fail(decision.code, decision.message);
     }
-    return {
-      ok: true,
-      registry: {
-        schemaVersion: toNumber(payload.schemaVersion, 1),
-        batches: { ...payload.batches },
-        artifactHashes: { ...payload.artifactHashes },
-      },
-    };
+    return decision;
   }
 
   buildBatchBase(prepared) {
-    return {
-      planBatchId: prepared.planBatchId,
-      artifactHash: prepared.artifactHash,
-      taskId: prepared.taskId,
-      runId: prepared.runId,
-      artifactPath: prepared.artifact.path,
-      planPrefix: prepared.planPrefix,
-      planTitle: prepared.planTitle,
-      sliceCount: prepared.materialized.length,
-      plannedTaskIds: prepared.materialized.map(slice => slice.taskId),
-    };
+    return buildPlanBatchBase(prepared);
   }
 
   async writeBatchState(prepared, patch = {}) {
     const registryDecision = await this.readBatchRegistry();
     const registry = registryDecision.ok ? registryDecision.registry : prepared.registry;
-    const existingBatch = registry.batches?.[prepared.planBatchId] ?? {};
-    const existingForHash = Array.isArray(registry.artifactHashes?.[prepared.artifactHash])
-      ? registry.artifactHashes[prepared.artifactHash]
-      : [];
-    const nextBatch = {
-      ...this.buildBatchBase(prepared),
-      ...existingBatch,
-      ...patch,
-      updatedAt: nowIso(),
-    };
-    const nextRegistry = {
-      ...registry,
-      batches: {
-        ...registry.batches,
-        [prepared.planBatchId]: nextBatch,
-      },
-      artifactHashes: {
-        ...registry.artifactHashes,
-        [prepared.artifactHash]: Array.from(new Set([...existingForHash, prepared.planBatchId])),
-      },
-    };
+    const nextRegistry = mergePlanBatchState(registry, prepared, patch, nowIso());
     await this.store.writeJson(this.paths.planBatchRegistry(), nextRegistry);
     return nextRegistry;
   }
@@ -342,19 +297,7 @@ export class PlanIngestRuntime {
   }
 
   allocatePlanBatchId(planPrefix, artifactHash, registry) {
-    const prefix = normalize(planPrefix).toLowerCase();
-    const hash = shortHash(artifactHash);
-    const matcher = new RegExp(`^${prefix}-[0-9a-f]{6}-(\\d{3})$`, 'u');
-    let max = 0;
-    for (const existingBatchId of Object.keys(registry.batches)) {
-      const match = existingBatchId.match(matcher);
-      if (!match) {
-        continue;
-      }
-      max = Math.max(max, toNumber(match[1], 0));
-    }
-    const sequence = max + 1;
-    return `${prefix}-${hash}-${String(sequence).padStart(3, '0')}`;
+    return allocatePlanBatchRegistryId(planPrefix, artifactHash, registry);
   }
 
   buildIngestGraph(normalizedSlices, dependencyGraph, allocatedIds) {

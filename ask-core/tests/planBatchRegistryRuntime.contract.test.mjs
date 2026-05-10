@@ -61,3 +61,32 @@ test('source-run runtime files do not import the TypeScript plan-batch helper di
 
   assert.deepEqual(sourceFiles, []);
 });
+
+test('PlanIngestRuntime delegates registry behavior through source-compatible helper', async () => {
+  const runtime = readCore('PlanIngestRuntime.js');
+  assert.match(runtime, /from '\.\/PlanBatchRegistryRuntime\.js'/u);
+  assert.doesNotMatch(runtime, /from '\.\/PlanBatchRegistryRuntime\.ts'/u);
+
+  const helper = await import('../src/core/PlanBatchRegistryRuntime.js');
+  assert.equal(helper.normalizePlanBatchValue(' ask-plan-001 '), 'ask-plan-001');
+  assert.deepEqual(helper.normalizePlanBatchRegistry({
+    schemaVersion: 1,
+    batches: {},
+    artifactHashes: { 'sha256:abc': [' batch-1 ', '', null] },
+  }), {
+    ok: true,
+    registry: {
+      schemaVersion: 1,
+      batches: {},
+      artifactHashes: { 'sha256:abc': ['batch-1'] },
+    },
+  });
+  assert.equal(helper.allocatePlanBatchId('Deep', 'sha256:abcdef123456', {
+    batches: {
+      'deep-abcdef-001': {},
+    },
+  }), 'deep-abcdef-002');
+  assert.deepEqual(helper.mergeArtifactHashIndex({ 'sha256:abc': ['batch-1'] }, 'sha256:abc', 'batch-1'), {
+    'sha256:abc': ['batch-1'],
+  });
+});
