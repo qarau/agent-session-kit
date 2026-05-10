@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ask-release",
+  "planTitle": "ASK Forge v6.0.0 Release Alignment",
+  "planSummary": "Align package metadata, README positioning, and v6.0.0 release notes with completed TypeScript contract and runtime-boundary migration work before tagging and pushing v6.0.0.",
+  "slices": [
+    {
+      "sliceId": "001-v6-release-alignment",
+      "title": "001 v6 Release Alignment",
+      "description": "Update package metadata, README, v6 release notes, and docs contract tests for the v6.0.0 release.",
+      "acceptanceCriteria": [
+        "package.json and package-lock.json use version 6.0.0.",
+        "README current release line says v6.0.0 and no longer calls v6 a draft.",
+        "README opening summary explains the ASK Forge advantage: governed plan-to-slice execution, evidence-before-commit, OHDER governance, replayable history, and clear boundaries for Codex and Superpowers.",
+        "README v6 section mentions TypeScript contracts plus Governance/OFRR, EventLedger, RuntimeSnapshotStore, TaskRuntime, TaskBoardProjector, PlanBatchRegistry, and SliceCloseRuntime boundary waves.",
+        "docs/releases/v6.0.0.md explains the shift from v5.0/v5.1 to v6.0.0 and lists the completed boundary waves.",
+        "Documentation contract tests cover the updated release/current-line claims."
+      ],
+      "queueClass": "integrator"
+    }
+  ]
+}
