@@ -73,3 +73,28 @@ export interface AskPlanBatchRecord {
   slices: AskMaterializedPlanSlice[];
   [key: string]: JsonValue | AskMaterializedPlanSlice[] | undefined;
 }
+
+export interface AskPlanBatchRegistryRecord {
+  planBatchId: string;
+  artifactHash: string;
+  taskId: string;
+  runId: string;
+  artifactPath?: string;
+  planPrefix: string;
+  planTitle: string;
+  sliceCount?: number;
+  plannedTaskIds?: string[];
+  createdTaskIds?: string[];
+  status?: string;
+  createdAt?: IsoTimestamp;
+  updatedAt?: IsoTimestamp;
+  failure?: JsonObject;
+  [key: string]: JsonValue | string[] | JsonObject | undefined;
+}
+
+export interface AskPlanBatchRegistry {
+  schemaVersion: number;
+  batches: Record<string, AskPlanBatchRegistryRecord>;
+  artifactHashes: Record<string, string[]>;
+  [key: string]: JsonValue | Record<string, AskPlanBatchRegistryRecord> | Record<string, string[]> | undefined;
+}
