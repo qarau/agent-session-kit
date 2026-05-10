@@ -22,9 +22,28 @@ test('README frames ASK Forge v6 as the TypeScript contract foundation for langu
   assert.match(readme, /Current release line: `v6\.0\.0`/u);
   assert.doesNotMatch(readme, /Next release draft/u);
   assert.match(readme, /ASK Forge advantage/u);
+  assert.match(readme, /governed autonomous software-development platform/u);
   assert.match(readme, /turns plans into governed implementation slices/u);
   assert.match(readme, /evidence before commit and push/u);
   assert.match(readme, /OHDER architecture governance/u);
+  assert.match(readme, /What the runtimes give you/u);
+  for (const runtimeAdvantage of [
+    'Plan ingestion runtime',
+    'Slice close runtime',
+    'OHDER architecture governance runtime',
+    'OHDER semantic autonomy runtime',
+    'OHDER finding resolution runtime',
+    'Flow governance runtime',
+    'Design governance runtime',
+    'Coordination runtime',
+    'Delivery governance runtime',
+    'Codex control runtime',
+    'Event ledger runtime',
+    'Projection and snapshot runtime',
+    'TypeScript contract foundation',
+  ]) {
+    assert.match(readme, new RegExp(runtimeAdvantage, 'u'));
+  }
   assert.match(readme, /replayable runtime history/u);
   assert.match(readme, /ASK Forge v6/u);
   assert.match(readme, /TypeScript contracts/u);

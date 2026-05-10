@@ -6,15 +6,40 @@ Governed Autonomous Software Development
 
 Current release line: `v6.0.0`
 
-ASK Forge is a governance runtime for AI-assisted software delivery. Its advantage is that it turns implementation intent into governed execution: plans become traceable slices, every slice must carry evidence before commit and push, OHDER evaluates architecture impact before close, and the runtime ledger keeps the session replayable.
+ASK Forge is a governed autonomous software-development platform for AI-assisted delivery. It turns implementation intent into governed execution: plans become traceable slices, every slice must carry evidence before commit and push, OHDER evaluates architecture impact before close, and the runtime ledger keeps the session replayable.
 
 ASK Forge is not just a command wrapper around coding. It is the governing layer that turns plans into governed implementation slices, applies OHDER architecture governance before slice completion, records replayable runtime history, and keeps commit/push boundaries tied to policy evidence.
 
 ASK is implemented in `ask-core/` and integrated through git hooks and session adapter wrappers.
 
-## ASK Forge advantage
+## ASK Forge Advantage
 
-Codex can implement and Superpowers can provide workflow discipline, but ASK Forge supplies the governing constitution: lifecycle rules, policy gates, architecture laws, commit provenance, and recoverable state. That makes autonomous development cohesive as a codebase scales instead of letting each agent session become an isolated burst of work.
+The ASK Forge advantage is the runtime system, not any single command. Codex can implement and Superpowers can provide workflow discipline, but ASK Forge supplies the governing constitution: lifecycle rules, policy gates, architecture laws, commit provenance, runtime state, and recoverable history. That makes autonomous development cohesive as a codebase scales instead of letting each agent session become an isolated burst of work.
+
+The active runtimes work together:
+
+- **Plan ingestion runtime** converts markdown and JSON plans into deterministic governed slices instead of leaving plans as static intent.
+- **Slice close runtime** runs OHDER governance, verification, task completion, `ASK-Slice` commit creation, and pre-push validation as one governed close path.
+- **OHDER architecture governance runtime** evaluates hard and soft architecture laws, architecture score, entropy impact, and refactor pressure before work is treated as complete.
+- **OHDER semantic autonomy runtime** turns analyzer evidence into `semanticFacts`, ranked `targetPortfolio` recommendations, patch-readiness boundaries, and council-lite architecture review.
+- **OHDER finding resolution runtime** makes false positives and analyzer/law tuning decisions visible, explainable, and replayable instead of pretending governance findings are always perfect.
+- **Flow governance runtime** protects behavior continuity by discovering, promoting, and validating hard or protected flows.
+- **Design governance runtime** protects visual and UX continuity by tracking design regions, lifecycle promotion, and drift validation.
+- **Coordination runtime** governs multi-agent routing through route recommendations, claims, child sessions, agent registration, and dispatch policy.
+- **Delivery governance runtime** connects features, releases, promotion gates, rollouts, and rollback triggers to the same governed evidence trail.
+- **Codex control runtime** defines when Codex work is governed, when direct execution is an exception, and how context status, compaction, and checkpoints stay visible.
+- **Event ledger runtime** records append-only runtime events so decisions, checks, tasks, and governance outcomes can be replayed.
+- **Projection and snapshot runtime** rebuilds operational state from the ledger so sessions can resume with continuity instead of relying on memory.
+- **TypeScript contract foundation** gives current runtime artifacts and future language adapters stable contracts before ASK Forge expands beyond Node/JavaScript.
+
+### What the runtimes give you
+
+- Plans become executable governance, not disposable planning text.
+- Slices close only after evidence, architecture review, verification, commit provenance, and pre-push checks line up.
+- OHDER explains architectural pressure with semantic evidence, not vague "entropy increased" summaries.
+- Flow and design continuity stay governed alongside code quality.
+- Multi-agent and release work share the same task, policy, ledger, and projection model.
+- Runtime history remains replayable, auditable, and portable toward language-agnostic ASK Forge.
 
 ## Best Use of ASK Forge
 
