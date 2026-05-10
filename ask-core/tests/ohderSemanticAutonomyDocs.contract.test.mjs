@@ -16,7 +16,8 @@ test('semantic autonomy docs explain current runtime and future patch boundary',
   const release = read('docs/releases/v5.1.0.md');
 
   for (const required of [
-    'Current release line: `v5.1.0`',
+    'Current release line: `v6.0.0`',
+    'Why 5.1.0 Was Special',
     'OHDER Semantic Autonomy',
     'semanticFacts',
     'ask governance validate',

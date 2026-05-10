@@ -23,75 +23,17 @@ import { OhderEntropySnapshotEngine } from './OhderEntropySnapshotEngine.js';
 import { AutonomousLoopStateMachine, AUTONOMOUS_LOOP_STEPS } from './AutonomousLoopStateMachine.js';
 import { OhderRefactorOutcomeEngine } from './OhderRefactorOutcomeEngine.js';
 import { normalizeOhderProfile } from './PolicyEngine.js';
-
-function normalize(value) {
-  return String(value ?? '').trim();
-}
-
-function toBoolean(value, fallback = false) {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-  const normalized = normalize(value).toLowerCase();
-  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
-    return true;
-  }
-  if (['0', 'false', 'no', 'off'].includes(normalized)) {
-    return false;
-  }
-  return fallback;
-}
-
-function toNumber(value, fallback = 0) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function normalizeLower(value) {
-  return normalize(value).toLowerCase();
-}
-
-function riskFromScore(score) {
-  const value = toNumber(score, 100);
-  if (value < 70) {
-    return 'high';
-  }
-  if (value < 85) {
-    return 'medium';
-  }
-  return 'low';
-}
-
-function entropyDimensionsFromArchitect(architect = {}) {
-  const facts = architect?.ohderFacts && typeof architect.ohderFacts === 'object'
-    ? architect.ohderFacts
-    : {};
-  const observabilityScore = architect?.architectureScore?.categories?.observability;
-  return {
-    ssotViolationCount: normalizeLower(facts.ssot_integrity) === 'invalid' ? 1 : 0,
-    durabilityRisk: normalizeLower(architect?.durabilityAnalysis?.risk)
-      || (normalizeLower(facts.durability_integrity) === 'at-risk' ? 'high' : 'low'),
-    complexityRisk: normalizeLower(architect?.complexityAnalysis?.risk)
-      || (normalizeLower(facts.srp_integrity) === 'weak' ? 'high' : 'low'),
-    duplicationRisk: normalizeLower(architect?.duplicationAnalysis?.risk) || 'low',
-    observabilityRisk: normalizeLower(architect?.observabilityAnalysis?.risk) || riskFromScore(observabilityScore),
-    refactorHealth: normalizeLower(architect?.refactorOutcome?.status) || 'healthy',
-  };
-}
-
-function parseList(value, fallback = [], lower = true) {
-  const normalizeEntry = (entry) => {
-    const resolved = normalize(entry);
-    return lower ? resolved.toLowerCase() : resolved;
-  };
-  if (Array.isArray(value)) {
-    return value.map(entry => normalizeEntry(entry)).filter(Boolean);
-  }
-  if (typeof value === 'string') {
-    return value.split(',').map(entry => normalizeEntry(entry)).filter(Boolean);
-  }
-  return [...fallback].map(entry => normalizeEntry(entry)).filter(Boolean);
-}
+import {
+  entropyDimensionsFromArchitectResult as entropyDimensionsFromArchitect,
+  isRefactorGovernedSliceTask as isRefactorGovernedTask,
+  normalizeSliceCloseLower as normalizeLower,
+  normalizeSliceCloseValue as normalize,
+  parseGitStatusPath,
+  parseSliceCloseList as parseList,
+  resolveSliceCloseSummary as resolveSummary,
+  toSliceCloseBoolean as toBoolean,
+  toSliceCloseNumber as toNumber,
+} from './SliceCloseRuntimeHelpers.js';
 
 function nowIso() {
   return new Date().toISOString();
@@ -108,32 +50,6 @@ function fail(code, message, extra = {}) {
 
 function renderTemplate(template, values = {}) {
   return String(template ?? '').replace(/\{([^}]+)\}/g, (_full, key) => normalize(values[key]));
-}
-
-function parseGitStatusPath(line) {
-  const raw = String(line ?? '').trimEnd();
-  if (!raw) {
-    return '';
-  }
-  const pathStart = raw.length > 2 && raw[2] === ' ' ? 3 : 2;
-  return raw.slice(pathStart).trim();
-}
-
-function resolveSummary({ taskId, lanes, fullSuiteResult }) {
-  const laneText = lanes.length > 0 ? lanes.join(',') : 'default';
-  if (fullSuiteResult.required) {
-    return `slice close auto-verified after full suite pass for ${taskId}; lanes=${laneText}; command=${fullSuiteResult.command}`;
-  }
-  return `slice close auto-verified for ${taskId}; lanes=${laneText}; full-suite=not-required`;
-}
-
-function isRefactorGovernedTask(task = {}) {
-  const taskId = normalizeLower(task?.taskId || task?.id);
-  const title = normalizeLower(task?.title);
-  return Boolean(task?.refactorGovernance)
-    || normalize(task?.origin?.type) === 'ohder-refactor-governance'
-    || taskId.includes('refactor')
-    || title.includes('refactor');
 }
 
 export class SliceCloseRuntime {

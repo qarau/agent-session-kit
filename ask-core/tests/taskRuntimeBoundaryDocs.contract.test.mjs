@@ -15,7 +15,7 @@ test('typescript migration status records TaskRuntime boundary hardening complet
   for (const phrase of [
     'TaskRuntime TypeScript Boundary Hardening wave',
     'TaskRuntime boundary hardening is complete for this wave',
-    'SliceCloseRuntime remains deferred because it owns validation, OHDER, auto-commit, rollback, and pre-push behavior',
+    'SliceCloseRuntime was deferred from this TaskRuntime wave because it owns validation, OHDER, auto-commit, rollback, and pre-push behavior',
     'Plan Batch Registry Runtime Conversion',
     'contracts first',
     'runtime conversion later',

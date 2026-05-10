@@ -9,14 +9,15 @@ const testsDir = path.dirname(thisFilePath);
 const repoRoot = path.resolve(testsDir, '..', '..');
 const statusDocPath = path.join(repoRoot, 'docs', 'operations', 'typescript-migration-status.md');
 
-test('typescript migration status records Plan Batch Registry runtime conversion completion', () => {
+test('typescript migration status records SliceCloseRuntime boundary hardening completion', () => {
   const statusDoc = fs.readFileSync(statusDocPath, 'utf8');
   for (const expected of [
-    'Plan Batch Registry TypeScript Runtime Conversion Wave',
-    'Plan Batch Registry Runtime Conversion is complete for this wave',
-    '`PlanIngestRuntime.js` remains source-compatible JavaScript while plan-batch registry helpers are typed and mirrored',
-    '`PlanBatchRegistryRuntime.ts` provides the typed helper boundary',
-    '`SliceCloseRuntime boundary` followed this wave',
+    'SliceCloseRuntime TypeScript Boundary Hardening Wave',
+    'SliceCloseRuntime boundary hardening is complete for this wave',
+    '`SliceCloseRuntime.js` remains source-compatible JavaScript while pure helpers are typed and mirrored',
+    '`SliceCloseRuntimeHelpers.ts` provides the typed helper boundary',
+    '`SliceCloseRuntimeHelpers.js` provides the source-compatible helper mirror',
+    'Law-pack and profile runtime conversion is the next likely wave',
     'contracts first',
     'runtime conversion later',
     'strictness last',

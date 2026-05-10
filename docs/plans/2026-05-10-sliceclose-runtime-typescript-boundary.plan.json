@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ask-sliceclose",
+  "planTitle": "SliceCloseRuntime TypeScript Boundary Hardening",
+  "planSummary": "Typed boundary hardening wave for SliceCloseRuntime while preserving source-run CLI compatibility, slice-close behavior, ASK commit provenance, OHDER governance, rollback, entropy, and pre-push semantics.",
+  "slices": [
+    {
+      "sliceId": "001-current-behavior-characterization",
+      "title": "001 Current Behavior Characterization",
+      "description": "Characterize current SliceCloseRuntime behavior before helper extraction.",
+      "acceptanceCriteria": [
+        "Successful close still auto-completes the task, creates an ASK-Slice commit, runs pre-push, emits OHDER and entropy events, and records loop state.",
+        "Dirty index still fails before task completion.",
+        "OHDER block still leaves task in-progress and creates no commit.",
+        "Commit failure still rolls task back to in-progress.",
+        "Pre-push failure after commit still leaves task completed.",
+        "Integrator or protected lanes still require the full suite."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "002-slice-close-typescript-contracts",
+      "title": "002 Slice Close TypeScript Contracts",
+      "description": "Add TypeScript-facing interfaces and fixtures for current slice-close result payloads without changing runtime output.",
+      "dependsOn": ["001-current-behavior-characterization"],
+      "acceptanceCriteria": [
+        "Contracts represent success and failure payloads without changing runtime output.",
+        "Contract fixtures compile under current TypeScript settings.",
+        "Existing check and governance contract exports remain backward-compatible.",
+        "No runtime JavaScript imports TypeScript contract files directly."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "003-typed-helper-boundary",
+      "title": "003 Typed Helper Boundary",
+      "description": "Create SliceCloseRuntimeHelpers.ts and move only pure helper behavior into typed helpers while leaving SliceCloseRuntime.js unchanged in this slice.",
+      "dependsOn": ["002-slice-close-typescript-contracts"],
+      "acceptanceCriteria": [
+        "SliceCloseRuntimeHelpers.ts exports normalizeSliceCloseValue, toSliceCloseBoolean, toSliceCloseNumber, normalizeSliceCloseLower, parseSliceCloseList, riskFromArchitectureScore, entropyDimensionsFromArchitectResult, parseGitStatusPath, resolveSliceCloseSummary, and isRefactorGovernedSliceTask.",
+        "Helper contract tests cover trimming, lower-casing, boolean parsing, numeric fallback, comma-list parsing, git status path parsing, refactor task detection, lane summary rendering, and entropy dimensions.",
+        "Source inspection confirms no runtime JavaScript imports SliceCloseRuntimeHelpers.ts.",
+        "SliceCloseRuntime.js remains unchanged in this slice."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "004-js-mirror-runtime-delegation",
+      "title": "004 JS Mirror Runtime Delegation",
+      "description": "Create SliceCloseRuntimeHelpers.js and refactor SliceCloseRuntime.js to delegate pure helper behavior through the source-compatible JS mirror.",
+      "dependsOn": ["003-typed-helper-boundary"],
+      "acceptanceCriteria": [
+        "SliceCloseRuntime.js imports from ./SliceCloseRuntimeHelpers.js, not .ts.",
+        "Removed inline helper definitions are replaced by equivalent helper calls.",
+        "Public CLI behavior and payload shape are unchanged.",
+        "Existing slice-close contract tests pass.",
+        "Helper tests prove the JS mirror behavior matches typed helper expectations."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "005-migration-status-update",
+      "title": "005 Migration Status Update",
+      "description": "Update TypeScript migration status for the completed SliceCloseRuntime TypeScript Boundary Hardening wave.",
+      "dependsOn": ["004-js-mirror-runtime-delegation"],
+      "acceptanceCriteria": [
+        "ask-ts-006 says SliceCloseRuntime boundary hardening is complete for this wave.",
+        "Docs include a SliceCloseRuntime TypeScript Boundary Hardening Wave section.",
+        "Docs state SliceCloseRuntime.js remains source-compatible JavaScript while pure helpers are typed and mirrored.",
+        "Next Recommended Implementation Sequence moves to law-pack/profile runtime conversion.",
+        "Docs preserve contracts-first, runtime-conversion-later, strictness-last framing."
+      ],
+      "queueClass": "integrator"
+    }
+  ]
+}

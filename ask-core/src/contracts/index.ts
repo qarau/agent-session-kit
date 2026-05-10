@@ -9,6 +9,8 @@ export * from './runtimeSnapshots.js';
 export * from './tasks.js';
 export * from './taskPlanFixtures.js';
 export * from './checks.js';
+export * from './sliceClose.js';
+export * from './sliceCloseFixtures.js';
 export * from './governance.js';
 export * from './governanceRuntimeBoundary.js';
 export * from './governanceReportBuilder.js';

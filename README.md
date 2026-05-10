@@ -4,13 +4,17 @@ Governed Autonomous Software Development
 
 ## Runtime Status
 
-Current release line: `v5.1.0`
+Current release line: `v6.0.0`
 
-Next release draft: `v6.0.0`
+ASK Forge is a governance runtime for AI-assisted software delivery. Its advantage is that it turns implementation intent into governed execution: plans become traceable slices, every slice must carry evidence before commit and push, OHDER evaluates architecture impact before close, and the runtime ledger keeps the session replayable.
 
-ASK Forge is a Developer-Agent Runtime for governing long-running implementation sessions before code reaches remote CI. It enforces session and policy checks at commit/push boundaries and keeps runtime state reconstructable through an event ledger.
+ASK Forge is not just a command wrapper around coding. It is the governing layer that turns plans into governed implementation slices, applies OHDER architecture governance before slice completion, records replayable runtime history, and keeps commit/push boundaries tied to policy evidence.
 
 ASK is implemented in `ask-core/` and integrated through git hooks and session adapter wrappers.
+
+## ASK Forge advantage
+
+Codex can implement and Superpowers can provide workflow discipline, but ASK Forge supplies the governing constitution: lifecycle rules, policy gates, architecture laws, commit provenance, and recoverable state. That makes autonomous development cohesive as a codebase scales instead of letting each agent session become an isolated burst of work.
 
 ## Best Use of ASK Forge
 
@@ -26,7 +30,7 @@ When a user chooses "Implement the plan", the implementation boundary is `ask im
 
 The approved plan is the canonical source. Do not regenerate or rewrite the approved plan after approval unless the user asks for a revision; that extra planning pass is YAGNI and can degrade slice fidelity before ASK ingestion.
 
-## Why 5.0.0 Is Special
+## Why 5.0.0 Was Special
 
 `v5.0.0` is the release where ASK moves from "runtime checks around coding" to a governed autonomous delivery loop.
 
@@ -38,7 +42,7 @@ The approved plan is the canonical source. Do not regenerate or rewrite the appr
 
 In short: 4.x proved runtime governance works; 5.0.0 turns that governance into an operational execution system.
 
-## Why 5.1.0 Is Special
+## Why 5.1.0 Was Special
 
 `v5.1.0` is the OHDER Semantic Autonomy release. It moves ASK Forge from architecture checks and refactor suggestions toward semantic, evidence-backed architecture governance.
 
@@ -65,10 +69,21 @@ The shift is not "more Node commands." The shift is contract clarity:
 - future language adapters get a stable interface before implementations are added
 - project profiles and law packs can describe language/framework governance boundaries without changing enforcement behavior
 - fixture samples make runtime field names visible for consumers and future migrations
+- Governance/OFRR, EventLedger, RuntimeSnapshotStore, TaskRuntime, TaskBoardProjector, PlanBatchRegistry, and SliceCloseRuntime now have explicit boundary contracts or typed helper seams
 
 Node/JavaScript remains the first supported adapter target. The v6 foundation describes where Python, PHP, .NET, Java, C++, Go, Rust, and other adapters can fit later, but non-Node adapters do not exist yet.
 
 In short: 5.1 makes ASK Forge semantically smarter; 6.0 starts making ASK Forge portable.
+
+Completed v6 runtime boundary waves:
+
+- Governance/OFRR: finding resolution and governance records now have typed decision boundaries.
+- EventLedger: append/read event shapes are documented through contract fixtures and TypeScript event records.
+- RuntimeSnapshotStore: projection snapshot state has a typed contract seam for durable replay.
+- TaskRuntime: task lifecycle records are named and compiled instead of being implicit JavaScript objects.
+- TaskBoardProjector: projected task-board entries now align with the artifact contract family.
+- PlanBatchRegistry: plan ingestion and batch traceability are represented as explicit plan contracts.
+- SliceCloseRuntime: governed close now has typed evidence boundaries while the source-compatible JavaScript runtime remains active.
 
 ## What Changed in 5.0.0 (from 4.x)
 
@@ -216,12 +231,13 @@ Operational runtime guidance lives in:
 
 ## Adopt ASK Forge in Another Repository (Vendor Copy + Hooks)
 
-ASK Forge 5 currently uses a vendor-copy model. Copy these assets into your target repository:
+ASK Forge v6 currently uses a vendor-copy model. Copy these assets into your target repository:
 
 - `ask-core/`
 - `.githooks/`
 - `scripts/session/installHooks.mjs`
 - `scripts/session/runAskCorePreCommitAdapter.mjs`
+- `scripts/session/runAskCoreCommitMsgAdapter.mjs`
 - `scripts/session/runAskCorePrePushAdapter.mjs`
 
 Then in the target repo:
@@ -460,10 +476,10 @@ Architect status includes an `architectureScore` with weighted categories for SS
 - Volatile runtime logs and snapshots should remain excluded from version control.
 - Keep static policy/configuration files as needed by your team.
 
-## v4 to v5 Migration Notes
+## v4 to v6 Migration Notes
 
-v5 keeps v4 runtime governance and hook enforcement, then adds governed ingestion-to-slice execution flow.
-The shift is intentional: v5 moves from "governed runtime checks" to "governed autonomous execution lifecycle."
+v5 kept v4 runtime governance and hook enforcement, then added governed ingestion-to-slice execution flow. v6 keeps that execution lifecycle and adds the TypeScript contract foundation needed for language-agnostic ASK Forge.
+The shift is intentional: v5 moved from "governed runtime checks" to "governed autonomous execution lifecycle"; v6 starts turning that lifecycle into a portable platform boundary.
 
 Key changes from v4:
 
@@ -474,10 +490,11 @@ Key changes from v4:
 - Enforced pre-push lineage metadata (`ASK-Slice` / `ASK-Exempt`)
 - Expanded Codex runtime controls (`ask codex ...`) as first-class governed surfaces
 - Repositioned product identity to ASK Forge (Governed Autonomous Software Development)
+- Added v6 TypeScript contracts and runtime boundary waves for governance, event ledger, snapshots, task runtime, projectors, plan batches, and slice close
 
 Migration checklist for v4 users:
 
-1. Vendor-copy the v5 assets listed in "Adopt ASK Forge in Another Repository".
+1. Vendor-copy the ASK Forge v6 assets listed in "Adopt ASK Forge in Another Repository".
 2. Run `ask plan validate` and `ask plan ingest` for governed plan-to-slice execution.
 3. Run `node scripts/session/installHooks.mjs` in each target repo.
 4. Validate `core.hooksPath` is `.githooks`.
