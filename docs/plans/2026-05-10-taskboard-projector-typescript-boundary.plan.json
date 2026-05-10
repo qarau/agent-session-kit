@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ask-taskprojector",
+  "planTitle": "TaskBoardProjector TypeScript Boundary Hardening",
+  "planSummary": "Typed boundary hardening wave for TaskBoardProjector lifecycle projection behavior while preserving ASK source-run CLI compatibility.",
+  "slices": [
+    {
+      "sliceId": "001-projector-characterization",
+      "title": "001 Projector Characterization",
+      "description": "Add characterization coverage for current TaskBoardProjector task lifecycle projection behavior before refactoring.",
+      "acceptanceCriteria": [
+        "Tests cover unknown or taskless events leaving state unchanged.",
+        "Tests cover `TaskCreated`, `TaskAssigned`, `TaskStarted`, `TaskCompleted`, `TaskReopened`, `TaskBlocked`, and `TaskDependencyAdded` behavior.",
+        "Tests verify acceptance criteria are trimmed and empty values removed.",
+        "Tests verify dependencies remain sorted and unique.",
+        "Existing projection and task runtime tests continue to pass."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "002-typescript-projector-helper-boundary",
+      "title": "002 TypeScript Projector Helper Boundary",
+      "description": "Add typed helper functions for pure task-board projection behavior while keeping source-run loading safe.",
+      "acceptanceCriteria": [
+        "`ask-core/src/runtime/projectors/TaskBoardProjectorHelpers.ts` exports typed task ID normalization, base task creation, task state replacement, acceptance criteria normalization, dependency merge/sort, and safe object clone helpers.",
+        "Helper contract tests compile under `npm run typecheck`.",
+        "Source-run runtime files do not import `TaskBoardProjectorHelpers.ts` directly.",
+        "Helper behavior matches the characterization tests."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "001-projector-characterization"
+      ]
+    },
+    {
+      "sliceId": "003-source-runtime-uses-projector-helper-seam",
+      "title": "003 Source Runtime Uses Projector Helper Seam",
+      "description": "Add a source-compatible helper mirror and refactor TaskBoardProjector.js to delegate pure behavior through it.",
+      "acceptanceCriteria": [
+        "`TaskBoardProjector.js` imports `TaskBoardProjectorHelpers.js`, not `.ts`.",
+        "Public `TaskBoardProjector` method names and return shapes remain unchanged.",
+        "Task lifecycle projection behavior remains unchanged.",
+        "Existing projector, replay projection, task runtime, helper, typecheck, and build validations pass."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "002-typescript-projector-helper-boundary"
+      ]
+    },
+    {
+      "sliceId": "004-refactor-governance-projection-integration",
+      "title": "004 Refactor Governance Projection Integration",
+      "description": "Lock RefactorTaskGovernance.js integration with TaskBoardProjector without changing refactor governance behavior.",
+      "acceptanceCriteria": [
+        "Tests cover `RefactorApproved` and `RefactorRejected` task-board projection integration.",
+        "`RefactorTaskGovernance.js` behavior remains unchanged.",
+        "Refactor approval keeps existing task metadata while updating refactor governance state.",
+        "Refactor rejection blocks the task and preserves existing metadata."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "003-source-runtime-uses-projector-helper-seam"
+      ]
+    },
+    {
+      "sliceId": "005-migration-status-update",
+      "title": "005 Migration Status Update",
+      "description": "Update TypeScript migration status for the completed TaskBoardProjector boundary wave.",
+      "acceptanceCriteria": [
+        "Docs mark TaskBoardProjector boundary hardening complete for this wave.",
+        "Docs state `RuntimeProjectionEngine.js` remains source-compatible JavaScript while task-board projection helpers are typed.",
+        "Docs identify `Plan Batch Registry Runtime Conversion` as the next likely wave.",
+        "Docs preserve contracts-first, runtime-conversion-later, strictness-last framing."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "004-refactor-governance-projection-integration"
+      ]
+    }
+  ]
+}
