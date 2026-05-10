@@ -36,3 +36,22 @@ test('projection cursor contract fixtures are included in TypeScript compilation
   assert.match(contract, /satisfies AskProjectionReplayProof/u);
   assert.match(contract, /satisfies AskProjectionRunSummary/u);
 });
+
+test('projection runtime artifact fixture preserves projection state and replay proof fields', () => {
+  const contract = readContract('projection.ts');
+  assert.match(contract, /export const askProjectionRuntimeArtifactsFixture/u);
+  for (const field of [
+    'projectionState',
+    'replayProof',
+    'lastAppliedSeq',
+    'requiresReplay',
+    'reason',
+    'updatedAt',
+    'schemaVersion',
+    'projectionCursor',
+    'sequenceIntegrity',
+    'generatedAt',
+  ]) {
+    assert.match(contract, new RegExp(field, 'u'));
+  }
+});

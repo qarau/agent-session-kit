@@ -40,6 +40,11 @@ export interface AskProjectionRunSummary {
   sequenceIntegrity?: AskProjectionSequenceIntegrity;
 }
 
+export interface AskProjectionRuntimeArtifacts {
+  projectionState: AskProjectionCursorState;
+  replayProof: AskProjectionReplayProof;
+}
+
 export const askProjectionCursorStateFixture = {
   lastAppliedSeq: 4,
   requiresReplay: false,
@@ -76,3 +81,8 @@ export const askProjectionRunSummaryFixture = {
   snapshotHash: 'sha256:projection-snapshot',
   sequenceIntegrity: askProjectionSequenceIntegrityFixture,
 } satisfies AskProjectionRunSummary;
+
+export const askProjectionRuntimeArtifactsFixture = {
+  projectionState: askProjectionCursorStateFixture,
+  replayProof: askProjectionReplayProofFixture,
+} satisfies AskProjectionRuntimeArtifacts;
