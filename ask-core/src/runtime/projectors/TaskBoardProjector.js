@@ -3,42 +3,14 @@ import {
   createdRefactorGovernance,
   rejectedRefactorGovernance,
 } from './RefactorTaskGovernance.js';
-
-function normalizeTaskId(event) {
-  const taskId = String(event.taskId ?? '').trim();
-  return taskId;
-}
-
-function createTaskBase(taskId, event, previous) {
-  return {
-    taskId,
-    status: previous?.status ?? 'created',
-    title: String(previous?.title ?? ''),
-    description: String(previous?.description ?? ''),
-    origin: previous?.origin && typeof previous.origin === 'object' ? { ...previous.origin } : null,
-    acceptanceCriteria: Array.isArray(previous?.acceptanceCriteria) ? [...previous.acceptanceCriteria] : [],
-    queueClassHint: String(previous?.queueClassHint ?? ''),
-    refactorGovernance: previous?.refactorGovernance && typeof previous.refactorGovernance === 'object'
-      ? { ...previous.refactorGovernance }
-      : null,
-    owner: String(previous?.owner ?? ''),
-    dependencies: Array.isArray(previous?.dependencies) ? [...previous.dependencies] : [],
-    createdAt: previous?.createdAt || String(event.ts ?? ''),
-    updatedAt: String(event.ts ?? ''),
-    lastEventSeq: Number(event.seq ?? 0),
-    lastEventType: String(event.type ?? ''),
-  };
-}
-
-function withTask(state, taskId, task) {
-  return {
-    ...state,
-    tasks: {
-      ...state.tasks,
-      [taskId]: task,
-    },
-  };
-}
+import {
+  cloneTaskBoardObject,
+  createTaskBoardBase,
+  mergeTaskBoardDependencies,
+  normalizeAcceptanceCriteria,
+  normalizeTaskBoardTaskId,
+  withTaskBoardTask,
+} from './TaskBoardProjectorHelpers.js';
 
 export class TaskBoardProjector {
   initialState() {
@@ -46,24 +18,22 @@ export class TaskBoardProjector {
   }
 
   apply(state, event) {
-    const taskId = normalizeTaskId(event);
+    const taskId = normalizeTaskBoardTaskId(event.taskId);
     if (!taskId) {
       return state;
     }
 
     const current = state.tasks[taskId];
-    const base = createTaskBase(taskId, event, current);
+    const base = createTaskBoardBase(taskId, event, current);
     const type = String(event.type ?? '');
 
     if (type === 'TaskCreated') {
-      const origin = event.payload?.origin && typeof event.payload.origin === 'object'
-        ? { ...event.payload.origin }
-        : base.origin;
+      const origin = cloneTaskBoardObject(event.payload?.origin) ?? base.origin;
       const acceptanceCriteria = Array.isArray(event.payload?.acceptanceCriteria)
-        ? event.payload.acceptanceCriteria.map(value => String(value ?? '').trim()).filter(Boolean)
+        ? normalizeAcceptanceCriteria(event.payload.acceptanceCriteria)
         : base.acceptanceCriteria;
       const refactorGovernance = createdRefactorGovernance(origin, base.refactorGovernance);
-      return withTask(state, taskId, {
+      return withTaskBoardTask(state, taskId, {
         ...base,
         status: 'created',
         title: String(event.payload?.title ?? base.title),
@@ -76,49 +46,49 @@ export class TaskBoardProjector {
     }
 
     if (type === 'TaskAssigned') {
-      return withTask(state, taskId, {
+      return withTaskBoardTask(state, taskId, {
         ...base,
         owner: String(event.payload?.owner ?? base.owner),
       });
     }
 
     if (type === 'TaskStarted') {
-      return withTask(state, taskId, {
+      return withTaskBoardTask(state, taskId, {
         ...base,
         status: 'in-progress',
       });
     }
 
     if (type === 'TaskCompleted') {
-      return withTask(state, taskId, {
+      return withTaskBoardTask(state, taskId, {
         ...base,
         status: 'completed',
       });
     }
 
     if (type === 'TaskReopened') {
-      return withTask(state, taskId, {
+      return withTaskBoardTask(state, taskId, {
         ...base,
         status: 'in-progress',
       });
     }
 
     if (type === 'TaskBlocked') {
-      return withTask(state, taskId, {
+      return withTaskBoardTask(state, taskId, {
         ...base,
         status: 'blocked',
       });
     }
 
     if (type === 'RefactorApproved') {
-      return withTask(state, taskId, {
+      return withTaskBoardTask(state, taskId, {
         ...base,
         refactorGovernance: approvedRefactorGovernance(base.refactorGovernance, event),
       });
     }
 
     if (type === 'RefactorRejected') {
-      return withTask(state, taskId, {
+      return withTaskBoardTask(state, taskId, {
         ...base,
         status: 'blocked',
         refactorGovernance: rejectedRefactorGovernance(base.refactorGovernance, event),
@@ -126,14 +96,9 @@ export class TaskBoardProjector {
     }
 
     if (type === 'TaskDependencyAdded') {
-      const dependencyTaskId = String(event.payload?.dependencyTaskId ?? '').trim();
-      const dependencies = new Set(base.dependencies);
-      if (dependencyTaskId) {
-        dependencies.add(dependencyTaskId);
-      }
-      return withTask(state, taskId, {
+      return withTaskBoardTask(state, taskId, {
         ...base,
-        dependencies: Array.from(dependencies).sort(),
+        dependencies: mergeTaskBoardDependencies(base.dependencies, event.payload?.dependencyTaskId),
       });
     }
 

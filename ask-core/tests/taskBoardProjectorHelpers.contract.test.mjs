@@ -49,3 +49,16 @@ test('source-run runtime files do not import the TypeScript task-board helper di
 
   assert.deepEqual(sourceFiles, []);
 });
+
+test('TaskBoardProjector source runtime delegates pure behavior through source-compatible helper', async () => {
+  const projector = readProjector('TaskBoardProjector.js');
+  assert.match(projector, /from '\.\/TaskBoardProjectorHelpers\.js'/u);
+  assert.doesNotMatch(projector, /from '\.\/TaskBoardProjectorHelpers\.ts'/u);
+
+  const helper = await import('../src/runtime/projectors/TaskBoardProjectorHelpers.js');
+  assert.equal(helper.normalizeTaskBoardTaskId(' task-1 '), 'task-1');
+  assert.deepEqual(helper.cloneTaskBoardObject({ source: 'plan' }), { source: 'plan' });
+  assert.equal(helper.cloneTaskBoardObject(['not-object']), null);
+  assert.deepEqual(helper.normalizeAcceptanceCriteria([' ship ', '', null, 'test']), ['ship', 'test']);
+  assert.deepEqual(helper.mergeTaskBoardDependencies(['task-c'], ' task-a '), ['task-a', 'task-c']);
+});
