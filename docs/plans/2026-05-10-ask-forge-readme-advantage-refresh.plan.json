@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ask-readme",
+  "planTitle": "ASK Forge README Advantage Refresh",
+  "planSummary": "Refresh the v6 README so the current ASK Forge advantage is explained through its active runtimes before the historical release sections.",
+  "slices": [
+    {
+      "sliceId": "001-readme-advantage-runtime-map",
+      "title": "001 README Advantage Runtime Map",
+      "description": "Update README positioning and docs contract tests so the full ASK Forge runtime advantage is clear in the current v6 narrative.",
+      "acceptanceCriteria": [
+        "README contains a current ## ASK Forge Advantage section near the top.",
+        "The section explains ASK Forge as a governed autonomous software-development platform, not only a hook/check tool.",
+        "The section explicitly maps plan ingestion, slice close, OHDER architecture governance, OHDER semantic autonomy, finding resolution, flow governance, design governance, coordination/runtime routing, delivery governance, Codex controls, event ledger, projection/snapshot continuity, and TypeScript contract foundation.",
+        "README contains a concise What the runtimes give you subsection with developer-facing outcomes.",
+        "Historical v5.0, v5.1, and v6.0 sections remain as evolution history after the current advantage story.",
+        "Documentation contract tests assert the runtime advantage map so the README cannot regress to a narrow dated summary."
+      ],
+      "queueClass": "integrator"
+    }
+  ]
+}
