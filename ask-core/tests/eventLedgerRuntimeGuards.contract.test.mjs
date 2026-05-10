@@ -59,6 +59,29 @@ test('EventLedger append preserves payload and metadata on returned and persiste
   assert.deepEqual(persisted.meta, event.meta);
 });
 
+test('EventLedger append preserves envelope defaults and omits empty taskId', async () => {
+  const repoDir = setupRepo();
+  const ledger = new EventLedger(repoDir);
+
+  const event = await ledger.append({
+    type: 'SessionStarted',
+    sessionId: 'sess-ledger-defaults',
+  });
+
+  assert.equal(event.seq, 1);
+  assert.equal(event.type, 'SessionStarted');
+  assert.match(event.ts, /^\d{4}-\d{2}-\d{2}T/u);
+  assert.equal(event.sessionId, 'sess-ledger-defaults');
+  assert.equal(Object.hasOwn(event, 'taskId'), false);
+  assert.equal(event.actor, 'local');
+  assert.deepEqual(event.payload, {});
+  assert.deepEqual(event.meta, {});
+
+  const [persisted] = await ledger.readAll();
+  assert.equal(Object.hasOwn(persisted, 'taskId'), false);
+  assert.deepEqual(persisted, event);
+});
+
 test('EventLedger readAll returns events sorted by sequence', async () => {
   const repoDir = setupRepo();
   const eventsPath = path.join(repoDir, '.ask', 'runtime', 'events.ndjson');
