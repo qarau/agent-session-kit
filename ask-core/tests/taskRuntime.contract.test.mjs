@@ -175,3 +175,76 @@ test('task reopen transitions completed task back to in-progress', () => {
   const eventTypes = readEvents(repoDir).map(event => event.type);
   assert.ok(eventTypes.includes('TaskReopened'));
 });
+
+test('task depends records TaskDependencyAdded event and projected dependency snapshot', () => {
+  const repoDir = setupRepo();
+
+  runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-a', '--title', 'Consumer'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-b', '--title', 'Provider'], { cwd: repoDir });
+
+  const dependency = runOrThrow(process.execPath, [askBinPath, 'task', 'depends', 'task-a', 'task-b'], {
+    cwd: repoDir,
+  });
+  const dependencyPayload = JSON.parse(dependency.stdout);
+  assert.equal(dependencyPayload.ok, true);
+  assert.deepEqual(dependencyPayload.task.dependencies, ['task-b']);
+
+  const status = runOrThrow(process.execPath, [askBinPath, 'task', 'status', 'task-a'], { cwd: repoDir });
+  const statusPayload = JSON.parse(status.stdout);
+  assert.deepEqual(statusPayload.task.dependencies, ['task-b']);
+
+  const events = readEvents(repoDir);
+  const dependencyEvent = events.find(event => event.type === 'TaskDependencyAdded');
+  assert.equal(dependencyEvent.taskId, 'task-a');
+  assert.equal(dependencyEvent.payload.dependencyTaskId, 'task-b');
+});
+
+test('task depends rejects missing self and duplicate dependencies before event append', () => {
+  const repoDir = setupRepo();
+
+  runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-a', '--title', 'Consumer'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-b', '--title', 'Provider'], { cwd: repoDir });
+
+  const missingBefore = readEvents(repoDir).length;
+  const missing = run(process.execPath, [askBinPath, 'task', 'depends', 'task-a', 'missing-task'], { cwd: repoDir });
+  assert.equal(missing.status, 1, missing.stdout + missing.stderr);
+  assert.equal(JSON.parse(missing.stdout).code, 'dependency-task-not-found');
+  assert.equal(readEvents(repoDir).length, missingBefore);
+
+  const selfBefore = readEvents(repoDir).length;
+  const self = run(process.execPath, [askBinPath, 'task', 'depends', 'task-a', 'task-a'], { cwd: repoDir });
+  assert.equal(self.status, 1, self.stdout + self.stderr);
+  assert.equal(JSON.parse(self.stdout).code, 'invalid-task-dependency');
+  assert.equal(readEvents(repoDir).length, selfBefore);
+
+  runOrThrow(process.execPath, [askBinPath, 'task', 'depends', 'task-a', 'task-b'], { cwd: repoDir });
+  const duplicateBefore = readEvents(repoDir).length;
+  const duplicate = run(process.execPath, [askBinPath, 'task', 'depends', 'task-a', 'task-b'], { cwd: repoDir });
+  assert.equal(duplicate.status, 1, duplicate.stdout + duplicate.stderr);
+  assert.equal(JSON.parse(duplicate.stdout).code, 'dependency-exists');
+  assert.equal(readEvents(repoDir).length, duplicateBefore);
+});
+
+test('task status enriches missing freshness snapshot with default freshness state', () => {
+  const repoDir = setupRepo();
+
+  runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-fresh', '--title', 'Freshness default'], {
+    cwd: repoDir,
+  });
+
+  const statusOne = runOrThrow(process.execPath, [askBinPath, 'task', 'status', 'task-fresh'], { cwd: repoDir });
+  const statusAll = runOrThrow(process.execPath, [askBinPath, 'task', 'status'], { cwd: repoDir });
+  const single = JSON.parse(statusOne.stdout);
+  const all = JSON.parse(statusAll.stdout);
+
+  assert.deepEqual(single.task.freshness, {
+    status: 'unverified',
+    reasonCode: 'verification-not-passed',
+    blockingDependencies: [],
+  });
+  assert.deepEqual(all.tasks['task-fresh'].freshness, {
+    status: 'unverified',
+    reasonCode: 'verification-not-passed',
+    blockingDependencies: [],
+  });
+});
