@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "aph",
+  "planTitle": "Automatic Plan Handoff Artifact Generation",
+  "planSummary": "Make future Implement the plan flows produce ASK-ingestible markdown and JSON artifacts, hand them to ASK, and start implementation only after ASK creates governed slices.",
+  "slices": [
+    {
+      "sliceId": "plan-mode-prepare-runtime",
+      "title": "Plan Mode Prepare Runtime",
+      "description": "Create ask plan-mode prepare to convert a markdown plan into canonical ASK markdown and JSON artifacts that validate through existing plan ingestion.",
+      "acceptanceCriteria": [
+        "ask plan-mode prepare --title <title> --source <md> exists",
+        "The runtime writes a canonical markdown artifact under docs/plans",
+        "The runtime writes a matching ASK plan JSON artifact under docs/plans",
+        "The generated JSON uses schema version 2 and validates through existing plan validation",
+        "The command returns artifact paths and the exact next ask plan-mode handoff command"
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "implementation-begin-runtime",
+      "title": "Implementation Begin Runtime",
+      "description": "Create ask implementation begin to prepare plan artifacts, hand them to ASK, ingest slices, and report the next governed task start command.",
+      "acceptanceCriteria": [
+        "ask implementation begin --title <title> --plan <md> exists",
+        "The runtime calls prepare behavior and then existing plan-mode handoff behavior",
+        "The runtime returns created task ids, the selected next task, and ask task start <taskId>",
+        "Existing ask implementation preflight behavior remains intact for active-slice checks"
+      ],
+      "dependsOn": [
+        "plan-mode-prepare-runtime"
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "recovery-adapter-and-documentation",
+      "title": "Recovery Adapter And Documentation",
+      "description": "Make the automatic implementation boundary visible to operators and Codex/Superpowers automation.",
+      "acceptanceCriteria": [
+        "Missing-handoff preflight recovery points to ask implementation begin --plan <md> --title <title>",
+        "A session adapter script exists for Codex/Superpowers workflows to invoke implementation begin",
+        "README or operations docs explain that Implement the plan must call implementation begin before editing",
+        "The docs keep the ASK/Codex/Superpowers responsibility split clear"
+      ],
+      "dependsOn": [
+        "implementation-begin-runtime"
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "end-to-end-begin-governance-contract",
+      "title": "End-To-End Begin Governance Contract",
+      "description": "Add an end-to-end contract proving a raw plan cannot become implementation until ask implementation begin creates ASK artifacts and slices.",
+      "acceptanceCriteria": [
+        "The test starts with a raw markdown plan and no handoff",
+        "Preflight blocks implementation and reports the implementation begin recovery command",
+        "ask implementation begin creates markdown and JSON artifacts, ingests slices, and returns ask task start <taskId>",
+        "After task start, implementation preflight passes and slice close commits with ASK-Slice provenance"
+      ],
+      "dependsOn": [
+        "recovery-adapter-and-documentation"
+      ],
+      "queueClass": "integrator"
+    }
+  ]
+}

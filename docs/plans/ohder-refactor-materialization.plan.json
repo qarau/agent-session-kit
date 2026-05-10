@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ohrefactor",
+  "planTitle": "OHDER Refactor Governance Materialization",
+  "slices": [
+    {
+      "sliceId": "ohder-refactor-recommendation-engine",
+      "title": "Add OHDER refactor recommendation engine",
+      "description": "Create a deterministic engine that converts OHDER entropy, architect status, law violations, and refactor governance hints into a concrete refactor recommendation.",
+      "acceptanceCriteria": [
+        "High entropy pressure produces a concrete refactor recommendation.",
+        "Blocking law violations produce a repair recommendation with target signals.",
+        "Healthy architecture produces no recommendation.",
+        "Recommendations include title, objective, reason, confidence, target signals, and acceptance criteria.",
+        "Recommendation output is deterministic for the same inputs."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "refactor-slice-materialization",
+      "title": "Materialize refactor recommendations into governed ASK tasks",
+      "description": "Add a runtime and CLI path that creates a governed ASK task from an OHDER refactor recommendation without bypassing normal slice governance.",
+      "dependsOn": [
+        "ohder-refactor-recommendation-engine"
+      ],
+      "acceptanceCriteria": [
+        "A refactor recommendation can be previewed without mutating task state.",
+        "A refactor recommendation can be materialized as a created ASK task.",
+        "The created task includes recommendation title, objective, reason, and acceptance criteria.",
+        "Materialization emits RefactorSuggested.",
+        "Duplicate materialization is idempotent for the same recommendation fingerprint."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "refactor-confidence-approval-governance",
+      "title": "Add refactor confidence and approval governance",
+      "description": "Implement low, medium, and high confidence behavior so autonomous refactors follow the spec approval model.",
+      "dependsOn": [
+        "refactor-slice-materialization"
+      ],
+      "acceptanceCriteria": [
+        "Low confidence recommendations are suggest-only.",
+        "Medium confidence recommendations create approval-required tasks.",
+        "High confidence recommendations can create governed tasks automatically when policy allows.",
+        "Approval and rejection events are emitted as RefactorApproved and RefactorRejected.",
+        "Policy can disable automatic high-confidence materialization."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ask-next-refactor-materialization",
+      "title": "Integrate refactor materialization with ask next",
+      "description": "Make OHDER next-action output provide a concrete refactor materialization command when it recommends create-refactor-slice.",
+      "dependsOn": [
+        "refactor-confidence-approval-governance"
+      ],
+      "acceptanceCriteria": [
+        "ask next keeps task-first precedence.",
+        "When OHDER recommends create-refactor-slice, ask next includes a concrete refactor command.",
+        "ask next includes a compact refactor recommendation summary.",
+        "OhderNextActionRecommended includes the refactor recommendation fingerprint.",
+        "No task is created by ask next unless policy explicitly allows automatic materialization."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-refactor-materialization-docs",
+      "title": "Document OHDER refactor governance materialization",
+      "description": "Update README and operations docs so operators understand how entropy pressure becomes a governed refactor task.",
+      "dependsOn": [
+        "ask-next-refactor-materialization"
+      ],
+      "acceptanceCriteria": [
+        "README explains OHDER refactor materialization and confidence levels.",
+        "Runtime architecture docs map refactor materialization to the OHDER loop.",
+        "Operator playbooks explain preview, create, approve, and reject flows.",
+        "Policy reference documents confidence and auto-materialization defaults.",
+        "Full test suite and ASK pre-push check pass after documentation updates."
+      ],
+      "queueClass": "reviewer"
+    }
+  ]
+}

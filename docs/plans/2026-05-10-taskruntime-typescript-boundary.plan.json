@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ask-taskruntime",
+  "planTitle": "TaskRuntime TypeScript Boundary Hardening",
+  "planSummary": "Typed boundary hardening wave for TaskRuntime lifecycle behavior while preserving ASK source-run CLI compatibility.",
+  "slices": [
+    {
+      "sliceId": "001-task-runtime-characterization",
+      "title": "001 Task Runtime Characterization",
+      "description": "Expand characterization coverage for current task lifecycle behavior before refactoring.",
+      "acceptanceCriteria": [
+        "Tests cover create, assign, start, complete, reopen, dependency add, and status behavior.",
+        "Tests verify rejected transitions do not append new runtime events.",
+        "Tests verify dependency add rejects missing, self, and duplicate dependencies.",
+        "Tests verify status output enriches freshness defaults when freshness is missing.",
+        "Existing task runtime tests continue to pass."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "002-typescript-task-runtime-helper-boundary",
+      "title": "002 TypeScript Task Runtime Helper Boundary",
+      "description": "Add typed helper functions for pure task lifecycle behavior while keeping source-run loading safe.",
+      "acceptanceCriteria": [
+        "`ask-core/src/core/TaskRuntimeHelpers.ts` exports typed normalization, freshness enrichment, task event payload, and result helper functions.",
+        "Helper contract tests compile under `npm run typecheck`.",
+        "Source-run runtime files do not import `TaskRuntimeHelpers.ts` directly.",
+        "Helper behavior matches the characterization tests."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "001-task-runtime-characterization"
+      ]
+    },
+    {
+      "sliceId": "003-source-runtime-uses-task-helper-seam",
+      "title": "003 Source Runtime Uses Task Helper Seam",
+      "description": "Add a source-compatible helper mirror and refactor TaskRuntime.js to delegate pure behavior through it.",
+      "acceptanceCriteria": [
+        "`ask-core/src/core/TaskRuntime.js` imports `TaskRuntimeHelpers.js`, not `.ts`.",
+        "Public `TaskRuntime` method names and CLI output remain unchanged.",
+        "Task lifecycle events and failure/result shapes remain unchanged.",
+        "Existing task runtime tests and helper tests pass."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "002-typescript-task-runtime-helper-boundary"
+      ]
+    },
+    {
+      "sliceId": "004-task-invariant-boundary-decision",
+      "title": "004 Task Invariant Boundary Decision",
+      "description": "Harden task invariant typing if the change remains small; otherwise document invariant conversion as a deferred sub-wave.",
+      "acceptanceCriteria": [
+        "Either task invariant helpers have typed coverage and source-compatible loading, or docs explicitly defer invariant conversion.",
+        "Existing validation error codes and allowed transition metadata remain unchanged.",
+        "No task invariant behavior changes without characterization tests."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "003-source-runtime-uses-task-helper-seam"
+      ]
+    },
+    {
+      "sliceId": "005-migration-status-update",
+      "title": "005 Migration Status Update",
+      "description": "Update TypeScript migration status for the completed TaskRuntime boundary wave.",
+      "acceptanceCriteria": [
+        "Docs mark TaskRuntime boundary hardening complete for this wave.",
+        "Docs state `SliceCloseRuntime` remains deferred because it owns validation, OHDER, auto-commit, rollback, and pre-push behavior.",
+        "Docs identify the next likely step as task projector boundary or plan batch registry runtime conversion.",
+        "Docs preserve contracts-first, runtime-conversion-later, strictness-last framing."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "004-task-invariant-boundary-decision"
+      ]
+    }
+  ]
+}

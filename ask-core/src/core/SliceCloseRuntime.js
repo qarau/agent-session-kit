@@ -17,6 +17,12 @@ import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
 import { EventLedger } from '../runtime/EventLedger.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
+import { MetricsWriter } from './MetricsWriter.js';
+import { RuntimeDriftAnalyticsEngine } from './RuntimeDriftAnalyticsEngine.js';
+import { OhderEntropySnapshotEngine } from './OhderEntropySnapshotEngine.js';
+import { AutonomousLoopStateMachine, AUTONOMOUS_LOOP_STEPS } from './AutonomousLoopStateMachine.js';
+import { OhderRefactorOutcomeEngine } from './OhderRefactorOutcomeEngine.js';
+import { normalizeOhderProfile } from './PolicyEngine.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -34,6 +40,43 @@ function toBoolean(value, fallback = false) {
     return false;
   }
   return fallback;
+}
+
+function toNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeLower(value) {
+  return normalize(value).toLowerCase();
+}
+
+function riskFromScore(score) {
+  const value = toNumber(score, 100);
+  if (value < 70) {
+    return 'high';
+  }
+  if (value < 85) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function entropyDimensionsFromArchitect(architect = {}) {
+  const facts = architect?.ohderFacts && typeof architect.ohderFacts === 'object'
+    ? architect.ohderFacts
+    : {};
+  const observabilityScore = architect?.architectureScore?.categories?.observability;
+  return {
+    ssotViolationCount: normalizeLower(facts.ssot_integrity) === 'invalid' ? 1 : 0,
+    durabilityRisk: normalizeLower(architect?.durabilityAnalysis?.risk)
+      || (normalizeLower(facts.durability_integrity) === 'at-risk' ? 'high' : 'low'),
+    complexityRisk: normalizeLower(architect?.complexityAnalysis?.risk)
+      || (normalizeLower(facts.srp_integrity) === 'weak' ? 'high' : 'low'),
+    duplicationRisk: normalizeLower(architect?.duplicationAnalysis?.risk) || 'low',
+    observabilityRisk: normalizeLower(architect?.observabilityAnalysis?.risk) || riskFromScore(observabilityScore),
+    refactorHealth: normalizeLower(architect?.refactorOutcome?.status) || 'healthy',
+  };
 }
 
 function parseList(value, fallback = [], lower = true) {
@@ -67,12 +110,30 @@ function renderTemplate(template, values = {}) {
   return String(template ?? '').replace(/\{([^}]+)\}/g, (_full, key) => normalize(values[key]));
 }
 
+function parseGitStatusPath(line) {
+  const raw = String(line ?? '').trimEnd();
+  if (!raw) {
+    return '';
+  }
+  const pathStart = raw.length > 2 && raw[2] === ' ' ? 3 : 2;
+  return raw.slice(pathStart).trim();
+}
+
 function resolveSummary({ taskId, lanes, fullSuiteResult }) {
   const laneText = lanes.length > 0 ? lanes.join(',') : 'default';
   if (fullSuiteResult.required) {
     return `slice close auto-verified after full suite pass for ${taskId}; lanes=${laneText}; command=${fullSuiteResult.command}`;
   }
   return `slice close auto-verified for ${taskId}; lanes=${laneText}; full-suite=not-required`;
+}
+
+function isRefactorGovernedTask(task = {}) {
+  const taskId = normalizeLower(task?.taskId || task?.id);
+  const title = normalizeLower(task?.title);
+  return Boolean(task?.refactorGovernance)
+    || normalize(task?.origin?.type) === 'ohder-refactor-governance'
+    || taskId.includes('refactor')
+    || title.includes('refactor');
 }
 
 export class SliceCloseRuntime {
@@ -92,12 +153,21 @@ export class SliceCloseRuntime {
     this.store = new FileStore();
     this.ledger = new EventLedger(cwd);
     this.projectionEngine = new RuntimeProjectionEngine(cwd);
+    this.metricsWriter = new MetricsWriter(cwd);
+    this.driftAnalyticsEngine = new RuntimeDriftAnalyticsEngine();
+    this.entropySnapshotEngine = new OhderEntropySnapshotEngine();
+    this.loopStateMachine = new AutonomousLoopStateMachine(cwd);
+    this.refactorOutcomeEngine = new OhderRefactorOutcomeEngine();
   }
 
-  runGit(args, allowFailure = false) {
+  runGit(args, allowFailure = false, env = {}) {
     const result = spawnSync('git', args, {
       cwd: this.cwd,
       encoding: 'utf8',
+      env: {
+        ...process.env,
+        ...env,
+      },
     });
     const stdout = String(result.stdout ?? '');
     const stderr = String(result.stderr ?? '');
@@ -221,6 +291,25 @@ export class SliceCloseRuntime {
     });
   }
 
+  evaluateOhderModeCloseGuard(task = {}, policy = {}) {
+    const profile = normalizeOhderProfile(policy);
+    if (profile.blockNonRefactorSlices !== true || isRefactorGovernedTask(task)) {
+      return {
+        ok: true,
+        profile,
+      };
+    }
+
+    return fail(
+      'ohder-refactor-mode-non-refactor-slice',
+      'OHDER refactor mode only closes refactor-governed slices unless policy allows non-refactor close',
+      {
+        profile,
+        taskId: normalize(task?.taskId || task?.id),
+      }
+    );
+  }
+
   resolveCommitFooterKey(policy) {
     return normalize(policy?.slice_commit?.footer_key) || 'ASK-Slice';
   }
@@ -260,7 +349,7 @@ export class SliceCloseRuntime {
       .split('\n')
       .map(line => line.trimEnd())
       .filter(Boolean)
-      .map(line => line.slice(3).trim())
+      .map(parseGitStatusPath)
       .map(filePath => filePath.split(' -> ').at(-1))
       .map(filePath => normalize(filePath).replace(/\\/gu, '/'))
       .filter(Boolean)
@@ -327,6 +416,22 @@ export class SliceCloseRuntime {
     await this.projectionEngine.projectIncremental();
   }
 
+  async enterSliceCloseLoopStep(stepIndex, session, taskId, details = {}) {
+    const stepName = AUTONOMOUS_LOOP_STEPS[stepIndex - 1] || '';
+    const step = await this.loopStateMachine.enter(stepIndex, {
+      source: 'slice-close',
+      taskId,
+      ...details,
+    });
+    await this.emitRuntimeEvent('AutonomousLoopStepEntered', session, taskId, {
+      stepIndex,
+      stepName,
+      details: step.details || {},
+      enteredAt: step.enteredAt,
+    });
+    return step;
+  }
+
   buildArchitectEventPayload(taskId, architect) {
     return {
       taskId,
@@ -344,6 +449,10 @@ export class SliceCloseRuntime {
   async emitArchitectReplayabilityEvents(session, taskId, architect) {
     const payload = this.buildArchitectEventPayload(taskId, architect);
     await this.emitRuntimeEvent('ArchitectValidationCompleted', session, taskId, payload);
+    await this.emitRuntimeEvent('ArchitectureScoreCalculated', session, taskId, {
+      ...payload,
+      architectureScore: architect?.architectureScore || {},
+    });
 
     for (const violation of payload.lawViolations) {
       await this.emitRuntimeEvent('ArchitectureViolationDetected', session, taskId, {
@@ -362,6 +471,99 @@ export class SliceCloseRuntime {
         valid: true,
       });
     }
+  }
+
+  async captureEntropyImpact(session, taskId, architect, policy = {}) {
+    const previousAnalytics = await this.metricsWriter.readDriftAnalytics();
+    const previousHistory = await this.metricsWriter.readHistory();
+    const previousEntry = previousHistory.at(-1);
+    const previousArchitect = previousEntry
+      ? {
+        architectureScore: {
+          overallScore: toNumber(previousEntry.architectureScore, 0),
+        },
+      }
+      : null;
+    const entropy = this.entropySnapshotEngine.snapshot({
+      architect,
+      previousArchitect,
+      driftAnalytics: previousAnalytics,
+      policy,
+    });
+    const entropyDimensions = entropyDimensionsFromArchitect(architect);
+    const historyEntry = {
+      ts: entropy.measuredAt,
+      source: 'slice-close',
+      taskId,
+      sliceId: taskId,
+      validationStatus: 'passed',
+      recoveryStatus: '',
+      entropyDelta: toNumber(architect?.entropyDelta, 0),
+      couplingDelta: toNumber(architect?.couplingDelta, 0),
+      replayabilityRisk: normalize(architect?.replayabilityRisk),
+      architectureScore: toNumber(architect?.architectureScore?.overallScore, 0),
+      architectureScoreDelta: entropy.architectureScoreDelta,
+      entropyScore: entropy.entropyScore,
+      entropyTrend: entropy.trend,
+      refactorPressure: entropy.refactorPressure,
+      ...entropyDimensions,
+      behaviorReplayConfidence: 1,
+      protectedFlowViolations: 0,
+      hardFlowViolations: 0,
+    };
+    await this.metricsWriter.appendHistory(historyEntry);
+    const history = await this.metricsWriter.readHistory();
+    const driftWindowSize = Math.max(1, Math.floor(toNumber(policy?.metrics?.drift_window_size, 10)));
+    const analytics = this.driftAnalyticsEngine.compute(history, {
+      windowSize: driftWindowSize,
+    });
+    const metrics = await this.metricsWriter.read();
+    const nextMetrics = {
+      ...metrics,
+      architectureDriftScore: toNumber(analytics?.architecture?.driftScore, 0),
+      behaviorDriftScore: toNumber(analytics?.behavior?.driftScore, 0),
+      driftTrend: normalize(analytics?.overall?.trend) || 'stable',
+      driftWindowSize: toNumber(analytics?.windowSize, 0),
+      latestEntropy: entropy,
+      latestEntropyDimensions: {
+        ...entropyDimensions,
+        ssotViolationTrend: analytics?.architecture?.ssotViolationTrend || 'stable',
+        durabilityTrend: analytics?.architecture?.durabilityTrend || 'stable',
+        complexityTrend: analytics?.architecture?.complexityTrend || 'stable',
+        duplicationTrend: analytics?.architecture?.duplicationTrend || 'stable',
+        observabilityTrend: analytics?.architecture?.observabilityTrend || 'stable',
+        refactorHealthTrend: analytics?.architecture?.refactorHealthTrend || 'stable',
+      },
+      updatedAt: nowIso(),
+    };
+    await this.metricsWriter.write(nextMetrics);
+    await this.metricsWriter.writeDriftAnalytics(analytics);
+
+    await this.emitRuntimeEvent('EntropyImpactMeasured', session, taskId, {
+      taskId,
+      sliceId: taskId,
+      entropy,
+      history: historyEntry,
+    });
+
+    const previousTrend = normalize(previousAnalytics?.overall?.trend) || 'stable';
+    const nextTrend = normalize(analytics?.overall?.trend) || 'stable';
+    if (previousTrend !== nextTrend || previousHistory.length < 1) {
+      await this.emitRuntimeEvent('EntropyTrendChanged', session, taskId, {
+        taskId,
+        sliceId: taskId,
+        previousTrend,
+        trend: nextTrend,
+        entropy,
+      });
+    }
+
+    return {
+      entropy,
+      history: historyEntry,
+      driftAnalytics: analytics,
+      metrics: nextMetrics,
+    };
   }
 
   commitWithSliceFooter(taskId, policy, task) {
@@ -390,7 +592,9 @@ export class SliceCloseRuntime {
 
     let lastAttempt = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      const commit = this.runGit(['commit', '-m', subject, '-m', footer], true);
+      const commit = this.runGit(['commit', '-m', subject, '-m', footer], true, {
+        ASK_SLICE_CLOSE_TASK_ID: taskId,
+      });
       lastAttempt = {
         attempt,
         ...commit,
@@ -441,6 +645,10 @@ export class SliceCloseRuntime {
     if (toBoolean(policy?.slice_close?.enabled, true) !== true) {
       return fail('slice-close-disabled', 'slice close runtime disabled by policy');
     }
+    const modeGuard = this.evaluateOhderModeCloseGuard(task, policy);
+    if (!modeGuard.ok) {
+      return modeGuard;
+    }
 
     const session = await this.sessionRuntime.getActiveSession();
     const context = await this.contextEngine.getContext();
@@ -450,14 +658,29 @@ export class SliceCloseRuntime {
         missing: preflight.missing,
       });
     }
+    await this.loopStateMachine.start(session.sessionId, {
+      source: 'slice-close',
+      taskId: resolvedTaskId,
+      title: normalize(task.title),
+    });
+    await this.enterSliceCloseLoopStep(1, session, resolvedTaskId, {
+      status: 'hydrated',
+    });
 
     const laneInputs = await this.resolveLaneInputs(resolvedTaskId, task, policy);
+    await this.enterSliceCloseLoopStep(3, session, resolvedTaskId, {
+      lanes: laneInputs.lanes,
+      requiresFullSuite: laneInputs.requiresFullSuite,
+    });
     const fullSuiteResult = {
       required: laneInputs.requiresFullSuite,
       command: '',
       args: [],
       status: 0,
     };
+    await this.enterSliceCloseLoopStep(8, session, resolvedTaskId, {
+      required: laneInputs.requiresFullSuite,
+    });
     if (laneInputs.requiresFullSuite) {
       const suite = this.runFullSuite(policy);
       fullSuiteResult.command = suite.command;
@@ -491,13 +714,75 @@ export class SliceCloseRuntime {
     }
 
     const architect = await this.assessOhderBeforeClose(resolvedTaskId, task, policy, fullSuiteResult, evidence);
+    await this.enterSliceCloseLoopStep(9, session, resolvedTaskId, {
+      status: normalize(architect?.status),
+      blocking: architect?.blocking === true,
+    });
     await this.emitArchitectReplayabilityEvents(session, resolvedTaskId, architect);
     if (architect.blocking === true) {
+      await this.emitRuntimeEvent('GovernanceGateBlocked', session, resolvedTaskId, {
+        gate: 'ohder-architect',
+        reason: normalize(architect?.reason),
+        architect,
+      });
+      await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+        decision: 'block',
+        reason: normalize(architect?.reason),
+      });
+      await this.loopStateMachine.fail('block', {
+        taskId: resolvedTaskId,
+        reason: normalize(architect?.reason),
+      });
       return fail('slice-close-ohder-blocked', 'OHDER architect governance blocked slice close', {
         taskId: resolvedTaskId,
         architect,
       });
     }
+    const entropy = await this.captureEntropyImpact(session, resolvedTaskId, architect, policy);
+    const changedFiles = this.getWorkspaceChangedFiles();
+    if (changedFiles.length > 0) {
+      await this.emitRuntimeEvent('CodeWritten', session, resolvedTaskId, {
+        taskId: resolvedTaskId,
+        sliceId: resolvedTaskId,
+        touchedFiles: changedFiles,
+      });
+    }
+    const refactorOutcome = this.refactorOutcomeEngine.evaluate({
+      task,
+      architect,
+      entropy: entropy?.entropy || entropy,
+      policy,
+    });
+    if (refactorOutcome.required) {
+      await this.emitRuntimeEvent('RefactorOutcomeValidated', session, resolvedTaskId, {
+        taskId: resolvedTaskId,
+        outcome: refactorOutcome,
+      });
+    }
+    if (refactorOutcome.blocking === true) {
+      await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+        decision: 'block',
+        reason: normalize(refactorOutcome.reason),
+      });
+      await this.loopStateMachine.fail('block', {
+        taskId: resolvedTaskId,
+        reason: normalize(refactorOutcome.reason),
+      });
+      return fail('slice-close-refactor-outcome-blocked', 'OHDER refactor outcome validation blocked slice close', {
+        taskId: resolvedTaskId,
+        refactorOutcome,
+      });
+    }
+    await this.enterSliceCloseLoopStep(10, session, resolvedTaskId, {
+      refactorPressure: normalize(entropy?.entropy?.refactorPressure || entropy?.refactorPressure),
+      trend: normalize(entropy?.entropy?.trend || entropy?.trend),
+    });
+    await this.enterSliceCloseLoopStep(11, session, resolvedTaskId, {
+      triggered: false,
+    });
+    await this.enterSliceCloseLoopStep(12, session, resolvedTaskId, {
+      validation: 'auto-verify',
+    });
 
     const summary = resolveSummary({
       taskId: resolvedTaskId,
@@ -506,20 +791,69 @@ export class SliceCloseRuntime {
     });
     const verified = await this.verificationRuntime.verify(resolvedTaskId, 'pass', summary);
     if (!verified.ok) {
+      await this.emitRuntimeEvent('TestFailed', session, resolvedTaskId, {
+        taskId: resolvedTaskId,
+        sliceId: resolvedTaskId,
+        summary,
+      });
+      await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+        decision: 'block',
+        reason: 'verification failed',
+      });
+      await this.loopStateMachine.fail('block', {
+        taskId: resolvedTaskId,
+        reason: 'verification failed',
+      });
       return fail('slice-close-verify-failed', 'failed to auto-verify task before close', {
         verification: verified,
       });
     }
+    await this.emitRuntimeEvent('TestPassed', session, resolvedTaskId, {
+      taskId: resolvedTaskId,
+      sliceId: resolvedTaskId,
+      summary,
+    });
+    await this.enterSliceCloseLoopStep(13, session, resolvedTaskId, {
+      verification: 'passed',
+    });
 
     const completed = await this.taskRuntime.complete(resolvedTaskId);
     if (!completed.ok) {
+      await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+        decision: 'block',
+        reason: 'task completion failed',
+      });
+      await this.loopStateMachine.fail('block', {
+        taskId: resolvedTaskId,
+        reason: 'task completion failed',
+      });
       return fail('slice-close-complete-failed', 'failed to auto-complete task', {
         completion: completed,
       });
     }
+    await this.enterSliceCloseLoopStep(14, session, resolvedTaskId, {
+      checkpoint: 'task-completed',
+    });
+    await this.enterSliceCloseLoopStep(15, session, resolvedTaskId, {
+      resumePacket: 'unchanged',
+    });
+    await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+      decision: 'continue',
+    });
+    await this.loopStateMachine.complete('continue', {
+      taskId: resolvedTaskId,
+    });
 
     const committed = this.commitWithSliceFooter(resolvedTaskId, policy, task);
     if (!committed.ok) {
+      await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+        decision: 'retry',
+        reason: normalize(committed.message),
+      });
+      await this.loopStateMachine.fail('retry', {
+        taskId: resolvedTaskId,
+        reason: normalize(committed.message),
+      });
       const reopened = await this.taskRuntime.reopen(
         resolvedTaskId,
         `slice close rollback after commit failure: ${normalize(committed.message)}`
@@ -540,6 +874,14 @@ export class SliceCloseRuntime {
     if (shouldRunPrePush) {
       const prePush = await this.prePushCheckEngine.run();
       if (!prePush.passed) {
+        await this.enterSliceCloseLoopStep(16, session, resolvedTaskId, {
+          decision: 'block',
+          reason: 'pre-push checks failed',
+        });
+        await this.loopStateMachine.fail('block', {
+          taskId: resolvedTaskId,
+          reason: 'pre-push checks failed',
+        });
         const blocked = await this.sessionRuntime.block(
           `pre-push checks failed after slice close commit for ${resolvedTaskId}`,
           'slice close pre-push failure'
@@ -558,6 +900,7 @@ export class SliceCloseRuntime {
         commit: committed.commit,
         prePush,
         architect,
+        entropy,
         lanes: laneInputs.lanes,
         fullSuite: fullSuiteResult,
       };
@@ -569,6 +912,7 @@ export class SliceCloseRuntime {
       task: completed.task,
       commit: committed.commit,
       architect,
+      entropy,
       lanes: laneInputs.lanes,
       fullSuite: fullSuiteResult,
     };

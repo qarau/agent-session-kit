@@ -1,7 +1,7 @@
 {
   "name": "agent-session-kit",
   "private": true,
-  "version": "5.0.1",
+  "version": "5.1.0",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -13,9 +13,18 @@
     "ask:preflight": "node ask-core/bin/ask.js preflight",
     "ask:can-commit": "node ask-core/bin/ask.js can-commit",
     "ask:pre-commit-check": "node ask-core/bin/ask.js pre-commit-check",
+    "ask:commit-msg-check": "node ask-core/bin/ask.js commit-msg-check",
     "ask:pre-push-check": "node ask-core/bin/ask.js pre-push-check",
     "session:hooks:install": "node scripts/session/installHooks.mjs",
     "session:guard:precommit": "node scripts/session/runAskCorePreCommitAdapter.mjs",
-    "session:guard:prepush": "node scripts/session/runAskCorePrePushAdapter.mjs"
+    "session:guard:commitmsg": "node scripts/session/runAskCoreCommitMsgAdapter.mjs",
+    "session:guard:prepush": "node scripts/session/runAskCorePrePushAdapter.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
   }
 }

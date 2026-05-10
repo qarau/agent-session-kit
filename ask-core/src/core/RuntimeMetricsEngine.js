@@ -6,6 +6,38 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function normalize(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function riskFromScore(score) {
+  const value = toNumber(score, 100);
+  if (value < 70) {
+    return 'high';
+  }
+  if (value < 85) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function entropyDimensionsFromArchitect(architect = {}) {
+  const facts = architect?.ohderFacts && typeof architect.ohderFacts === 'object'
+    ? architect.ohderFacts
+    : {};
+  const observabilityScore = architect?.architectureScore?.categories?.observability;
+  return {
+    ssotViolationCount: normalize(facts.ssot_integrity) === 'invalid' ? 1 : 0,
+    durabilityRisk: normalize(architect?.durabilityAnalysis?.risk)
+      || (normalize(facts.durability_integrity) === 'at-risk' ? 'high' : 'low'),
+    complexityRisk: normalize(architect?.complexityAnalysis?.risk)
+      || (normalize(facts.srp_integrity) === 'weak' ? 'high' : 'low'),
+    duplicationRisk: normalize(architect?.duplicationAnalysis?.risk) || 'low',
+    observabilityRisk: normalize(architect?.observabilityAnalysis?.risk) || riskFromScore(observabilityScore),
+    refactorHealth: normalize(architect?.refactorOutcome?.status) || 'healthy',
+  };
+}
+
 export class RuntimeMetricsEngine {
   constructor(cwd) {
     this.writer = new MetricsWriter(cwd);
@@ -40,6 +72,7 @@ export class RuntimeMetricsEngine {
       passEvents: passes,
       updatedAt: new Date().toISOString(),
     };
+    const entropyDimensions = entropyDimensionsFromArchitect(architect);
     const historyEntry = {
       ts: payload.updatedAt,
       loopsRun,
@@ -48,6 +81,7 @@ export class RuntimeMetricsEngine {
       entropyDelta: toNumber(architect?.entropyDelta, 0),
       couplingDelta: toNumber(architect?.couplingDelta, 0),
       replayabilityRisk: architect?.replayabilityRisk || '',
+      ...entropyDimensions,
       behaviorReplayConfidence: toNumber(flow?.behaviorReplay?.confidence, 1),
       protectedFlowViolations: Array.isArray(flow?.protectedFlowViolations) ? flow.protectedFlowViolations.length : 0,
       hardFlowViolations: Array.isArray(flow?.hardFlowViolations) ? flow.hardFlowViolations.length : 0,
@@ -61,6 +95,15 @@ export class RuntimeMetricsEngine {
     payload.behaviorDriftScore = toNumber(analytics?.behavior?.driftScore, 0);
     payload.driftTrend = analytics?.overall?.trend || 'stable';
     payload.driftWindowSize = toNumber(analytics?.windowSize, 0);
+    payload.latestEntropyDimensions = {
+      ...entropyDimensions,
+      ssotViolationTrend: analytics?.architecture?.ssotViolationTrend || 'stable',
+      durabilityTrend: analytics?.architecture?.durabilityTrend || 'stable',
+      complexityTrend: analytics?.architecture?.complexityTrend || 'stable',
+      duplicationTrend: analytics?.architecture?.duplicationTrend || 'stable',
+      observabilityTrend: analytics?.architecture?.observabilityTrend || 'stable',
+      refactorHealthTrend: analytics?.architecture?.refactorHealthTrend || 'stable',
+    };
     await this.writer.write(payload);
     await this.writer.writeDriftAnalytics(analytics);
     return payload;

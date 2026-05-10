@@ -1,4 +1,4 @@
-# Operator Playbooks
+﻿# Operator Playbooks
 
 ## Daily Start
 
@@ -9,13 +9,82 @@
 2. Confirm governance state:
    - `node ask-core/bin/ask.js governance status`
    - `node ask-core/bin/ask.js next`
-3. Start the next task from `ask next`.
+3. Start the next task from `ask next`, or follow the OHDER-driven next action when no task is available.
 
+## OHDER-Driven Next Action Playbook
+
+`ask next` selects tasks first. If it returns `next.type: "ohder-action"`, do not start unrelated feature work until the recommendation is handled.
+
+Action responses:
+
+- `inspect-ohder-findings`: run `node ask-core/bin/ask.js architect finding list`, explain each blocking finding, then resolve it as fix-planned, false-positive, justified-risk, exempt, tune-law, or tune-analyzer.
+- `resolve-architecture-block`: run `node ask-core/bin/ask.js architect status` and `node ask-core/bin/ask.js governance explain`, then fix the blocking law violation or use an approved short-lived exemption.
+- `create-refactor-slice`: run `node ask-core/bin/ask.js refactor preview`, confirm the concrete target, then `node ask-core/bin/ask.js refactor create` when the recommendation is acceptable. Approve medium-confidence tasks before execution.
+- `run-governance-validation`: run `node ask-core/bin/ask.js governance validate` before asking for the next task again.
+- `await-new-requirement`: architecture governance is clear; add or ingest the next product requirement.
+
+OHDER-driven next actions are advisory task-selection outputs. They emit `OhderNextActionRecommended` for replayability but do not mutate the task board. `governance validate` is the explicit mutating governance refresh path: it recomputes architect/entropy evidence, writes `.ask/runtime/governance-decision.json`, and emits `GovernanceValidationCompleted` plus `GovernanceDecisionWritten`.
+
+## OHDER Refactor Materialization Playbook
+
+Use this playbook when `ask next` returns `next.action: "create-refactor-slice"`.
+
+1. Preview the recommendation:
+   - `node ask-core/bin/ask.js refactor preview`
+2. Inspect:
+   - `recommendation.confidence`
+   - `recommendation.target.targetId`
+   - `recommendation.targetPortfolio[]`
+   - `recommendation.target.path`
+   - `recommendation.reason`
+   - `recommendation.targetSignals`
+   - `recommendation.acceptanceCriteria`
+   - `refactorExecutionPlan.actions`
+   - `refactorExecutionPlan.approvalRequired`
+3. Review the ranked portfolio before creating work. Each target includes `rank`, `score`, `confidence`, `blastRadius`, `freshness`, reasons, and related slice evidence. ASK selects rank 1 deterministically, but the portfolio shows the next best alternatives.
+4. If preview returns `suppression.reason: "no-new-refactor-target"`, do not force a generic refactor. Run governance validation, review recent entropy history, and add new evidence or a clearer refactor plan before materializing work.
+5. Materialize when acceptable:
+   - `node ask-core/bin/ask.js refactor create`
+6. If confidence is `medium`, approve before execution:
+   - `node ask-core/bin/ask.js refactor approve <taskId> --approved-by <id>`
+7. If the recommendation is unsafe or poorly timed, reject it:
+   - `node ask-core/bin/ask.js refactor reject <taskId> --reason "<reason>"`
+8. Execute the created task through the normal governed loop:
+   - `node ask-core/bin/ask.js task start <taskId>`
+   - implement and validate changes
+   - `node ask-core/bin/ask.js slice close <taskId>`
+
+Confidence behavior:
+
+- `low`: suggest-only; no task is created.
+- `medium`: task is created with approval required.
+- `high`: explicit creation is allowed; automatic creation requires policy opt-in.
+- `refactorExecutionPlan.risk: "high"`: approval is required even when recommendation confidence is high.
+
+Ledger events:
+
+- `RefactorSuggested`
+- `RefactorApproved`
+- `RefactorRejected`
+- `RefactorOutcomeValidated`
+
+Refactor close behavior:
+
+- ASK captures a baseline architecture score and entropy score when an OHDER refactor task is materialized.
+- `ask slice close <taskId>` compares the closing architecture/entropy result against that baseline.
+- In `ohder.mode: refactor`, a worsening outcome without explicit justification blocks close.
+- In other modes, worsening outcomes are visible as governance evidence and can continue when justified.
 ## Executing a Governed Loop
 
 Use governed continuation for checkpointed execution:
 
 - `node ask-core/bin/ask.js continue --once`
+
+For manual interactive Codex work that was not launched through `ask codex`, record explicit checkpoint evidence before change gates:
+
+- `node ask-core/bin/ask.js codex checkpoint --operation <name> --touched-file <path>`
+
+`ask pre-commit-check`, `ask pre-push-check`, and `ask slice close` accept either governed launch evidence (`CodexGovernedLaunchStarted`, `CodexExecutionCaptured`, and a governed checkpoint) or this explicit interactive checkpoint. Direct launch exceptions remain disallowed by default for change gates.
 
 If blocked:
 
@@ -78,6 +147,20 @@ Manage temporary exemptions:
 
 Use exemptions as short-lived operational controls, not permanent policy.
 
+Resolve OHDER findings:
+
+- List: `node ask-core/bin/ask.js architect finding list`
+- Explain: `node ask-core/bin/ask.js architect finding explain <finding-id>`
+- Resolve: `node ask-core/bin/ask.js architect finding resolve <finding-id> --decision <fix-planned|false-positive|justified-risk|exempt|tune-law|tune-analyzer> --reason "<text>" --approved-by <id> [--expires-at <iso>] [--task-id <id>] [--notes "<text>"]`
+
+OFRR v1 records decisions only. A `false-positive` resolution makes analyzer noise visible and replayable, but it does not automatically bypass a hard-law block. Use the existing exemption command when a time-boxed hard-law bypass is actually required.
+
+## OHDER Analyzer Warning Playbook
+
+Detailed analyzer-warning response guidance now lives in `docs/operations/ohder-analyzer-playbook.md`.
+
+Use that playbook when `ask architect status` reports coupling, durability, authority, security boundary, complexity/SRP, or refactor execution plan warnings without a hard-law block.
+
 ## Metrics and Drift Monitoring
 
 Inspect latest metrics and trends:
@@ -90,9 +173,22 @@ Watch:
 - `driftAnalytics.overall.trend`
 - `architectureDriftScore`
 - `behaviorDriftScore`
+- latest `history[].entropyScore`
+- latest `history[].refactorPressure`
+- latest `history[].architectureScoreDelta`
 - hard-flow/protected-flow violation trend
 
-Escalate when trend is `regressing` across multiple windows.
+Entropy events:
+
+- `EntropyImpactMeasured`: a slice-close OHDER assessment was converted into entropy history.
+- `EntropyTrendChanged`: the architecture trend changed or the first slice-close entropy record was created.
+
+Escalation rules:
+
+- If `refactorPressure` is `high`, create or ingest a focused refactor slice only after ASK identifies a concrete target.
+- If target discovery is suppressed, run governance validation instead of creating a generic entropy refactor.
+- If `refactorPressure` is `medium`, run governance validation before selecting new feature work.
+- If `driftAnalytics.overall.trend` is `regressing` across multiple windows, stop feature expansion and reduce entropy first.
 
 ## Pre-Commit and Pre-Push Guard Failures
 
@@ -174,3 +270,4 @@ When session is blocked:
    - `node ask-core/bin/ask.js can-commit`
    - `node ask-core/bin/ask.js pre-commit-check`
    - `node ask-core/bin/ask.js pre-push-check`
+

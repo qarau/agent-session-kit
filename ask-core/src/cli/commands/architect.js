@@ -1,5 +1,7 @@
 import { ArchitectRuntime } from '../../core/ArchitectRuntime.js';
 import { OhderLawPackEngine } from '../../core/OhderLawPackEngine.js';
+import { PolicyEngine } from '../../core/PolicyEngine.js';
+import { FindingResolutionRuntime } from '../../core/FindingResolutionRuntime.js';
 
 function getArgValue(args, name) {
   for (let index = 0; index < args.length; index += 1) {
@@ -18,8 +20,13 @@ function normalize(value) {
   return String(value ?? '').trim();
 }
 
+function normalizeOhderMode(value) {
+  const normalized = normalize(value).toLowerCase();
+  return ['fast', 'strict', 'refactor'].includes(normalized) ? normalized : 'fast';
+}
+
 function printUsage() {
-  console.log('Usage: ask architect status | ask architect exempt list | ask architect exempt add --law-id <id> --reason <text> --approved-by <id> [--operation <name>] [--session-id <id>] [--expires-at <iso>]');
+  console.log('Usage: ask architect status | ask architect finding list|explain|resolve ... | ask architect exempt list | ask architect exempt add --law-id <id> --reason <text> --approved-by <id> [--operation <name>] [--session-id <id>] [--expires-at <iso>]');
 }
 
 export async function runArchitect(subcommand, args = []) {
@@ -27,8 +34,12 @@ export async function runArchitect(subcommand, args = []) {
   const runtime = new ArchitectRuntime(process.cwd());
 
   if (action === 'status') {
+    const policy = await new PolicyEngine(process.cwd()).load();
     const payload = await runtime.readStatus();
-    console.log(JSON.stringify(payload, null, 2));
+    console.log(JSON.stringify({
+      ...payload,
+      ohderMode: normalizeOhderMode(policy?.ohder?.mode || payload.ohderMode),
+    }, null, 2));
     return;
   }
 
@@ -86,6 +97,63 @@ export async function runArchitect(subcommand, args = []) {
         ok: true,
         ...added,
       }, null, 2));
+      return;
+    }
+    printUsage();
+    return;
+  }
+
+  if (action === 'finding') {
+    const findingRuntime = new FindingResolutionRuntime(process.cwd());
+    const findingAction = String(args[0] || 'list').trim();
+    if (findingAction === 'list') {
+      const payload = await findingRuntime.list({
+        status: normalize(getArgValue(args.slice(1), '--status')),
+      });
+      console.log(JSON.stringify(payload, null, 2));
+      return;
+    }
+    if (findingAction === 'explain') {
+      const findingId = normalize(args[1]);
+      if (!findingId) {
+        console.log(JSON.stringify({
+          ok: false,
+          code: 'missing-finding-id',
+          message: 'finding id is required',
+        }, null, 2));
+        process.exitCode = 1;
+        return;
+      }
+      const payload = await findingRuntime.explain(findingId);
+      if (!payload.ok) {
+        process.exitCode = 1;
+      }
+      console.log(JSON.stringify(payload, null, 2));
+      return;
+    }
+    if (findingAction === 'resolve') {
+      const findingId = normalize(args[1]);
+      if (!findingId) {
+        console.log(JSON.stringify({
+          ok: false,
+          code: 'missing-finding-id',
+          message: 'finding id is required',
+        }, null, 2));
+        process.exitCode = 1;
+        return;
+      }
+      const payload = await findingRuntime.resolve(findingId, {
+        decision: normalize(getArgValue(args.slice(2), '--decision')),
+        reason: normalize(getArgValue(args.slice(2), '--reason')),
+        approvedBy: normalize(getArgValue(args.slice(2), '--approved-by')),
+        expiresAt: normalize(getArgValue(args.slice(2), '--expires-at')),
+        taskId: normalize(getArgValue(args.slice(2), '--task-id')),
+        notes: normalize(getArgValue(args.slice(2), '--notes')),
+      });
+      if (!payload.ok) {
+        process.exitCode = 1;
+      }
+      console.log(JSON.stringify(payload, null, 2));
       return;
     }
     printUsage();

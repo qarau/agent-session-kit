@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ohnext",
+  "planTitle": "OHDER Next Action Runtime",
+  "slices": [
+    {
+      "sliceId": "ohder-next-action-engine",
+      "title": "Add OHDER next action decision engine",
+      "description": "Create a deterministic engine that converts architect status, refactor governance, replayability risk, and task pressure into a next governed action when no ASK task is ready.",
+      "acceptanceCriteria": [
+        "Blocking architect status returns resolve-architecture-block.",
+        "Required refactor governance returns create-refactor-slice.",
+        "High replayability or low architecture score returns run-governance-validation.",
+        "Healthy architecture with no task pressure returns await-new-requirement.",
+        "Active or ready task pressure returns no OHDER override."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ask-next-ohder-fallback",
+      "title": "Integrate OHDER fallback into ask next",
+      "description": "Teach ask next to preserve existing task-first selection while using OHDER recommendations when no active or ready task exists.",
+      "dependsOn": [
+        "ohder-next-action-engine"
+      ],
+      "acceptanceCriteria": [
+        "Ready created tasks still take precedence over OHDER recommendations.",
+        "In-progress tasks still take precedence over OHDER recommendations.",
+        "No-task blocking architect status returns next.type ohder-action.",
+        "No-task healthy architecture returns await-new-requirement.",
+        "The ask next JSON payload includes a compact OHDER decision summary."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-next-action-events",
+      "title": "Emit replayable OHDER next-action evidence",
+      "description": "Record OHDER fallback recommendations in the event ledger without mutating task state so architecture-driven next actions are replayable.",
+      "dependsOn": [
+        "ask-next-ohder-fallback"
+      ],
+      "acceptanceCriteria": [
+        "An OHDER fallback decision emits OhderNextActionRecommended.",
+        "The event payload includes action, reason, architect status, architecture score, blocking flag, and recommended command.",
+        "Task-first next selections do not emit OHDER fallback events.",
+        "Projection replay remains stable after event emission."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-next-action-docs",
+      "title": "Document OHDER-driven next actions",
+      "description": "Update README and operations docs so operators understand when ask next returns architecture-driven actions and how to respond.",
+      "dependsOn": [
+        "ohder-next-action-events"
+      ],
+      "acceptanceCriteria": [
+        "README explains OHDER-driven next actions and the task-first precedence rule.",
+        "Runtime architecture docs map OHDER next actions to the 16-step loop.",
+        "Operator playbooks explain resolve-architecture-block, create-refactor-slice, run-governance-validation, and await-new-requirement.",
+        "ASK preflight, can-commit, and pre-push checks pass after documentation updates."
+      ],
+      "queueClass": "reviewer"
+    }
+  ]
+}

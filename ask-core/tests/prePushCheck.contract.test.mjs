@@ -204,3 +204,31 @@ test('pre-push-check scans all outgoing commits when branch has no upstream', ()
   assert.match(JSON.stringify(payload.missing), /missing ASK-Slice footer/i);
   assert.equal(payload.commitGovernance.checkedCommits.length >= 2, true);
 });
+
+test('pre-push-check allows ASK-Plan commits only for docs/plans artifacts', () => {
+  const repoDir = setupRepo('ask-runtime');
+  makeHealthyPrePushState(repoDir);
+
+  fs.mkdirSync(path.join(repoDir, 'docs', 'plans'), { recursive: true });
+  fs.writeFileSync(path.join(repoDir, 'docs', 'plans', 'runtime-plan.md'), '# Runtime Plan\n', 'utf8');
+  fs.writeFileSync(path.join(repoDir, 'docs', 'plans', 'runtime-plan.plan.json'), '{"taskId":"runtime-plan"}\n', 'utf8');
+  runOrThrow('git', ['add', 'docs/plans/runtime-plan.md', 'docs/plans/runtime-plan.plan.json'], { cwd: repoDir });
+  runOrThrow('git', ['commit', '-m', 'chore(plan): ready runtime plan', '-m', 'ASK-Plan: runtime-plan'], { cwd: repoDir });
+
+  const valid = run(process.execPath, [askBinPath, 'pre-push-check'], { cwd: repoDir });
+  assert.equal(valid.status, 0, valid.stdout + valid.stderr);
+  const validPayload = JSON.parse(valid.stdout);
+  assert.equal(validPayload.passed, true);
+  assert.deepEqual(validPayload.commitGovernance.checkedCommits.at(-1).planIds, ['runtime-plan']);
+
+  fs.mkdirSync(path.join(repoDir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(repoDir, 'src', 'implementation.js'), 'export const implementation = true;\n', 'utf8');
+  runOrThrow('git', ['add', 'src/implementation.js'], { cwd: repoDir });
+  runOrThrow('git', ['commit', '-m', 'chore(plan): invalid implementation', '-m', 'ASK-Plan: invalid-plan'], { cwd: repoDir });
+
+  const invalid = run(process.execPath, [askBinPath, 'pre-push-check'], { cwd: repoDir });
+  assert.equal(invalid.status, 1, invalid.stdout + invalid.stderr);
+  const invalidPayload = JSON.parse(invalid.stdout);
+  assert.equal(invalidPayload.passed, false);
+  assert.match(JSON.stringify(invalidPayload.missing), /ASK-Plan commit .* only change docs\/plans artifacts/i);
+});

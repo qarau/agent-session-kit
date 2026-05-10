@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "missing": [],
+  "checks": [
+    "work-context",
+    "docs-freshness",
+    "codex-governance-parity",
+    "slice-commit-governance",
+    "session-preflight",
+    "session-can-commit"
+  ],
+  "commitGovernance": {
+    "checkedCommits": [
+      {
+        "sha": "0000000000000000000000000000000000000000",
+        "sliceIds": [
+          "ask-ts-009"
+        ],
+        "planIds": [],
+        "exemptKinds": [],
+        "files": [
+          "ask-core/tests/contractJsonFixtures.contract.test.mjs"
+        ]
+      }
+    ]
+  }
+}

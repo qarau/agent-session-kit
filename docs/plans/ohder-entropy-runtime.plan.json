@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ohentropy",
+  "planTitle": "OHDER Entropy Runtime",
+  "slices": [
+    {
+      "sliceId": "ohder-entropy-snapshot-engine",
+      "title": "Add OHDER entropy snapshot engine",
+      "description": "Create a deterministic engine that converts architect status, previous architecture score, drift analytics, and policy thresholds into entropy telemetry and refactor pressure.",
+      "acceptanceCriteria": [
+        "Healthy architect status returns low entropyScore and refactorPressure none.",
+        "High replayability risk increases entropyScore and refactorPressure.",
+        "Low architecture score increases entropyScore and refactorPressure.",
+        "Regressing drift analytics sets trend regressing.",
+        "Architecture score deltas are deterministic when previous architect status is available."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "slice-close-entropy-capture",
+      "title": "Capture entropy during slice close",
+      "description": "Make ask slice close persist OHDER entropy history and emit replayable entropy events after architect assessment.",
+      "dependsOn": [
+        "ohder-entropy-snapshot-engine"
+      ],
+      "acceptanceCriteria": [
+        "Successful slice close emits EntropyImpactMeasured.",
+        "Successful slice close emits EntropyTrendChanged.",
+        "Metrics history includes entropy, coupling, replayability risk, architecture score, entropyScore, and source slice-close.",
+        "Drift analytics are recomputed after slice-close entropy capture.",
+        "Entropy capture does not block otherwise successful slice close."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-next-entropy-trends",
+      "title": "Make OHDER next use entropy trends",
+      "description": "Upgrade OHDER next-action decisions so worsening entropy trend or refactor pressure can recommend refactor or governance validation when no task is ready.",
+      "dependsOn": [
+        "slice-close-entropy-capture"
+      ],
+      "acceptanceCriteria": [
+        "Active and ready tasks still take precedence over entropy recommendations.",
+        "High entropy refactor pressure returns create-refactor-slice.",
+        "Regressing entropy trend returns create-refactor-slice.",
+        "Medium entropy refactor pressure returns run-governance-validation.",
+        "Healthy entropy keeps await-new-requirement.",
+        "ask next output and OhderNextActionRecommended event include compact entropy summary."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "ohder-entropy-docs",
+      "title": "Document OHDER entropy runtime",
+      "description": "Update README and operations docs so operators understand entropy history, entropy events, refactor pressure, and ask next trend behavior.",
+      "dependsOn": [
+        "ohder-next-entropy-trends"
+      ],
+      "acceptanceCriteria": [
+        "README explains OHDER Entropy Runtime and slice-close entropy capture.",
+        "Runtime architecture docs map entropy capture to the 16-step OHDER loop.",
+        "Operator playbooks explain EntropyImpactMeasured, EntropyTrendChanged, refactorPressure, and ask metrics show --history.",
+        "Policy reference documents entropy thresholds or defaults used by OHDER next actions.",
+        "Full test suite and ASK pre-push check pass after documentation updates."
+      ],
+      "queueClass": "reviewer"
+    }
+  ]
+}

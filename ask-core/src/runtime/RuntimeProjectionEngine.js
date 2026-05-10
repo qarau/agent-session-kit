@@ -19,6 +19,7 @@ import { ReleaseTrainProjector } from './projectors/ReleaseTrainProjector.js';
 import { PromotionGateProjector } from './projectors/PromotionGateProjector.js';
 import { RolloutProjector } from './projectors/RolloutProjector.js';
 import { SubagentDispatchProjector } from './projectors/SubagentDispatchProjector.js';
+import { FindingProjector } from './projectors/FindingProjector.js';
 
 function toNumber(value, fallback = 0) {
   const parsed = Number(value);
@@ -112,6 +113,7 @@ export class RuntimeProjectionEngine {
     this.promotionGateProjector = overrides.promotionGateProjector ?? new PromotionGateProjector();
     this.rolloutProjector = overrides.rolloutProjector ?? new RolloutProjector();
     this.subagentDispatchProjector = overrides.subagentDispatchProjector ?? new SubagentDispatchProjector();
+    this.findingProjector = overrides.findingProjector ?? new FindingProjector();
   }
 
   initialStates() {
@@ -134,6 +136,7 @@ export class RuntimeProjectionEngine {
       promotionGates: this.promotionGateProjector.initialState(),
       rollout: this.rolloutProjector.initialState(),
       subagentDispatch: this.subagentDispatchProjector.initialState(),
+      ohderFindings: this.findingProjector.initialState(),
     };
   }
 
@@ -157,6 +160,7 @@ export class RuntimeProjectionEngine {
       promotionGates: this.promotionGateProjector.apply(states.promotionGates, event),
       rollout: this.rolloutProjector.apply(states.rollout, event),
       subagentDispatch: this.subagentDispatchProjector.apply(states.subagentDispatch, event),
+      ohderFindings: this.findingProjector.apply(states.ohderFindings, event),
     };
   }
 
@@ -222,6 +226,7 @@ export class RuntimeProjectionEngine {
     await this.snapshots.writePromotionGates(states.promotionGates);
     await this.snapshots.writeRollout(states.rollout);
     await this.snapshots.writeSubagentDispatch(states.subagentDispatch);
+    await this.snapshots.writeOhderFindings(states.ohderFindings);
     await this.snapshots.writeProjectionState({
       lastAppliedSeq: lastSeq,
       requiresReplay: false,
@@ -251,6 +256,7 @@ export class RuntimeProjectionEngine {
       promotionGates: await this.snapshots.readPromotionGates(initial.promotionGates),
       rollout: await this.snapshots.readRollout(initial.rollout),
       subagentDispatch: await this.snapshots.readSubagentDispatch(initial.subagentDispatch),
+      ohderFindings: await this.snapshots.readOhderFindings(initial.ohderFindings),
     };
   }
 
@@ -275,6 +281,7 @@ export class RuntimeProjectionEngine {
       paths.promotionGatesSnapshot(),
       paths.rolloutSnapshot(),
       paths.subagentDispatchSnapshot(),
+      paths.ohderFindings(),
     ];
   }
 

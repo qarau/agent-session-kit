@@ -2,6 +2,21 @@ import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
 import { OhderLawPackEngine } from './OhderLawPackEngine.js';
 import { ArchitectureScoreEngine } from './ArchitectureScoreEngine.js';
+import { OhderCouplingAnalyzerEngine } from './OhderCouplingAnalyzerEngine.js';
+import { OhderDurabilityValidatorEngine } from './OhderDurabilityValidatorEngine.js';
+import { OhderAuthorityAnalyzerEngine } from './OhderAuthorityAnalyzerEngine.js';
+import { OhderComplexityAnalyzerEngine } from './OhderComplexityAnalyzerEngine.js';
+import { OhderSecurityBoundaryAnalyzerEngine } from './OhderSecurityBoundaryAnalyzerEngine.js';
+import { OhderSemanticFactEngine } from './OhderSemanticFactEngine.js';
+import { OhderSsotAnalyzerEngine } from './OhderSsotAnalyzerEngine.js';
+import { OhderEventOnlySyncAnalyzerEngine } from './OhderEventOnlySyncAnalyzerEngine.js';
+import { OhderDuplicationAnalyzerEngine } from './OhderDuplicationAnalyzerEngine.js';
+import { OhderObservabilityAnalyzerEngine } from './OhderObservabilityAnalyzerEngine.js';
+import { OhderTestabilityAnalyzerEngine } from './OhderTestabilityAnalyzerEngine.js';
+import { OhderReplaceabilityAnalyzerEngine } from './OhderReplaceabilityAnalyzerEngine.js';
+import { normalizeOhderProfile } from './PolicyEngine.js';
+import { OhderArchitectureReviewEnvelope } from './OhderArchitectureReviewEnvelope.js';
+import { FindingResolutionRuntime } from './FindingResolutionRuntime.js';
 
 function normalize(value) {
   return String(value ?? '').trim();
@@ -16,11 +31,17 @@ function toNonNegativeInt(value, fallback = 0) {
   return Math.max(0, Math.floor(toNumber(value, fallback)));
 }
 
+function normalizeOhderMode(value) {
+  const normalized = normalize(value).toLowerCase();
+  return ['fast', 'strict', 'refactor'].includes(normalized) ? normalized : 'fast';
+}
+
 function uniqueDirs(paths = []) {
   const dirs = new Set();
   for (const filePath of paths) {
     const normalized = normalize(filePath).replace(/\\/gu, '/');
-    const top = normalized.split('/').filter(Boolean)[0] || '';
+    const parts = normalized.split('/').filter(Boolean);
+    const top = parts.length > 1 ? parts[0] : 'root';
     if (top) {
       dirs.add(top);
     }
@@ -32,12 +53,62 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function strictSemanticEvidence(ohderProfile, ohderFacts = {}, semanticFacts = []) {
+  const requiredMetrics = [
+    'projection_authority',
+    'ssot_integrity',
+    'event_only_sync',
+    'security_boundary',
+    'layer_isolation',
+    'durability_integrity',
+  ].filter(metric => ['invalid', 'at-risk', 'high', 'failed', 'false'].includes(
+    normalize(ohderFacts?.[metric]).toLowerCase()
+  ));
+
+  if (ohderProfile?.requireSemanticFactEvidence !== true) {
+    return {
+      required: false,
+      status: 'not-required',
+      requiredMetrics,
+      missingMetrics: [],
+    };
+  }
+
+  const missingMetrics = requiredMetrics.filter(metric => !semanticFacts.some(fact => (
+    normalize(fact?.metric) === metric
+    && normalize(fact?.confidence).toLowerCase() === 'high'
+    && Array.isArray(fact?.evidence)
+    && fact.evidence.length > 0
+  )));
+
+  return {
+    required: true,
+    status: missingMetrics.length > 0 ? 'missing' : 'satisfied',
+    requiredMetrics,
+    missingMetrics,
+  };
+}
+
 export class ArchitectRuntime {
   constructor(cwd) {
     this.paths = new AskPaths(cwd);
     this.store = new FileStore();
     this.lawPackEngine = new OhderLawPackEngine(cwd);
     this.scoreEngine = new ArchitectureScoreEngine();
+    this.couplingAnalyzer = new OhderCouplingAnalyzerEngine(cwd);
+    this.durabilityValidator = new OhderDurabilityValidatorEngine(cwd);
+    this.authorityAnalyzer = new OhderAuthorityAnalyzerEngine(cwd);
+    this.complexityAnalyzer = new OhderComplexityAnalyzerEngine(cwd);
+    this.securityAnalyzer = new OhderSecurityBoundaryAnalyzerEngine(cwd);
+    this.ssotAnalyzer = new OhderSsotAnalyzerEngine(cwd);
+    this.eventOnlySyncAnalyzer = new OhderEventOnlySyncAnalyzerEngine(cwd);
+    this.duplicationAnalyzer = new OhderDuplicationAnalyzerEngine(cwd);
+    this.observabilityAnalyzer = new OhderObservabilityAnalyzerEngine(cwd);
+    this.testabilityAnalyzer = new OhderTestabilityAnalyzerEngine(cwd);
+    this.replaceabilityAnalyzer = new OhderReplaceabilityAnalyzerEngine(cwd);
+    this.semanticFactEngine = new OhderSemanticFactEngine();
+    this.reviewEnvelope = new OhderArchitectureReviewEnvelope();
+    this.findingRuntime = new FindingResolutionRuntime(cwd);
   }
 
   entropyDelta(execution = {}, validation = {}) {
@@ -105,7 +176,10 @@ export class ArchitectRuntime {
         entropyDelta: 0,
         couplingDelta: 0,
         replayabilityRisk: 'unknown',
+        ohderMode: normalizeOhderMode(policy?.ohder?.mode),
         findings: [],
+        ohderFacts: {},
+        semanticFacts: [],
         architectureScore: this.scoreEngine.score(),
         recommendedAction: 'continue',
         updatedAt: nowIso(),
@@ -115,12 +189,97 @@ export class ArchitectRuntime {
     }
 
     const entropyDelta = this.entropyDelta(execution, validation);
-    const couplingDelta = this.couplingDelta(execution);
+    const couplingAnalysis = this.couplingAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const durabilityAnalysis = this.durabilityValidator.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const authorityAnalysis = this.authorityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const ssotAnalysis = this.ssotAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const eventOnlySyncAnalysis = this.eventOnlySyncAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const duplicationAnalysis = this.duplicationAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const observabilityAnalysis = this.observabilityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const testabilityAnalysis = this.testabilityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+      validation,
+    });
+    const replaceabilityAnalysis = this.replaceabilityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const complexityAnalysis = this.complexityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const securityAnalysis = this.securityAnalyzer.analyze({
+      touchedFiles: Array.isArray(execution.touchedFiles) ? execution.touchedFiles : [],
+    });
+    const couplingDelta = Math.max(this.couplingDelta(execution), toNumber(couplingAnalysis.couplingDelta, 0));
     const replayabilityRisk = this.replayabilityRisk(state, execution);
     const maxEntropy = toNonNegativeInt(policy?.architect?.max_entropy_delta, 3);
     const maxCoupling = toNonNegativeInt(policy?.architect?.max_coupling_delta, 2);
     const requireReplayability = policy?.architect?.require_replayability !== false;
     const blockOnViolation = policy?.architect?.block_on_violation !== false;
+    const ohderMode = normalizeOhderMode(policy?.ohder?.mode);
+    const ohderProfile = normalizeOhderProfile(policy);
+    const layerIsolation = Array.isArray(couplingAnalysis.crossLayerImports) && couplingAnalysis.crossLayerImports.length > 0
+      ? 'invalid'
+      : 'valid';
+    const durabilityIntegrity = normalize(durabilityAnalysis.risk).toLowerCase() === 'high'
+      ? 'at-risk'
+      : 'valid';
+    const srpIntegrity = normalize(complexityAnalysis.risk).toLowerCase() === 'high'
+      ? 'weak'
+      : 'strong';
+    const ohderFacts = {
+      sessionId: normalize(state.sessionId),
+      operation: normalize(slice?.execution?.operation),
+      entropy_delta: entropyDelta,
+      coupling_delta: couplingDelta,
+      replayability_risk: replayabilityRisk,
+      validation_status: normalize(validation.status).toLowerCase(),
+      execution_status: normalize(execution.status).toLowerCase(),
+      execution_ok: execution.ok === true ? 'true' : 'false',
+      projection_authority: authorityAnalysis.authorityValid ? 'valid' : 'invalid',
+      ssot_integrity: ssotAnalysis.ssotValid ? 'valid' : 'invalid',
+      security_boundary: securityAnalysis.boundaryValid ? 'valid' : 'invalid',
+      layer_isolation: layerIsolation,
+      event_only_sync: eventOnlySyncAnalysis.eventOnlySyncValid ? 'valid' : 'invalid',
+      duplication: normalize(duplicationAnalysis.risk).toLowerCase(),
+      duplication_risk: normalize(duplicationAnalysis.risk).toLowerCase(),
+      observability_risk: normalize(observabilityAnalysis.risk).toLowerCase(),
+      testability_risk: normalize(testabilityAnalysis.risk).toLowerCase(),
+      replaceability_risk: normalize(replaceabilityAnalysis.risk).toLowerCase(),
+      yagni_risk: normalize(replaceabilityAnalysis.yagniRisk).toLowerCase(),
+      durability_integrity: durabilityIntegrity,
+      srp_integrity: srpIntegrity,
+      durability_risk: normalize(durabilityAnalysis.risk).toLowerCase(),
+      complexity_risk: normalize(complexityAnalysis.risk).toLowerCase(),
+    };
+    const semanticFacts = this.semanticFactEngine.fromArchitectContext({
+      ohderFacts,
+      authorityAnalysis,
+      ssotAnalysis,
+      eventOnlySyncAnalysis,
+      duplicationAnalysis,
+      observabilityAnalysis,
+      testabilityAnalysis,
+      replaceabilityAnalysis,
+      couplingAnalysis,
+      durabilityAnalysis,
+      complexityAnalysis,
+      securityAnalysis,
+    });
+    const semanticEvidence = strictSemanticEvidence(ohderProfile, ohderFacts, semanticFacts);
     const legacyFindings = [];
     if (entropyDelta > maxEntropy) {
       legacyFindings.push(`entropy delta ${String(entropyDelta)} exceeds max ${String(maxEntropy)}`);
@@ -130,6 +289,29 @@ export class ArchitectRuntime {
     }
     if (requireReplayability && replayabilityRisk === 'high') {
       legacyFindings.push('replayability continuity risk is high');
+    }
+    if (ohderMode === 'strict') {
+      if (authorityAnalysis.authorityValid === false) {
+        legacyFindings.push('projection authority invalid: direct governed-state write detected outside approved authority');
+      }
+      if (ssotAnalysis.ssotValid === false) {
+        legacyFindings.push('SSoT integrity invalid: duplicate governed-state authority detected');
+      }
+      if (eventOnlySyncAnalysis.eventOnlySyncValid === false) {
+        legacyFindings.push('event-only sync invalid: direct sync mutation bypasses event ledger');
+      }
+      if (Array.isArray(couplingAnalysis.crossLayerImports) && couplingAnalysis.crossLayerImports.length > 0) {
+        legacyFindings.push('layer isolation invalid: cross-layer import direction risk detected');
+      }
+      if (normalize(durabilityAnalysis.risk).toLowerCase() === 'high') {
+        legacyFindings.push('durability integrity at risk: high durability-sensitive change detected');
+      }
+      if (securityAnalysis.boundaryValid === false) {
+        legacyFindings.push('security boundary invalid: security-sensitive change lacks required guardrails');
+      }
+      if (semanticEvidence.status === 'missing') {
+        legacyFindings.push(`strict mode semantic evidence missing for: ${semanticEvidence.missingMetrics.join(', ')}`);
+      }
     }
 
     const loadedLawPack = await this.lawPackEngine.load();
@@ -154,16 +336,7 @@ export class ArchitectRuntime {
         })
         : [],
     };
-    const lawEvaluation = this.lawPackEngine.evaluate(lawPack, {
-      sessionId: normalize(state.sessionId),
-      operation: normalize(slice?.execution?.operation),
-      entropy_delta: entropyDelta,
-      coupling_delta: couplingDelta,
-      replayability_risk: replayabilityRisk,
-      validation_status: normalize(validation.status).toLowerCase(),
-      execution_status: normalize(execution.status).toLowerCase(),
-      execution_ok: execution.ok === true ? 'true' : 'false',
-    });
+    const lawEvaluation = this.lawPackEngine.evaluate(lawPack, ohderFacts);
     const lawFindings = lawEvaluation.violations.map(violation => {
       const detail = normalize(violation.message)
         || `${normalize(violation.metric)} ${normalize(violation.operator)} ${String(violation.expected)}`;
@@ -193,12 +366,30 @@ export class ArchitectRuntime {
       couplingDelta,
       replayabilityRisk,
       lawEvaluation,
+      couplingAnalysis,
+      durabilityAnalysis,
+      authorityAnalysis,
+      ssotAnalysis,
+      eventOnlySyncAnalysis,
+      duplicationAnalysis,
+      observabilityAnalysis,
+      testabilityAnalysis,
+      replaceabilityAnalysis,
+      complexityAnalysis,
+      securityAnalysis,
+    });
+    const architectureReview = this.reviewEnvelope.review({
+      semanticFacts,
+      architectureScore,
     });
     const payload = {
       status,
       blocking,
       reason: violation ? findings.join('; ') : 'architecture guardrails satisfied',
       sliceId: normalize(slice.id),
+      ohderMode,
+      ohderProfile,
+      semanticEvidence,
       entropyDelta,
       couplingDelta,
       replayabilityRisk,
@@ -207,10 +398,30 @@ export class ArchitectRuntime {
       lawOutcome: lawEvaluation.outcome,
       lawViolations: lawEvaluation.violations,
       lawExemptions: lawEvaluation.exempted,
+      ohderFacts,
+      semanticFacts,
+      couplingAnalysis,
+      durabilityAnalysis,
+      authorityAnalysis,
+      ssotAnalysis,
+      eventOnlySyncAnalysis,
+      duplicationAnalysis,
+      observabilityAnalysis,
+      testabilityAnalysis,
+      replaceabilityAnalysis,
+      complexityAnalysis,
+      securityAnalysis,
       architectureScore,
+      architectureReview,
       recommendedAction,
       updatedAt: nowIso(),
     };
+    const findingResult = await this.findingRuntime.detectFromArchitect({
+      sessionId: normalize(state.sessionId),
+      taskId: normalize(slice.id),
+      architect: payload,
+    });
+    payload.findings = findingResult.findings;
     await this.store.writeJson(this.paths.architectStatus(), payload);
     return payload;
   }
@@ -222,12 +433,64 @@ export class ArchitectRuntime {
       entropyDelta: 0,
       couplingDelta: 0,
       replayabilityRisk: 'unknown',
+      ohderMode: 'fast',
+      ohderProfile: normalizeOhderProfile({ ohder: { mode: 'fast' } }),
+      semanticEvidence: {
+        required: false,
+        status: 'not-required',
+        requiredMetrics: [],
+        missingMetrics: [],
+      },
       findings: [],
       lawPackVersion: 1,
       lawOutcome: '',
       lawViolations: [],
       lawExemptions: [],
+      ohderFacts: {},
+      semanticFacts: [],
+      duplicationAnalysis: {
+        risk: 'unknown',
+        duplicationValid: true,
+        filesAnalyzed: [],
+        duplicateGroups: [],
+        findings: [],
+        recommendations: [],
+      },
+      observabilityAnalysis: {
+        risk: 'unknown',
+        observabilityValid: true,
+        filesAnalyzed: [],
+        violations: [],
+        findings: [],
+        recommendations: [],
+      },
+      testabilityAnalysis: {
+        risk: 'unknown',
+        testabilityValid: true,
+        filesAnalyzed: [],
+        violations: [],
+        findings: [],
+        recommendations: [],
+      },
+      replaceabilityAnalysis: {
+        risk: 'unknown',
+        replaceabilityValid: true,
+        yagniRisk: 'unknown',
+        filesAnalyzed: [],
+        violations: [],
+        yagniWarnings: [],
+        findings: [],
+        recommendations: [],
+      },
+      securityAnalysis: {
+        risk: 'unknown',
+        boundaryValid: true,
+        filesAnalyzed: [],
+        findings: [],
+        recommendations: [],
+      },
       architectureScore: this.scoreEngine.score(),
+      architectureReview: this.reviewEnvelope.review(),
       recommendedAction: '',
       updatedAt: '',
     });

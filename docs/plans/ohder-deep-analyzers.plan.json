@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ohdeep",
+  "planTitle": "Deep OHDER Analyzer Runtime",
+  "slices": [
+    {
+      "sliceId": "coupling-analyzer",
+      "title": "Add OHDER coupling analyzer",
+      "description": "Add a deterministic analyzer that measures touched runtime layers, import direction risk, coupling hotspots, and cross-layer findings during OHDER architect assessment.",
+      "acceptanceCriteria": [
+        "Same-layer changes produce low coupling risk.",
+        "Core importing CLI is reported as a cross-layer coupling finding.",
+        "Analyzer output is exposed on architect status.",
+        "Coupling findings can affect architecture score."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "durability-validator",
+      "title": "Add OHDER durability validator",
+      "description": "Detect durability-sensitive runtime changes such as projector, snapshot, event, sequence, policy, and migration touchpoints.",
+      "dependsOn": [
+        "coupling-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "Projector and snapshot touchpoints raise durability risk.",
+        "Durability findings are exposed on architect status.",
+        "Durability risk can affect architecture score.",
+        "Existing slice-close behavior remains compatible."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "authority-analyzer",
+      "title": "Add OHDER authority analyzer",
+      "description": "Detect direct governed-state writes and duplicate authority risks outside approved runtime authorities.",
+      "dependsOn": [
+        "durability-validator"
+      ],
+      "acceptanceCriteria": [
+        "Approved projection and ledger authorities are allowed.",
+        "Direct writes to runtime snapshots outside approved authorities are reported.",
+        "Authority violations are exposed as OHDER findings.",
+        "Clear authority violations can lower SSoT architecture score."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "complexity-analyzer",
+      "title": "Add OHDER complexity and SRP analyzer",
+      "description": "Measure file complexity, mixed responsibility signals, and SRP risk for changed files.",
+      "dependsOn": [
+        "authority-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "Focused files produce low complexity risk.",
+        "Large multi-concern files produce SRP warnings.",
+        "Complexity findings are exposed on architect status.",
+        "Complexity risk can affect architecture score."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "refactor-execution-planner",
+      "title": "Add OHDER refactor execution planner",
+      "description": "Convert refactor targets and analyzer findings into concrete, governed refactor execution plans without auto-applying patches.",
+      "dependsOn": [
+        "complexity-analyzer"
+      ],
+      "acceptanceCriteria": [
+        "Doc targets produce split-doc-section plans.",
+        "Cross-layer coupling targets produce reduce-cross-layer-import plans.",
+        "High-risk plans require approval.",
+        "Planner output can be embedded in refactor task metadata."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "deep-analyzer-docs",
+      "title": "Document deep OHDER analyzers",
+      "description": "Update README and operations docs with the new analyzer responsibilities and operator guidance.",
+      "dependsOn": [
+        "refactor-execution-planner"
+      ],
+      "acceptanceCriteria": [
+        "README explains coupling, durability, authority, complexity, and refactor execution planning.",
+        "Runtime architecture docs map analyzers to the OHDER loop.",
+        "Operator playbooks explain how to respond to analyzer warnings.",
+        "ASK gates pass after documentation updates."
+      ],
+      "queueClass": "reviewer"
+    }
+  ]
+}

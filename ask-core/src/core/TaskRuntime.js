@@ -3,6 +3,15 @@ import { FileStore } from '../fs/FileStore.js';
 import { EventLedger } from '../runtime/EventLedger.js';
 import { RuntimeProjectionEngine } from '../runtime/RuntimeProjectionEngine.js';
 import {
+  buildTaskAssignedPayload,
+  buildTaskCreatedPayload,
+  buildTaskDependencyAddedPayload,
+  buildTaskReopenedPayload,
+  enrichTaskWithFreshness,
+  normalizeTaskRuntimeValue as normalize,
+  okTaskResult,
+} from './TaskRuntimeHelpers.js';
+import {
   validateTaskAssign,
   validateTaskComplete,
   validateTaskCreate,
@@ -10,10 +19,6 @@ import {
   validateTaskReopen,
   validateTaskStart,
 } from '../runtime/invariants/taskInvariants.js';
-
-function normalize(value) {
-  return String(value ?? '').trim();
-}
 
 export class TaskRuntime {
   constructor(cwd) {
@@ -79,13 +84,10 @@ export class TaskRuntime {
     const task = await this.appendTaskEvent(
       'TaskCreated',
       resolvedTaskId,
-      {
-        title: normalize(title),
-        description: normalize(description),
-      },
+      buildTaskCreatedPayload(title, description),
       { source: 'task-runtime' }
     );
-    return { ok: true, task };
+    return okTaskResult(task);
   }
 
   async assign(taskId, owner) {
@@ -103,12 +105,10 @@ export class TaskRuntime {
     const updated = await this.appendTaskEvent(
       'TaskAssigned',
       resolvedTaskId,
-      {
-        owner: normalize(owner),
-      },
+      buildTaskAssignedPayload(owner),
       { source: 'task-runtime' }
     );
-    return { ok: true, task: updated };
+    return okTaskResult(updated);
   }
 
   async start(taskId) {
@@ -128,7 +128,7 @@ export class TaskRuntime {
       {},
       { source: 'task-runtime' }
     );
-    return { ok: true, task: updated };
+    return okTaskResult(updated);
   }
 
   async complete(taskId) {
@@ -148,7 +148,7 @@ export class TaskRuntime {
       {},
       { source: 'task-runtime' }
     );
-    return { ok: true, task: updated };
+    return okTaskResult(updated);
   }
 
   async reopen(taskId, reason = '') {
@@ -165,12 +165,10 @@ export class TaskRuntime {
     const updated = await this.appendTaskEvent(
       'TaskReopened',
       resolvedTaskId,
-      {
-        reason: normalize(reason),
-      },
+      buildTaskReopenedPayload(reason),
       { source: 'task-runtime' }
     );
-    return { ok: true, task: updated };
+    return okTaskResult(updated);
   }
 
   async depends(taskId, dependencyTaskId) {
@@ -191,12 +189,10 @@ export class TaskRuntime {
     const updated = await this.appendTaskEvent(
       'TaskDependencyAdded',
       resolvedTaskId,
-      {
-        dependencyTaskId: resolvedDependencyTaskId,
-      },
+      buildTaskDependencyAddedPayload(resolvedDependencyTaskId),
       { source: 'task-runtime' }
     );
-    return { ok: true, task: updated };
+    return okTaskResult(updated);
   }
 
   async status(taskId = '') {
@@ -210,16 +206,7 @@ export class TaskRuntime {
       const enriched = {};
       for (const [id, task] of Object.entries(tasks)) {
         const taskFreshness = freshnessTasks[id] ?? {};
-        enriched[id] = {
-          ...task,
-          freshness: {
-            status: normalize(taskFreshness.status) || 'unverified',
-            reasonCode: normalize(taskFreshness.reasonCode) || 'verification-not-passed',
-            blockingDependencies: Array.isArray(taskFreshness.blockingDependencies)
-              ? [...taskFreshness.blockingDependencies]
-              : [],
-          },
-        };
+        enriched[id] = enrichTaskWithFreshness(task, taskFreshness);
       }
       return { ok: true, tasks: enriched };
     }
@@ -236,16 +223,7 @@ export class TaskRuntime {
     const taskFreshness = freshnessTasks[resolvedTaskId] ?? {};
     return {
       ok: true,
-      task: {
-        ...task,
-        freshness: {
-          status: normalize(taskFreshness.status) || 'unverified',
-          reasonCode: normalize(taskFreshness.reasonCode) || 'verification-not-passed',
-          blockingDependencies: Array.isArray(taskFreshness.blockingDependencies)
-            ? [...taskFreshness.blockingDependencies]
-            : [],
-        },
-      },
+      task: enrichTaskWithFreshness(task, taskFreshness),
     };
   }
 }

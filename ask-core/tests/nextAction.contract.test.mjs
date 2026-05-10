@@ -50,8 +50,95 @@ function setupRepo() {
   return tempRoot;
 }
 
-test('ask next prioritizes dependency-ready created task', () => {
+function writeJson(filePath, payload) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
+}
+
+function writeArchitectStatus(repoDir, patch = {}) {
+  writeJson(path.join(repoDir, '.ask', 'runtime', 'architect-status.json'), {
+    status: 'passed',
+    blocking: false,
+    reason: 'architecture guardrails satisfied',
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 99,
+    },
+    ...patch,
+  });
+}
+
+function writeDriftAnalytics(repoDir, patch = {}) {
+  writeJson(path.join(repoDir, '.ask', 'runtime', 'drift-analytics.json'), {
+    windowSize: 2,
+    architecture: {
+      entropyTrend: 'stable',
+      couplingTrend: 'stable',
+      replayabilityTrend: 'stable',
+      driftScore: 0,
+    },
+    behavior: {
+      replayConfidenceTrend: 'stable',
+      protectedViolationTrend: 'stable',
+      hardViolationTrend: 'stable',
+      driftScore: 0,
+    },
+    overall: {
+      trend: 'stable',
+      driftScore: 0,
+    },
+    updatedAt: new Date().toISOString(),
+    ...patch,
+  });
+}
+
+function appendMetricsHistory(repoDir, entry) {
+  const historyPath = path.join(repoDir, '.ask', 'runtime', 'metrics-history.ndjson');
+  fs.mkdirSync(path.dirname(historyPath), { recursive: true });
+  fs.appendFileSync(historyPath, `${JSON.stringify(entry)}\n`, 'utf8');
+}
+
+function seedRefactorTargetEvidence(repoDir, taskId = 'slice-001', filePath = 'ask-core/src/core/Hotspot.js') {
+  const absolutePath = path.join(repoDir, filePath);
+  fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+  fs.writeFileSync(absolutePath, 'export const hotspot = true;\n', 'utf8');
+  runOrThrow('git', ['add', filePath], { cwd: repoDir });
+  runOrThrow('git', ['commit', '-m', `chore(slice): close ${taskId}`, '-m', `ASK-Slice: ${taskId}`], { cwd: repoDir });
+  appendMetricsHistory(repoDir, {
+    ts: new Date().toISOString(),
+    source: 'slice-close',
+    taskId,
+    sliceId: taskId,
+    entropyDelta: 1,
+    couplingDelta: 1,
+    replayabilityRisk: 'low',
+    architectureScore: 98,
+    architectureScoreDelta: -1,
+    entropyScore: 0.17,
+    entropyTrend: 'regressing',
+    refactorPressure: 'high',
+  });
+}
+
+function readEvents(repoDir) {
+  const eventsPath = path.join(repoDir, '.ask', 'runtime', 'events.ndjson');
+  if (!fs.existsSync(eventsPath)) {
+    return [];
+  }
+  return fs.readFileSync(eventsPath, 'utf8')
+    .split(/\r?\n/u)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => JSON.parse(line));
+}
+
+test('ask next prioritizes dependency-ready created task over OHDER recommendations', () => {
   const repoDir = setupRepo();
+  writeArchitectStatus(repoDir, {
+    status: 'failed',
+    blocking: true,
+    reason: 'architecture block should not override ready task',
+  });
   runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-a', '--title', 'Task A'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-b', '--title', 'Task B'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'task', 'depends', 'task-b', 'task-a'], { cwd: repoDir });
@@ -64,25 +151,185 @@ test('ask next prioritizes dependency-ready created task', () => {
   assert.equal(payload.next.type, 'task-start');
   assert.equal(payload.next.taskId, 'task-b');
   assert.equal(Array.isArray(payload.tasks.ready), true);
+  assert.equal(readEvents(repoDir).some(event => event.type === 'OhderNextActionRecommended'), false);
 });
 
-test('ask next falls back to runtime action when no tasks exist', () => {
+test('ask next prioritizes in-progress task over OHDER recommendations', () => {
   const repoDir = setupRepo();
+  writeArchitectStatus(repoDir, {
+    status: 'failed',
+    blocking: true,
+    reason: 'architecture block should not override active task',
+  });
+  runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-active', '--title', 'Active task'], { cwd: repoDir });
+  runOrThrow(process.execPath, [askBinPath, 'task', 'start', 'task-active'], { cwd: repoDir });
+
   const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.ok, true);
-  assert.equal(payload.next.type, 'runtime-action');
-  assert.equal(typeof payload.runtime.nextRecommendedAction, 'string');
+  assert.equal(payload.next.type, 'task-continue');
+  assert.equal(payload.next.taskId, 'task-active');
 });
 
-test('ask next does not continue completed tasks', () => {
+test('ask next returns OHDER block action when no task is available', () => {
+  const repoDir = setupRepo();
+  writeArchitectStatus(repoDir, {
+    status: 'failed',
+    blocking: true,
+    reason: 'ProjectionAuthority violated',
+    architectureScore: {
+      overallScore: 61,
+    },
+  });
+
+  const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.next.type, 'ohder-action');
+  assert.equal(payload.next.action, 'resolve-architecture-block');
+  assert.equal(payload.next.blocking, true);
+  assert.equal(payload.ohder.action, 'resolve-architecture-block');
+  assert.equal(payload.ohder.architectureScore, 61);
+
+  const events = readEvents(repoDir).filter(event => event.type === 'OhderNextActionRecommended');
+  assert.equal(events.length, 1);
+  assert.equal(events[0].payload.action, 'resolve-architecture-block');
+  assert.match(events[0].payload.reason, /ProjectionAuthority/u);
+  assert.equal(events[0].payload.architectStatus, 'failed');
+  assert.equal(events[0].payload.architectureScore, 61);
+  assert.equal(events[0].payload.blocking, true);
+  assert.equal(events[0].payload.recommendedCommand, 'ask architect status');
+});
+
+test('ask next returns entropy refactor action and event summary when entropy trend regresses', () => {
+  const repoDir = setupRepo();
+  seedRefactorTargetEvidence(repoDir);
+  writeArchitectStatus(repoDir, {
+    status: 'passed',
+    blocking: false,
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 98,
+    },
+  });
+  writeDriftAnalytics(repoDir, {
+    architecture: {
+      entropyTrend: 'increasing',
+      couplingTrend: 'increasing',
+      replayabilityTrend: 'stable',
+      driftScore: 0.6667,
+    },
+    overall: {
+      trend: 'regressing',
+      driftScore: 0.3334,
+    },
+  });
+
+  const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.next.type, 'ohder-action');
+  assert.equal(payload.next.action, 'create-refactor-slice');
+  assert.equal(payload.next.recommendedCommand, 'ask refactor preview');
+  assert.equal(payload.next.refactorRecommendation.confidence, 'high');
+  assert.equal(payload.next.refactorRecommendation.target.targetId, 'file:ask-core/src/core/Hotspot.js');
+  assert.equal(typeof payload.next.refactorRecommendation.fingerprint, 'string');
+  assert.equal(payload.entropy.trend, 'regressing');
+  assert.equal(payload.entropy.refactorPressure, 'high');
+
+  const events = readEvents(repoDir).filter(event => event.type === 'OhderNextActionRecommended');
+  assert.equal(events.length, 1);
+  assert.equal(events[0].payload.action, 'create-refactor-slice');
+  assert.equal(events[0].payload.recommendedCommand, 'ask refactor preview');
+  assert.equal(events[0].payload.refactorRecommendationFingerprint, payload.next.refactorRecommendation.fingerprint);
+  assert.equal(events[0].payload.refactorRecommendation.target.targetId, 'file:ask-core/src/core/Hotspot.js');
+  assert.equal(events[0].payload.entropy.trend, 'regressing');
+  assert.equal(events[0].payload.entropy.refactorPressure, 'high');
+});
+
+test('ask next returns OHDER await-new-requirement action when architecture is healthy', () => {
   const repoDir = setupRepo();
   runOrThrow(process.execPath, [askBinPath, 'task', 'create', 'task-done', '--title', 'Done task'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'task', 'start', 'task-done'], { cwd: repoDir });
   runOrThrow(process.execPath, [askBinPath, 'task', 'complete', 'task-done'], { cwd: repoDir });
+  writeArchitectStatus(repoDir, {
+    status: 'passed',
+    blocking: false,
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 99,
+    },
+  });
 
   const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.ok, true);
-  assert.equal(payload.next.type, 'runtime-action');
+  assert.equal(payload.next.type, 'ohder-action');
+  assert.equal(payload.next.action, 'await-new-requirement');
+  assert.equal(payload.ohder.action, 'await-new-requirement');
+});
+
+
+test('ask next does not create a refactor task while recommending preview', () => {
+  const repoDir = setupRepo();
+  seedRefactorTargetEvidence(repoDir);
+  writeArchitectStatus(repoDir, {
+    status: 'passed',
+    blocking: false,
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 98,
+    },
+  });
+  writeDriftAnalytics(repoDir, {
+    architecture: {
+      entropyTrend: 'increasing',
+      couplingTrend: 'stable',
+      replayabilityTrend: 'stable',
+      driftScore: 0.5,
+    },
+    overall: {
+      trend: 'regressing',
+      driftScore: 0.25,
+    },
+  });
+
+  const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
+  const payload = JSON.parse(result.stdout);
+  const tasks = JSON.parse(runOrThrow(process.execPath, [askBinPath, 'task', 'status'], { cwd: repoDir }).stdout).tasks;
+
+  assert.equal(payload.next.recommendedCommand, 'ask refactor preview');
+  assert.equal(Object.keys(tasks).some(taskId => taskId.startsWith('ohder-refactor-')), false);
+});
+
+test('ask next runs governance validation when entropy regresses without a concrete refactor target', () => {
+  const repoDir = setupRepo();
+  writeArchitectStatus(repoDir, {
+    status: 'passed',
+    blocking: false,
+    replayabilityRisk: 'low',
+    architectureScore: {
+      overallScore: 98,
+    },
+  });
+  writeDriftAnalytics(repoDir, {
+    architecture: {
+      entropyTrend: 'increasing',
+      couplingTrend: 'stable',
+      replayabilityTrend: 'stable',
+      driftScore: 0.5,
+    },
+    overall: {
+      trend: 'regressing',
+      driftScore: 0.25,
+    },
+  });
+
+  const result = runOrThrow(process.execPath, [askBinPath, 'next'], { cwd: repoDir });
+  const payload = JSON.parse(result.stdout);
+
+  assert.equal(payload.next.action, 'run-governance-validation');
+  assert.equal(payload.next.reason, 'OHDER entropy is regressing but no new concrete refactor target was found');
+  assert.equal(payload.next.recommendedCommand, 'ask governance validate');
+  assert.equal(payload.next.refactorSuppression.reason, 'no-new-refactor-target');
 });

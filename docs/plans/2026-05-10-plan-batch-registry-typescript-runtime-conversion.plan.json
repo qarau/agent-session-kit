@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ask-planbatch",
+  "planTitle": "Plan Batch Registry TypeScript Runtime Conversion",
+  "planSummary": "Typed runtime conversion wave for plan-batch registry behavior while preserving ASK source-run CLI compatibility and existing registry artifact shape.",
+  "slices": [
+    {
+      "sliceId": "001-plan-batch-registry-characterization",
+      "title": "001 Plan Batch Registry Characterization",
+      "description": "Add focused tests for current plan-batch registry defaults, invalid registry rejection, duplicate artifact hash lookup, forced batch allocation, failed batch persistence, and batch show behavior.",
+      "acceptanceCriteria": [
+        "Existing `planIngest.contract.test.mjs` behavior remains covered.",
+        "Characterization tests prove current registry shape and duplicate detection before refactor.",
+        "No production code changes unless an existing bug is exposed."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "002-typescript-helper-boundary",
+      "title": "002 TypeScript Helper Boundary",
+      "description": "Add typed pure helper functions for plan-batch registry normalization and mutation behavior while keeping source-run loading safe.",
+      "dependsOn": ["001-plan-batch-registry-characterization"],
+      "acceptanceCriteria": [
+        "`ask-core/src/core/PlanBatchRegistryRuntime.ts` exports typed registry normalization, batch base construction, batch-state merge, artifact hash index merge, and batch ID allocation helpers.",
+        "Helper contract tests compile under `npm run typecheck`.",
+        "Source-run runtime files do not import `PlanBatchRegistryRuntime.ts` directly."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "003-source-runtime-helper-mirror",
+      "title": "003 Source Runtime Helper Mirror",
+      "description": "Add a source-compatible JavaScript helper mirror and refactor PlanIngestRuntime.js to delegate pure registry behavior through it.",
+      "dependsOn": ["002-typescript-helper-boundary"],
+      "acceptanceCriteria": [
+        "`PlanIngestRuntime.js` imports `PlanBatchRegistryRuntime.js`, not `.ts`.",
+        "Public `PlanIngestRuntime` method names and CLI output remain unchanged.",
+        "Plan ingest, duplicate detection, forced batch allocation, failed batch state, and batch show behavior remain unchanged."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "004-plan-ingest-integration-lock",
+      "title": "004 Plan Ingest Integration Lock",
+      "description": "Lock plan-ingest and plan-mode integration after the helper seam is active.",
+      "dependsOn": ["003-source-runtime-helper-mirror"],
+      "acceptanceCriteria": [
+        "Tests cover `plan ingest`, `plan batch show`, `plan-mode handoff`, and implementation-begin plan provenance.",
+        "Runtime events still include `PlanIngested`, `PlanSliceMaterialized`, and plan-batch metadata.",
+        "Existing idempotency and provenance behavior remains unchanged."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "005-migration-status-update",
+      "title": "005 Migration Status Update",
+      "description": "Update TypeScript migration status for the completed Plan Batch Registry Runtime Conversion wave.",
+      "dependsOn": ["004-plan-ingest-integration-lock"],
+      "acceptanceCriteria": [
+        "Docs mark Plan Batch Registry Runtime Conversion complete for this wave.",
+        "Docs state `PlanIngestRuntime.js` remains source-compatible JavaScript while plan-batch registry helpers are typed and mirrored.",
+        "Docs identify `SliceCloseRuntime boundary` as the next likely wave.",
+        "Docs preserve contracts-first, runtime-conversion-later, strictness-last framing."
+      ],
+      "queueClass": "integrator"
+    }
+  ]
+}

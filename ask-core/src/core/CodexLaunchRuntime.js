@@ -562,6 +562,60 @@ export class CodexLaunchRuntime {
     };
   }
 
+  async checkpoint(options = {}) {
+    const operation = String(options.operation || 'codex-interactive-checkpoint');
+    const touchedFiles = Array.isArray(options.touchedFiles) ? options.touchedFiles : [];
+    const session = await this.resolveRunnableSession();
+    if (!session) {
+      return {
+        ok: false,
+        code: 'session-not-runnable',
+        message: 'unable to enter runnable session state for codex checkpoint',
+      };
+    }
+    await this.contextEngine.verifyQuiet();
+    const sessionId = String(session.sessionId || '');
+    const actor = String(session.actorId || 'local');
+    const checkpointAt = nowIso();
+    const correlationId = randomUUID();
+    const changedFiles = touchedFiles.length > 0 ? touchedFiles : await this.listChangedFiles();
+
+    await this.emitEvent('CodexInteractiveCheckpointCreated', sessionId, actor, this.buildExecutionPayload({
+      correlationId,
+      operation,
+      command: 'interactive-codex',
+      args: [],
+      status: 'completed',
+      exitCode: 0,
+      durationMs: 0,
+      startedAt: checkpointAt,
+      endedAt: checkpointAt,
+      touchedFiles: changedFiles,
+      failureCode: '',
+      extra: {
+        checkpointAt,
+        launchMode: 'interactive-checkpoint',
+      },
+    }));
+    await this.persistCheckpointContinuity({
+      operation,
+      command: 'interactive-codex',
+      args: [],
+      status: 'completed',
+      correlationId,
+      endedAtIso: checkpointAt,
+      failureCode: '',
+    });
+
+    return {
+      ok: true,
+      correlationId,
+      operation,
+      touchedFiles: changedFiles,
+      mode: 'interactive-checkpoint',
+    };
+  }
+
   async directLaunch(options = {}) {
     const command = String(options.command || 'codex');
     const args = Array.isArray(options.args) ? options.args : [];

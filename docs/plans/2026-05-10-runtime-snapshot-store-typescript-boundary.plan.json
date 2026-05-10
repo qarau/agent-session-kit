@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ask-snapshot",
+  "planTitle": "RuntimeSnapshotStore TypeScript Boundary Hardening",
+  "planSummary": "Typed boundary hardening wave for RuntimeSnapshotStore defaults and normalization while preserving ASK source-run CLI compatibility.",
+  "slices": [
+    {
+      "sliceId": "001-snapshot-contract-coverage",
+      "title": "001 Snapshot Contract Coverage",
+      "description": "Add TypeScript contract coverage for current snapshot runtime artifacts without changing runtime behavior.",
+      "acceptanceCriteria": [
+        "Snapshot runtime contracts are exported from the TypeScript contract layer.",
+        "Contracts cover session, task board, task-indexed snapshots, projection state, replay proof, and runtime snapshot artifact grouping.",
+        "Fixture coverage compiles under `npm run typecheck`.",
+        "Existing current artifact contracts remain compatible."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "002-snapshot-defaults-normalization-tests",
+      "title": "002 Snapshot Defaults and Normalization Tests",
+      "description": "Add tests that lock current RuntimeSnapshotStore default and normalization behavior before refactoring.",
+      "acceptanceCriteria": [
+        "Tests cover session fallback behavior.",
+        "Tests cover task-indexed snapshot fallback behavior for representative verification/workflow/freshness snapshots.",
+        "Tests cover projection state normalization for missing, invalid, and loose payloads.",
+        "Tests cover replay proof default/merge behavior.",
+        "Existing replay projection tests continue to pass."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "001-snapshot-contract-coverage"
+      ]
+    },
+    {
+      "sliceId": "003-typescript-snapshot-runtime-helpers",
+      "title": "003 TypeScript Snapshot Runtime Helpers",
+      "description": "Add typed helper functions for snapshot defaults and normalization while keeping source-run loading safe.",
+      "acceptanceCriteria": [
+        "`ask-core/src/runtime/RuntimeSnapshotStoreRuntime.ts` exports typed default and normalization helpers.",
+        "Helper fixtures or contract tests compile under `npm run typecheck`.",
+        "Helper behavior matches the runtime default and normalization tests.",
+        "Source-run runtime files do not import `RuntimeSnapshotStoreRuntime.ts` directly."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "002-snapshot-defaults-normalization-tests"
+      ]
+    },
+    {
+      "sliceId": "004-source-runtime-uses-snapshot-helper-seam",
+      "title": "004 Source Runtime Uses Snapshot Helper Seam",
+      "description": "Refactor RuntimeSnapshotStore.js to delegate defaults and normalization through a source-compatible helper mirror.",
+      "acceptanceCriteria": [
+        "`RuntimeSnapshotStore.js` imports `RuntimeSnapshotStoreRuntime.js`, not `.ts`.",
+        "Public `RuntimeSnapshotStore` method names remain unchanged.",
+        "Snapshot fallback, projection state normalization, and replay proof merge behavior remain unchanged.",
+        "`AskPaths`, `FileStore`, and `RuntimeProjectionEngine` remain unchanged.",
+        "Existing projection and runtime snapshot tests pass."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "003-typescript-snapshot-runtime-helpers"
+      ]
+    },
+    {
+      "sliceId": "005-migration-status-update",
+      "title": "005 Migration Status Update",
+      "description": "Update TypeScript migration status for the completed snapshot/runtime store boundary wave.",
+      "acceptanceCriteria": [
+        "Docs mark snapshot/runtime store boundary hardening complete for this wave.",
+        "Docs state full source-only `.ts` runtime loading remains deferred until CLI build/shim strategy is selected.",
+        "Docs identify the next likely step as task/slice runtime conversion or CLI build/shim strategy.",
+        "Docs preserve contracts-first, runtime-conversion-later, strictness-last framing."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "004-source-runtime-uses-snapshot-helper-seam"
+      ]
+    }
+  ]
+}

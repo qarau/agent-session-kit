@@ -5,6 +5,7 @@ import { runPreflight } from './commands/preflight.js';
 import { runCanCommit } from './commands/canCommit.js';
 import { runPreCommitCheck } from './commands/preCommitCheck.js';
 import { runPrePushCheck } from './commands/prePushCheck.js';
+import { runCommitMsgCheck } from './commands/commitMsgCheck.js';
 import { runHandoff } from './commands/handoff.js';
 import { runCodex } from './commands/codex.js';
 import { runReplay } from './commands/replay.js';
@@ -16,9 +17,11 @@ import { runWorkflowProvider } from './commands/workflow-provider.js';
 import { runFreshness } from './commands/freshness.js';
 import { runIntegration } from './commands/integration.js';
 import { runIntegrationAuto } from './commands/integration-auto.js';
+import { runImplementation } from './commands/implementation.js';
 import { runRoute } from './commands/route.js';
 import { runClaim } from './commands/claim.js';
 import { runChildSession } from './commands/child-session.js';
+import { runAdapter } from './commands/adapter.js';
 import { runAgent } from './commands/agent.js';
 import { runPolicy } from './commands/policy.js';
 import { runFeature } from './commands/feature.js';
@@ -27,6 +30,7 @@ import { runPromote } from './commands/promote.js';
 import { runRollout } from './commands/rollout.js';
 import { runRollback } from './commands/rollback.js';
 import { runContinue } from './commands/continue.js';
+import { runProject } from './commands/project.js';
 import { runProjectState } from './commands/project-state.js';
 import { runIntent } from './commands/intent.js';
 import { runSlice } from './commands/slice.js';
@@ -39,6 +43,9 @@ import { runFlow } from './commands/flow.js';
 import { runGovernance } from './commands/governance.js';
 import { runDesign } from './commands/design.js';
 import { runPlan } from './commands/plan.js';
+import { runPlanMode } from './commands/planMode.js';
+import { runReadyPlan } from './commands/readyPlan.js';
+import { runRefactor } from './commands/refactor.js';
 
 function printHelp() {
   console.log(`ASK Core CLI
@@ -51,6 +58,7 @@ Usage:
   ask can-commit
   ask pre-commit-check
   ask pre-push-check
+  ask commit-msg-check <commit-msg-file>
   ask task create|assign|start|complete|reopen|depends|status
   ask evidence attach
   ask evidence checks record|status
@@ -60,9 +68,12 @@ Usage:
   ask freshness status|explain [task-id]
   ask integration plan|run|status
   ask integration-auto run|status
+  ask implementation begin --title <text> --plan <md> [--prefix <prefix>]
+  ask implementation preflight [--advisory]
   ask route recommend|status
   ask claim acquire|release|lock|status
   ask child-session spawn|status
+  ask adapter resolve [--adapter node]
   ask agent register|status|dispatch
   ask policy classify|apply|status|schema|migrate
   ask feature create|link-task|status
@@ -71,12 +82,14 @@ Usage:
   ask rollout start|phase|status
   ask rollback trigger
   ask continue [--once] [--max-slices <n>] [--until blocked|complete]
+  ask project detect
   ask project-state
   ask intent preview
   ask slice preview [--command <bin>] [--command-arg <arg>] [--operation <name>] [--allowed-command <cmd>]
   ask slice close <taskId>
   ask validate-last
   ask architect status
+  ask architect finding list|explain|resolve
   ask architect exempt list|add --law-id <id> --reason <text> --approved-by <id> [--operation <name>] [--session-id <id>] [--expires-at <iso>]
   ask flow status|list
   ask flow discover --last
@@ -86,14 +99,19 @@ Usage:
   ask design discover --last
   ask design validate --last
   ask design promote <region-id> --to <stage> --reason <text> [--approved-by <id>] [--approval-ticket <id>]
-  ask governance status|explain
+  ask governance status|explain|validate
   ask plan ingest|validate|batch show
+  ask plan-mode prepare --title <text> --source <md> [--prefix <prefix>]
+  ask plan-mode handoff --title <text> --source <md> --plan-json <json>
+  ask ready-plan commit --title <text> --source <md> --plan-json <json>
+  ask refactor preview|create
   ask next
   ask resume-packet show
   ask metrics show [--history <n>]
   ask replay
   ask handoff create
   ask codex [launch] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--allow-fail-open] [--fail-open-reason <text>] [--approved-by <id>] [--approval-ticket <id>] [--touched-file <path>] [-- <args...>]
+  ask codex checkpoint [--operation <name>] [--touched-file <path>]
   ask codex direct --reason <text> [--approved-by <id>] [--approval-ticket <id>] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--touched-file <path>] [-- <args...>]
   ask codex context status|ensure|compact
 `);
@@ -138,6 +156,11 @@ export async function runCli(args) {
 
   if (command === 'pre-push-check') {
     await runPrePushCheck();
+    return;
+  }
+
+  if (command === 'commit-msg-check') {
+    await runCommitMsgCheck([subcommand, ...rest].filter(Boolean));
     return;
   }
 
@@ -186,6 +209,11 @@ export async function runCli(args) {
     return;
   }
 
+  if (command === 'implementation') {
+    await runImplementation(subcommand, rest);
+    return;
+  }
+
   if (command === 'route') {
     await runRoute(subcommand, rest);
     return;
@@ -198,6 +226,11 @@ export async function runCli(args) {
 
   if (command === 'child-session') {
     await runChildSession(subcommand, rest);
+    return;
+  }
+
+  if (command === 'adapter') {
+    await runAdapter(subcommand, rest);
     return;
   }
 
@@ -238,6 +271,11 @@ export async function runCli(args) {
 
   if (command === 'continue') {
     await runContinue([subcommand, ...rest].filter(Boolean));
+    return;
+  }
+
+  if (command === 'project') {
+    await runProject(subcommand, rest);
     return;
   }
 
@@ -288,6 +326,21 @@ export async function runCli(args) {
 
   if (command === 'plan') {
     await runPlan(subcommand, rest);
+    return;
+  }
+
+  if (command === 'plan-mode') {
+    await runPlanMode(subcommand, rest);
+    return;
+  }
+
+  if (command === 'ready-plan') {
+    await runReadyPlan(subcommand, rest);
+    return;
+  }
+
+  if (command === 'refactor') {
+    await runRefactor(subcommand, rest);
     return;
   }
 

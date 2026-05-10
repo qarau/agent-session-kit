@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ask-govledger",
+  "planTitle": "Governance + Event Ledger TypeScript Boundary",
+  "planSummary": "Generated from C:/Users/Gumatua/AppData/Local/Temp/ask-governance-ledger-typescript-boundary-plan.md",
+  "slices": [
+    {
+      "sliceId": "001-governance-report-helper-extraction",
+      "title": "001 Governance Report Helper Extraction",
+      "description": "Extract governance status/explain report construction from `ask-core/src/cli/commands/governance.js` into a pure source-compatible helper module while keeping the CLI command output unchanged.",
+      "acceptanceCriteria": [
+        "`ask governance status` output keeps existing top-level field names.",
+        "`ask governance explain` output keeps existing top-level and `explanation` field names.",
+        "Report construction can be tested without spawning the CLI.",
+        "Existing governance surface tests pass."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "002-typescript-governance-report-builder-boundary",
+      "title": "002 TypeScript Governance Report Builder Boundary",
+      "description": "Add TypeScript-facing governance report builder contracts that mirror the helper behavior and validate `AskGovernanceExplainReport` without changing live runtime loading.",
+      "acceptanceCriteria": [
+        "TypeScript contract layer exports governance report builder input/output types or fixture helpers.",
+        "Contract tests prove the JS helper output shape satisfies the TS governance explain report contract.",
+        "`npm run typecheck` and `npm run build` pass.",
+        "No runtime dependency on `dist`, `tsx`, or a TypeScript loader is introduced."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "001-governance-report-helper-extraction"
+      ]
+    },
+    {
+      "sliceId": "003-governance-fixture-decomposition",
+      "title": "003 Governance Fixture Decomposition",
+      "description": "Split oversized governance contract fixture material into smaller fixture modules while preserving existing public exports from `governanceFixtures.ts`.",
+      "acceptanceCriteria": [
+        "Existing imports from `ask-core/src/contracts/governanceFixtures.ts` continue to work.",
+        "Governance finding, resolution, architect validation, decision state, and explain report fixtures are grouped in focused modules.",
+        "Existing contract tests pass.",
+        "No public fixture symbol is renamed."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "002-typescript-governance-report-builder-boundary"
+      ]
+    },
+    {
+      "sliceId": "004-event-ledger-typescript-boundary-contracts",
+      "title": "004 Event Ledger TypeScript Boundary Contracts",
+      "description": "Add EventLedger TypeScript boundary contracts for append input, event envelope output, read-all output, sequencing assumptions, and metadata preservation.",
+      "acceptanceCriteria": [
+        "Contract layer represents `EventLedger.append` input and returned event envelope.",
+        "Contract layer represents `EventLedger.readAll` output as ordered runtime event records.",
+        "Tests cover required fields: `seq`, `type`, `ts`, `sessionId`, optional `taskId`, `actor`, `payload`, `meta`.",
+        "Existing event contract tests pass."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "003-governance-fixture-decomposition"
+      ]
+    },
+    {
+      "sliceId": "005-event-ledger-runtime-guard-tests",
+      "title": "005 Event Ledger Runtime Guard Tests",
+      "description": "Add source-compatible EventLedger guard tests around ordering, malformed NDJSON handling expectations, metadata preservation, and sequence monotonicity.",
+      "acceptanceCriteria": [
+        "Tests document current malformed line behavior without changing it unless the current behavior is clearly unsafe and explicitly covered.",
+        "Tests prove appended event metadata and payload are preserved.",
+        "Tests prove read order is sorted by sequence.",
+        "Existing ledger and projection tests pass."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "004-event-ledger-typescript-boundary-contracts"
+      ]
+    },
+    {
+      "sliceId": "006-continuation-status-update",
+      "title": "006 Continuation Status Update",
+      "description": "Update migration docs to record the governance and ledger boundary work and identify projection cursor conversion as the next true runtime migration step.",
+      "acceptanceCriteria": [
+        "Docs state governance decomposition and EventLedger boundary hardening are complete for this wave.",
+        "Docs state projection cursor runtime conversion is next and still deferred.",
+        "Docs preserve v6 framing: contracts first, runtime conversion later, strictness last.",
+        "Docs preserve ASK ready-plan and slice-close governance requirements."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "005-event-ledger-runtime-guard-tests"
+      ]
+    }
+  ]
+}

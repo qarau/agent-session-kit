@@ -93,7 +93,23 @@ function violationPenalty(violation = {}) {
 }
 
 export class ArchitectureScoreEngine {
-  score({ entropyDelta = 0, couplingDelta = 0, replayabilityRisk = 'low', lawEvaluation = {} } = {}) {
+  score({
+    entropyDelta = 0,
+    couplingDelta = 0,
+    replayabilityRisk = 'low',
+    lawEvaluation = {},
+    couplingAnalysis = null,
+    durabilityAnalysis = null,
+    authorityAnalysis = null,
+    ssotAnalysis = null,
+    eventOnlySyncAnalysis = null,
+    duplicationAnalysis = null,
+    observabilityAnalysis = null,
+    testabilityAnalysis = null,
+    replaceabilityAnalysis = null,
+    complexityAnalysis = null,
+    securityAnalysis = null,
+  } = {}) {
     const categories = initialCategories();
     const violations = Array.isArray(lawEvaluation.violations) ? lawEvaluation.violations : [];
 
@@ -102,7 +118,61 @@ export class ArchitectureScoreEngine {
     }
 
     applyPenalty(categories, 'durability', Math.min(20, toNumber(entropyDelta, 0) * 4));
+    if (durabilityAnalysis?.risk === 'high') {
+      applyPenalty(categories, 'durability', 20);
+    } else if (durabilityAnalysis?.risk === 'medium') {
+      applyPenalty(categories, 'durability', 10);
+    }
+    if (authorityAnalysis?.risk === 'high' || authorityAnalysis?.authorityValid === false) {
+      applyPenalty(categories, 'ssotIntegrity', 25);
+    }
+    if (ssotAnalysis?.risk === 'high' || ssotAnalysis?.ssotValid === false) {
+      applyPenalty(categories, 'ssotIntegrity', 30);
+    }
+    if (eventOnlySyncAnalysis?.risk === 'high' || eventOnlySyncAnalysis?.eventOnlySyncValid === false) {
+      applyPenalty(categories, 'replayability', 25);
+      applyPenalty(categories, 'observability', 15);
+    }
+    if (duplicationAnalysis?.risk === 'high' || duplicationAnalysis?.duplicationValid === false) {
+      applyPenalty(categories, 'replaceability', 20);
+      applyPenalty(categories, 'testability', 12);
+    } else if (duplicationAnalysis?.risk === 'medium') {
+      applyPenalty(categories, 'replaceability', 10);
+      applyPenalty(categories, 'testability', 6);
+    }
+    if (observabilityAnalysis?.risk === 'high' || observabilityAnalysis?.observabilityValid === false) {
+      applyPenalty(categories, 'observability', 30);
+      applyPenalty(categories, 'replayability', 10);
+    } else if (observabilityAnalysis?.risk === 'medium') {
+      applyPenalty(categories, 'observability', 12);
+    }
+    if (testabilityAnalysis?.risk === 'high' || testabilityAnalysis?.testabilityValid === false) {
+      applyPenalty(categories, 'testability', 25);
+    } else if (testabilityAnalysis?.risk === 'medium') {
+      applyPenalty(categories, 'testability', 10);
+    }
+    if (replaceabilityAnalysis?.risk === 'high' || replaceabilityAnalysis?.replaceabilityValid === false) {
+      applyPenalty(categories, 'replaceability', 30);
+    } else if (replaceabilityAnalysis?.risk === 'medium' || replaceabilityAnalysis?.yagniRisk === 'medium') {
+      applyPenalty(categories, 'replaceability', 12);
+    }
+    if (complexityAnalysis?.risk === 'high') {
+      applyPenalty(categories, 'testability', 20);
+      applyPenalty(categories, 'replaceability', 10);
+    } else if (complexityAnalysis?.risk === 'medium') {
+      applyPenalty(categories, 'testability', 10);
+    }
+    if (securityAnalysis?.risk === 'high' || securityAnalysis?.boundaryValid === false) {
+      applyPenalty(categories, 'security', 30);
+    } else if (securityAnalysis?.risk === 'medium') {
+      applyPenalty(categories, 'security', 12);
+    }
     applyPenalty(categories, 'layerDiscipline', Math.min(20, toNumber(couplingDelta, 0) * 5));
+    if (couplingAnalysis?.risk === 'high') {
+      applyPenalty(categories, 'layerDiscipline', 18);
+    } else if (couplingAnalysis?.risk === 'medium') {
+      applyPenalty(categories, 'layerDiscipline', 8);
+    }
 
     const replayability = normalize(replayabilityRisk);
     if (replayability === 'high') {

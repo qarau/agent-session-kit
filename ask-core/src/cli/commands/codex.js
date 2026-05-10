@@ -2,7 +2,7 @@ import { ContextBudgetManager } from '../../integrations/codex/ContextBudgetMana
 import { CodexLaunchRuntime } from '../../core/CodexLaunchRuntime.js';
 
 function printUsage() {
-  console.log('Usage: ask codex [launch] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--allow-fail-open] [--fail-open-reason <text>] [--approved-by <id>] [--approval-ticket <id>] [--touched-file <path>] [-- <args...>] | ask codex direct --reason <text> [--approved-by <id>] [--approval-ticket <id>] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--touched-file <path>] [-- <args...>] | ask codex context status|ensure|compact');
+  console.log('Usage: ask codex [launch] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--allow-fail-open] [--fail-open-reason <text>] [--approved-by <id>] [--approval-ticket <id>] [--touched-file <path>] [-- <args...>] | ask codex checkpoint [--operation <name>] [--touched-file <path>] | ask codex direct --reason <text> [--approved-by <id>] [--approval-ticket <id>] [--command <bin>] [--command-arg <arg>] [--operation <name>] [--timeout-ms <n>] [--touched-file <path>] [-- <args...>] | ask codex context status|ensure|compact');
 }
 
 function printPayload(payload) {
@@ -114,6 +114,16 @@ export async function runCodex(subcommand, args = []) {
   if (subcommand === 'direct') {
     const options = parseLaunchArgs(args);
     const payload = await runtime.directLaunch(options);
+    printPayload(payload);
+    if (!payload.ok) {
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  if (subcommand === 'checkpoint') {
+    const options = parseLaunchArgs(args);
+    const payload = await runtime.checkpoint(options);
     printPayload(payload);
     if (!payload.ok) {
       process.exitCode = 1;

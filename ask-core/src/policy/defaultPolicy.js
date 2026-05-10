@@ -65,6 +65,17 @@ architect:
   max_coupling_delta: 2
   require_replayability: true
 
+ohder:
+  mode: fast
+  allow_non_refactor_close: false
+
+ohder_autonomy:
+  auto_create_refactor_tasks: false
+  max_auto_created_tasks_per_session: 1
+  require_clean_worktree: true
+  min_confidence: high
+  max_blast_radius: medium
+
 refactor_governance:
   enabled: true
   trigger_on_architect_failed: true

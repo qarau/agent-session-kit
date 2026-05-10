@@ -6,6 +6,7 @@ import { WorkContextEngine } from './WorkContextEngine.js';
 import { PolicyEngine } from './PolicyEngine.js';
 import { EvidenceRecorder } from './EvidenceRecorder.js';
 import { CodexGovernanceParityEngine } from './CodexGovernanceParityEngine.js';
+import { ImplementationPreflightRuntime } from './ImplementationPreflightRuntime.js';
 import { normalizeBranchEnforcementMode, resolveBranchEnforcementMode } from './resolveBranchEnforcementMode.js';
 import { evaluateCanCommitGate, evaluatePreflightGate } from './sessionPolicyGates.js';
 
@@ -13,7 +14,7 @@ const REQUIRED_DOCS = ['docs/session/current-status.md', 'docs/session/change-lo
 const TASKS_DOC = 'docs/session/tasks.md';
 
 function normalize(pathValue) {
-  return pathValue.replaceAll('\\', '/').trim();
+  return String(pathValue ?? '').replaceAll('\\', '/').trim();
 }
 
 function parseBoolean(value, fallback) {
@@ -38,6 +39,7 @@ export class PreCommitCheckEngine {
     this.policyEngine = new PolicyEngine(cwd);
     this.evidenceRecorder = new EvidenceRecorder(cwd);
     this.codexParityEngine = new CodexGovernanceParityEngine(cwd);
+    this.implementationPreflightRuntime = new ImplementationPreflightRuntime(cwd);
   }
 
   runGit(args, allowFailure = false) {
@@ -180,9 +182,26 @@ export class PreCommitCheckEngine {
     return true;
   }
 
+  hasImplementationChanges(stagedFiles) {
+    return stagedFiles.some(file =>
+      !file.startsWith('docs/')
+      && !file.startsWith('scripts/session/')
+      && !file.startsWith('.githooks/')
+    );
+  }
+
+  async shouldEnforceImplementationPreflight(config = {}) {
+    if (process.env.ASK_REQUIRE_PLAN_MODE_HANDOFF === '1' || config.requirePlanModeHandoff === true) {
+      return true;
+    }
+    const state = await this.implementationPreflightRuntime.planModeHandoff.readState();
+    return normalize(state?.latest?.status).toLowerCase() === 'ingested';
+  }
+
   async run() {
     const checks = ['work-context', 'docs-freshness', 'codex-governance-parity', 'session-preflight', 'session-can-commit'];
     const missing = [];
+    let implementationPreflight = null;
     const config = this.resolveEffectiveContextConfig(this.readConfig());
     const branchEnforcementMode = this.resolveBranchEnforcementMode(config);
     const branchName = this.runGit(['branch', '--show-current'], true);
@@ -209,10 +228,21 @@ export class PreCommitCheckEngine {
     missing.push(...evaluatePreflightGate(policy, session, context).missing);
     missing.push(...evaluateCanCommitGate(policy, session, evidence).missing);
 
+    if (this.hasImplementationChanges(stagedFiles) && await this.shouldEnforceImplementationPreflight(config)) {
+      checks.push('implementation-preflight');
+      implementationPreflight = await this.implementationPreflightRuntime.preflight({
+        sliceCloseTaskId: process.env.ASK_SLICE_CLOSE_TASK_ID,
+      });
+      if (!implementationPreflight.passed) {
+        missing.push(...implementationPreflight.missing);
+      }
+    }
+
     return {
       passed: missing.length === 0,
       missing: Array.from(new Set(missing)),
       checks,
+      implementationPreflight,
     };
   }
 }

@@ -1,0 +1,32 @@
+{
+  "planBatchId": "ask-ts-example-001",
+  "artifactHash": "sha256:example",
+  "taskId": "ask-forge-v6-typescript-contract-foundation",
+  "runId": "ask-forge-v6-ts-foundation-run",
+  "planPrefix": "ask-ts",
+  "planTitle": "ASK Forge v6 TypeScript Contract Foundation",
+  "createdAt": "2026-05-09T00:00:00.000Z",
+  "slices": [
+    {
+      "taskId": "ask-ts-009",
+      "sliceId": "contract-fixture-test-suite",
+      "title": "Contract Fixture Test Suite",
+      "dependencies": [
+        "ask-ts-008"
+      ],
+      "acceptanceCriteria": [
+        "Fixture samples exist for current runtime artifact families."
+      ],
+      "queueClass": "integrator",
+      "origin": {
+        "type": "plan-ingest",
+        "taskId": "ask-forge-v6-typescript-contract-foundation",
+        "runId": "ask-forge-v6-ts-foundation-run",
+        "artifactHash": "sha256:example",
+        "planBatchId": "ask-ts-example-001",
+        "sliceIndex": 9,
+        "sliceId": "contract-fixture-test-suite"
+      }
+    }
+  ]
+}

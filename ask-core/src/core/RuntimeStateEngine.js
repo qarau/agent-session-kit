@@ -12,6 +12,11 @@ function normalize(value) {
   return String(value ?? '').trim();
 }
 
+function normalizeOhderMode(value) {
+  const normalized = normalize(value).toLowerCase();
+  return ['fast', 'strict', 'refactor'].includes(normalized) ? normalized : 'fast';
+}
+
 function toNumber(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -208,8 +213,14 @@ export class RuntimeStateEngine {
       blocking: false,
       writtenAt: '',
     });
+    const ohderFindings = await this.store.readJson(this.paths.ohderFindings(), {
+      version: 1,
+      updatedAt: '',
+      findings: {},
+    });
     const latestTask = this.readLatestTask(taskBoard?.tasks || {});
     const failureStats = this.summarizeFailures(events, policy);
+    const ohderMode = normalizeOhderMode(policy?.ohder?.mode || architectStatus?.ohderMode);
     const eventCount = events.length;
     const lastSeq = eventCount > 0 ? toNumber(events.at(-1)?.seq, 0) : 0;
     const continuity = {
@@ -237,6 +248,7 @@ export class RuntimeStateEngine {
       currentTask: normalize(latestTask?.title || latestTask?.taskId || ''),
       currentTaskId: normalize(latestTask?.taskId || ''),
       currentPhase: normalize(latestValidation?.type || latestExecution?.type || 'analysis'),
+      ohderMode,
       completedTasks: Object.values(taskBoard?.tasks || {})
         .filter(task => normalize(task?.status) === 'completed')
         .map(task => normalize(task.taskId)),
@@ -246,13 +258,17 @@ export class RuntimeStateEngine {
       latestExecution: latestExecution?.payload || null,
       latestCheckpoint: latestCheckpoint?.payload || null,
       latestValidation: latestValidation?.payload || null,
-      architect: architectStatus,
+      architect: {
+        ...architectStatus,
+        ohderMode,
+      },
       flow: {
         ...flowStatus,
         metrics: flowMetrics,
       },
       loop: loopState,
       governanceDecision,
+      ohderFindings,
       dirtyWorktree,
       pendingTransitionExists,
       checkpointMatchesExecution,

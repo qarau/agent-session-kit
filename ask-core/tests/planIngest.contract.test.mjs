@@ -111,6 +111,10 @@ function readQueueClasses(repoDir) {
   );
 }
 
+function readPlanBatchRegistry(repoDir) {
+  return JSON.parse(fs.readFileSync(path.join(repoDir, '.ask', 'tasks', 'plan-batches.json'), 'utf8'));
+}
+
 function basePlan() {
   return {
     schemaVersion: 2,
@@ -138,6 +142,35 @@ function basePlan() {
     ],
   };
 }
+
+test('plan batch registry defaults to current persisted shape', async () => {
+  const repoDir = setupRepo();
+  const runtime = new PlanIngestRuntime(repoDir);
+
+  const decision = await runtime.readBatchRegistry();
+
+  assert.equal(decision.ok, true);
+  assert.deepEqual(decision.registry, {
+    schemaVersion: 1,
+    batches: {},
+    artifactHashes: {},
+  });
+});
+
+test('plan batch registry rejects invalid persisted shape', async () => {
+  const repoDir = setupRepo();
+  writeJson(path.join(repoDir, '.ask', 'tasks', 'plan-batches.json'), {
+    schemaVersion: 1,
+    batches: {},
+    artifactHashes: [],
+  });
+  const runtime = new PlanIngestRuntime(repoDir);
+
+  const decision = await runtime.readBatchRegistry();
+
+  assert.equal(decision.ok, false);
+  assert.equal(decision.code, 'E_PLAN_BATCH_INVALID');
+});
 
 test('plan validate previews deterministic materialization graph', () => {
   const repoDir = setupRepo();
@@ -246,6 +279,15 @@ test('plan ingest enforces strict idempotency with force override', () => {
   const forcedPayload = JSON.parse(forced.stdout);
   assert.equal(forcedPayload.ok, true);
   assert.deepEqual(forcedPayload.createdTaskIds, ['deep-004', 'deep-005', 'deep-006']);
+
+  const registry = readPlanBatchRegistry(repoDir);
+  assert.deepEqual(registry.artifactHashes[firstPayload.artifactHash], [
+    firstPayload.planBatchId,
+    forcedPayload.planBatchId,
+  ]);
+  assert.equal(registry.batches[firstPayload.planBatchId].status, 'completed');
+  assert.equal(registry.batches[forcedPayload.planBatchId].status, 'completed');
+  assert.notEqual(firstPayload.planBatchId, forcedPayload.planBatchId);
 });
 
 test('plan ingest --dry-run validates but does not write runtime events', () => {
