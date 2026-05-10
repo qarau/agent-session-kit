@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 2,
+  "planPrefix": "ask-eventledger",
+  "planTitle": "EventLedger TypeScript Runtime Conversion",
+  "planSummary": "Typed runtime conversion wave for EventLedger append/read behavior while preserving ASK source-run CLI compatibility.",
+  "slices": [
+    {
+      "sliceId": "001-eventledger-runtime-parity-tests",
+      "title": "001 EventLedger Runtime Parity Tests",
+      "description": "Add tests proving the current JS runtime and TypeScript-facing contract expectations stay aligned for append envelopes, defaults, ordering, and malformed NDJSON behavior.",
+      "acceptanceCriteria": [
+        "Tests cover append envelope shape.",
+        "Tests cover optional `taskId` omission.",
+        "Tests cover default `actor`, `payload`, and `meta` values.",
+        "Tests cover sorted `readAll` and malformed NDJSON throw behavior.",
+        "Existing EventLedger guard tests continue to pass."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "002-typescript-eventledger-runtime-helpers",
+      "title": "002 TypeScript EventLedger Runtime Helpers",
+      "description": "Add a TypeScript helper module for EventLedger event-envelope creation and event sorting without importing `.ts` from the source-run CLI path.",
+      "acceptanceCriteria": [
+        "`ask-core/src/runtime/EventLedgerRuntime.ts` exports typed helper inputs/results using existing EventLedger contracts.",
+        "Helper fixtures or contract tests compile under `npm run typecheck`.",
+        "Helper behavior matches the JS runtime contract expectations.",
+        "No CLI/runtime loading path imports `.ts` directly."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "001-eventledger-runtime-parity-tests"
+      ]
+    },
+    {
+      "sliceId": "003-source-runtime-uses-shared-behavior",
+      "title": "003 Source Runtime Uses Shared Behavior",
+      "description": "Refactor `EventLedger.js` to use shared source-compatible behavior while preserving imports, SequenceStore behavior, append output, and readAll behavior.",
+      "acceptanceCriteria": [
+        "Existing imports of `EventLedger.js` continue to work.",
+        "`SequenceStore.js` remains unchanged.",
+        "`EventLedger.append()` returns the same public event envelope shape.",
+        "`EventLedger.readAll()` preserves sorted output and malformed NDJSON behavior.",
+        "Existing EventLedger, projection, and governance tests pass."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "002-typescript-eventledger-runtime-helpers"
+      ]
+    },
+    {
+      "sliceId": "004-migration-status-update",
+      "title": "004 Migration Status Update",
+      "description": "Update TypeScript migration status to record EventLedger runtime compatibility conversion completion and identify the next safe migration area.",
+      "acceptanceCriteria": [
+        "Docs mark `ask-ts-004` as runtime compatibility conversion complete for this wave.",
+        "Docs state full source-only `.ts` runtime loading remains deferred until CLI build/shim strategy is selected.",
+        "Docs name the next likely step as snapshot/runtime store boundary hardening or CLI build/shim strategy.",
+        "Docs preserve contracts-first, runtime-conversion-later, strictness-last framing."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "003-source-runtime-uses-shared-behavior"
+      ]
+    }
+  ]
+}
