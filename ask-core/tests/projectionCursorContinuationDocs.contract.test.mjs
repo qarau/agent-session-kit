@@ -9,20 +9,17 @@ const testsDir = path.dirname(thisFilePath);
 const repoRoot = path.resolve(testsDir, '..', '..');
 const statusDocPath = path.join(repoRoot, 'docs', 'operations', 'typescript-migration-status.md');
 
-test('typescript migration status documents the next governed continuation sequence', () => {
+test('typescript migration status records projection cursor boundary completion and next runtime work', () => {
   const doc = fs.readFileSync(statusDocPath, 'utf8');
 
   for (const phrase of [
-    'adapter wrapper, project detection, and adapter resolution are already complete',
-    'Do not claim full TypeScript runtime migration is complete',
+    'Projection Cursor TypeScript Runtime Boundary wave',
+    'projection cursor boundary/conversion is complete for this wave',
+    'full projection engine TypeScript conversion remains deferred',
+    'EventLedger runtime conversion or snapshot/runtime store boundary hardening is the next recommended area',
     'contracts first',
     'runtime conversion later',
     'strictness last',
-    'ASK ready-plan and slice-close governance remain required',
-    'Next Recommended Implementation Sequence',
-    'governance runtime decomposition',
-    'event ledger runtime conversion',
-    'Projection Cursor TypeScript Runtime Boundary wave',
   ]) {
     assert.match(doc, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
   }

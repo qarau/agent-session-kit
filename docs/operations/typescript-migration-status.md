@@ -23,7 +23,7 @@ The adapter wrapper, project detection, and adapter resolution are already compl
 | `ask-ts-002` Core contract directory | Completed | `ask-core/src/contracts/*` |
 | `ask-ts-003` Typed runtime events | Completed foundation | `ask-core/src/contracts/events.ts`, `runtimeEventContracts.contract.test.mjs` |
 | `ask-ts-004` Event ledger append/read conversion | Completed boundary foundation, runtime conversion remaining | Event contracts, EventLedger boundary contracts, and runtime guard tests exist; ledger implementation remains JavaScript |
-| `ask-ts-005` Projection cursor state conversion | Remaining runtime migration | Current artifact contracts exist; projection implementation remains JavaScript |
+| `ask-ts-005` Projection cursor state conversion | Completed boundary foundation, full projection engine conversion remaining | Projection cursor contracts, replay proof contracts, runtime artifact fixtures, and projection-state compatibility tests exist; projection engine implementation remains JavaScript |
 | `ask-ts-006` Task and slice model conversion | Completed foundation, runtime conversion remaining | `tasks.ts` and task contract tests exist |
 | `ask-ts-007` Plan batch registry typing | Completed foundation, runtime conversion remaining | Plan batch contracts and fixtures exist |
 | `ask-ts-008` Queue classification typing | Completed foundation | `queues.ts`, `workers.ts`, queue contract tests |
@@ -66,12 +66,21 @@ The EventLedger implementation still remains JavaScript-first. The current work 
 
 governance runtime decomposition is complete for this wave. Deeper governance runtime conversion remains deferred until source-run CLI compatibility has a selected migration path.
 
-projection cursor runtime conversion is next and still deferred. It should follow the ledger boundary work because projection cursor correctness depends on stable event ordering, event parse behavior, replay assumptions, and ledger sequence semantics.
+projection cursor runtime conversion was the next deferred step after the ledger boundary work and is now complete for the boundary/compatibility wave. Projection cursor correctness is now covered through stable event ordering assumptions, replay proof contracts, cursor state contracts, and projection-state normalization tests.
+
+## Projection Cursor TypeScript Runtime Boundary Wave
+
+The Projection Cursor TypeScript Runtime Boundary wave is now in place:
+
+1. projection cursor boundary/conversion is complete for this wave. The TypeScript contract layer now represents projection cursor state, replay proof, sequence integrity, projection run summaries, and representative runtime artifacts.
+2. projection-state compatibility hardening is complete. `RuntimeSnapshotStore.readProjectionState()` and `writeProjectionState()` normalize missing or invalid cursor fields while preserving existing artifact paths and wire shape.
+3. full projection engine TypeScript conversion remains deferred. `RuntimeProjectionEngine.js` still runs as source-compatible JavaScript while its cursor and replay artifact boundary is typed and tested.
+4. EventLedger runtime conversion or snapshot/runtime store boundary hardening is the next recommended area. EventLedger conversion should preserve the existing append/read wire shape, while snapshot/runtime store hardening should reduce broad runtime-file responsibility before deeper TypeScript conversion.
 
 ## Next Recommended Implementation Sequence
 
-1. projection cursor runtime conversion: type the projection cursor and replay state after EventLedger boundaries remain stable.
-2. event ledger runtime conversion: convert append/read implementation to TypeScript after projection assumptions are explicitly covered.
+1. EventLedger runtime conversion or snapshot/runtime store boundary hardening: choose the smallest next wave based on whether the priority is event append/read source conversion or reducing broad snapshot-store responsibility.
+2. event ledger runtime conversion: convert append/read implementation to TypeScript after projection assumptions are explicitly covered, if not selected first.
 3. governance runtime conversion: convert governance helper/report builder logic to TypeScript only after source-run CLI compatibility has a selected migration path.
 4. Task, plan, law-pack, and profile runtime conversion: move each runtime behind its existing contract fixture coverage.
 5. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable.
