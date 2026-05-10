@@ -49,3 +49,28 @@ test('source-run runtime files do not import the TypeScript task helper directly
 
   assert.deepEqual(sourceFiles, []);
 });
+
+test('TaskRuntime source runtime delegates pure behavior through source-compatible helper', async () => {
+  const runtime = readCore('TaskRuntime.js');
+  assert.match(runtime, /from '\.\/TaskRuntimeHelpers\.js'/u);
+  assert.doesNotMatch(runtime, /from '\.\/TaskRuntimeHelpers\.ts'/u);
+
+  const helper = await import('../src/core/TaskRuntimeHelpers.js');
+  assert.equal(helper.normalizeTaskRuntimeValue('  task-1  '), 'task-1');
+  assert.deepEqual(helper.createTaskFreshness({ blockingDependencies: [' dep ', '', null] }), {
+    status: 'unverified',
+    reasonCode: 'verification-not-passed',
+    blockingDependencies: ['dep'],
+  });
+  assert.deepEqual(helper.buildTaskCreatedPayload('  Title ', ' Description '), {
+    title: 'Title',
+    description: 'Description',
+  });
+  assert.deepEqual(helper.buildTaskAssignedPayload(' codex '), { owner: 'codex' });
+  assert.deepEqual(helper.buildTaskReopenedPayload(' rollback '), { reason: 'rollback' });
+  assert.deepEqual(helper.buildTaskDependencyAddedPayload(' task-b '), { dependencyTaskId: 'task-b' });
+  assert.deepEqual(helper.okTaskResult({ taskId: 'task-1' }), {
+    ok: true,
+    task: { taskId: 'task-1' },
+  });
+});
