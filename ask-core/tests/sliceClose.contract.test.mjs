@@ -180,8 +180,18 @@ test('slice close auto-completes auto-commits and passes pre-push checks', () =>
   assert.equal(payload.task.status, 'completed');
   assert.equal(payload.prePush.passed, true);
   assert.equal(typeof payload.commit.sha, 'string');
+  assert.equal(payload.commit.footer, 'ASK-Slice: slice-001');
+  assert.ok(Array.isArray(payload.commit.stagedFiles));
+  assert.ok(payload.commit.stagedFiles.includes('src/slice-001.js'));
   assert.equal(payload.architect.blocking, false);
   assert.equal(typeof payload.architect.status, 'string');
+  assert.ok(Array.isArray(payload.lanes));
+  assert.equal(payload.fullSuite.required, false);
+  assert.equal(payload.entropy.history.source, 'slice-close');
+  assert.equal(payload.entropy.history.taskId, 'slice-001');
+  assert.equal(payload.entropy.history.validationStatus, 'passed');
+  assert.equal(typeof payload.entropy.entropy.entropyScore, 'number');
+  assert.equal(typeof payload.entropy.driftAnalytics.overall.trend, 'string');
 
   const commitMessage = runOrThrow('git', ['log', '-1', '--pretty=%B'], { cwd: repoDir }).stdout;
   assert.match(commitMessage, /ASK-Slice:\s*slice-001/i);
@@ -223,6 +233,7 @@ test('slice close rolls task back to in-progress when commit cannot be created',
   const repoDir = setupRepo();
   prepareGovernedSession(repoDir);
   createInProgressTask(repoDir, 'slice-002');
+  const headBefore = runOrThrow('git', ['rev-parse', 'HEAD'], { cwd: repoDir }).stdout.trim();
 
   runOrThrow('git', ['config', 'core.hooksPath', '.githooks'], { cwd: repoDir });
   fs.mkdirSync(path.join(repoDir, '.githooks'), { recursive: true });
@@ -234,6 +245,9 @@ test('slice close rolls task back to in-progress when commit cannot be created',
   assert.equal(payload.ok, false);
   assert.equal(payload.code, 'slice-close-commit-failed');
   assert.equal(readTaskStatus(repoDir, 'slice-002'), 'in-progress');
+  assert.equal(runOrThrow('git', ['rev-parse', 'HEAD'], { cwd: repoDir }).stdout.trim(), headBefore);
+  assert.equal(payload.task, undefined);
+  assert.equal(payload.prePush, undefined);
 });
 
 test('slice close requires full-suite on integrator lane and records pass', () => {
@@ -254,8 +268,10 @@ test('slice close requires full-suite on integrator lane and records pass', () =
   assert.equal(payload.ok, true);
   assert.equal(payload.fullSuite.required, true);
   assert.equal(payload.fullSuite.command, 'node');
+  assert.deepEqual(payload.fullSuite.args, ['-e', 'process.exit(0)']);
   assert.equal(payload.fullSuite.status, 0);
   assert.equal(payload.architect.blocking, false);
+  assert.ok(payload.lanes.includes('integrator'));
 });
 
 test('slice close rejects pre-staged work before completing the task', () => {
@@ -299,6 +315,9 @@ test('slice close blocks before completing task when OHDER assessment blocks', (
   assert.equal(payload.code, 'slice-close-ohder-blocked');
   assert.equal(payload.architect.blocking, true);
   assert.equal(payload.architect.lawViolations.length, 1);
+  assert.equal(payload.task, undefined);
+  assert.equal(payload.commit, undefined);
+  assert.equal(payload.prePush, undefined);
   assert.equal(readTaskStatus(repoDir, 'slice-006'), 'in-progress');
 
   const headAfter = runOrThrow('git', ['rev-parse', 'HEAD'], { cwd: repoDir }).stdout.trim();
@@ -339,5 +358,8 @@ test('slice close keeps task completed when commit succeeds but pre-push fails',
   const payload = JSON.parse(closeResult.stdout);
   assert.equal(payload.ok, false);
   assert.equal(payload.code, 'slice-close-pre-push-failed');
+  assert.equal(typeof payload.commit.sha, 'string');
+  assert.equal(payload.prePush.passed, false);
+  assert.ok(Array.isArray(payload.prePush.missing));
   assert.equal(readTaskStatus(repoDir, 'slice-004'), 'completed');
 });
