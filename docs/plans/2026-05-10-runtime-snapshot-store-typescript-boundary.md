@@ -1,4 +1,4 @@
-﻿# RuntimeSnapshotStore TypeScript Boundary Hardening Plan
+# RuntimeSnapshotStore TypeScript Boundary Hardening Plan
 
 ## Summary
 

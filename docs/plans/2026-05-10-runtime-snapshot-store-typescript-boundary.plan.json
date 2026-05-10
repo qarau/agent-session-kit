@@ -1,4 +1,4 @@
-﻿{
+{
   "schemaVersion": 2,
   "planPrefix": "ask-snapshot",
   "planTitle": "RuntimeSnapshotStore TypeScript Boundary Hardening",
