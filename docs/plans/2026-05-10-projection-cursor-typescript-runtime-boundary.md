@@ -1,4 +1,4 @@
-﻿# Projection Cursor TypeScript Runtime Boundary Plan
+# Projection Cursor TypeScript Runtime Boundary Plan
 
 ## Summary
 
