@@ -50,3 +50,20 @@ test('source-run runtime files do not import the TypeScript helper directly', ()
 
   assert.deepEqual(offenders, []);
 });
+
+test('EventLedger source runtime delegates behavior through source-compatible helper', () => {
+  const ledger = readRuntime('EventLedger.js');
+  assert.match(ledger, /from '\.\/EventLedgerRuntime\.js'/u);
+  assert.match(ledger, /\bcreateEventLedgerEnvelope\b/u);
+  assert.match(ledger, /\bparseEventLedgerLine\b/u);
+  assert.match(ledger, /\bsortEventLedgerRecords\b/u);
+
+  const helper = readRuntime('EventLedgerRuntime.js');
+  for (const symbol of [
+    'createEventLedgerEnvelope',
+    'parseEventLedgerLine',
+    'sortEventLedgerRecords',
+  ]) {
+    assert.match(helper, new RegExp(`export function ${symbol}\\b`, 'u'));
+  }
+});
