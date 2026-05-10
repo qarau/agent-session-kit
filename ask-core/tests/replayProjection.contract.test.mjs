@@ -7,6 +7,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { RuntimeProjectionEngine } from '../src/runtime/RuntimeProjectionEngine.js';
 import { EventLedger } from '../src/runtime/EventLedger.js';
+import { RuntimeSnapshotStore } from '../src/runtime/RuntimeSnapshotStore.js';
 
 const thisFilePath = fileURLToPath(import.meta.url);
 const testsDir = path.dirname(thisFilePath);
@@ -204,4 +205,34 @@ test('projectIncremental processes only new events and advances projection curso
   assert.equal(replayProof.mode, 'incremental');
   assert.equal(replayProof.lastSeq, 2);
   assert.equal(replayProof.sequenceIntegrity.cursorIntegrity, 'valid');
+});
+
+test('projection state read normalizes legacy or loose cursor state', async () => {
+  const repoDir = setupRepo();
+  const runtimeDir = path.join(repoDir, '.ask', 'runtime');
+  fs.writeFileSync(
+    path.join(runtimeDir, 'projection-state.json'),
+    JSON.stringify({ lastAppliedSeq: 'not-a-number', extraLegacyField: 'preserved' }),
+    'utf8'
+  );
+
+  const snapshots = new RuntimeSnapshotStore(repoDir);
+  const cursor = await snapshots.readProjectionState();
+
+  assert.equal(cursor.lastAppliedSeq, 0);
+  assert.equal(cursor.requiresReplay, false);
+  assert.equal(cursor.reason, '');
+  assert.equal(cursor.extraLegacyField, 'preserved');
+});
+
+test('projection state write normalizes missing fields and writes a timestamp', async () => {
+  const repoDir = setupRepo();
+  const snapshots = new RuntimeSnapshotStore(repoDir);
+
+  const cursor = await snapshots.writeProjectionState({});
+
+  assert.equal(cursor.lastAppliedSeq, 0);
+  assert.equal(cursor.requiresReplay, false);
+  assert.equal(cursor.reason, '');
+  assert.match(cursor.updatedAt, /^\d{4}-\d{2}-\d{2}T/u);
 });

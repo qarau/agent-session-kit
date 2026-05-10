@@ -31,6 +31,21 @@ function defaultReplayProof() {
   };
 }
 
+function normalizeProjectionState(payload = {}) {
+  const source = payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? payload
+    : {};
+  const lastAppliedSeq = Number(source.lastAppliedSeq ?? 0);
+  return {
+    ...defaultProjectionState(),
+    ...source,
+    lastAppliedSeq: Number.isFinite(lastAppliedSeq) && lastAppliedSeq >= 0 ? lastAppliedSeq : 0,
+    requiresReplay: source.requiresReplay === true,
+    reason: typeof source.reason === 'string' ? source.reason : '',
+    updatedAt: source.updatedAt || new Date().toISOString(),
+  };
+}
+
 export class RuntimeSnapshotStore {
   constructor(cwd) {
     this.paths = new AskPaths(cwd);
@@ -190,17 +205,12 @@ export class RuntimeSnapshotStore {
   }
 
   async readProjectionState() {
-    return this.store.readJson(this.paths.projectionState(), defaultProjectionState());
+    const state = await this.store.readJson(this.paths.projectionState(), defaultProjectionState());
+    return normalizeProjectionState(state);
   }
 
   async writeProjectionState(payload = {}) {
-    const state = {
-      ...defaultProjectionState(),
-      ...payload,
-      lastAppliedSeq: Number(payload.lastAppliedSeq ?? 0) || 0,
-      requiresReplay: payload.requiresReplay === true,
-      updatedAt: payload.updatedAt || new Date().toISOString(),
-    };
+    const state = normalizeProjectionState(payload);
     await this.store.writeJson(this.paths.projectionState(), state);
     return state;
   }
