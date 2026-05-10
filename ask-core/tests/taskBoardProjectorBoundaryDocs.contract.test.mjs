@@ -16,7 +16,7 @@ test('typescript migration status records TaskBoardProjector boundary hardening 
     'TaskBoardProjector TypeScript Boundary Hardening wave',
     'TaskBoardProjector boundary hardening is complete for this wave',
     'RuntimeProjectionEngine.js still runs as source-compatible JavaScript while task-board projection helpers are typed and mirrored',
-    'Plan Batch Registry Runtime Conversion is the next likely wave',
+    'Plan Batch Registry Runtime Conversion followed this wave',
     'contracts first',
     'runtime conversion later',
     'strictness last',
