@@ -1,0 +1,66 @@
+﻿{
+  "schemaVersion": 2,
+  "planPrefix": "ask-projcursor",
+  "planTitle": "Projection Cursor TypeScript Runtime Boundary",
+  "planSummary": "Typed Boundary First migration wave for projection cursor runtime state, replay proof, sequence integrity, and projection run summaries.",
+  "slices": [
+    {
+      "sliceId": "001-projection-cursor-contract-layer",
+      "title": "001 Projection Cursor Contract Layer",
+      "description": "Add TypeScript contracts for projection cursor state, replay proof, sequence integrity, and projection run summaries without converting the live projection runtime.",
+      "acceptanceCriteria": [
+        "`ask-core/src/contracts/projection.ts` exports projection cursor, replay proof, sequence integrity, and run summary contracts.",
+        "`ask-core/src/contracts/index.ts` re-exports the new projection contracts.",
+        "Contract fixtures compile with `satisfies`.",
+        "`npm run typecheck` and `npm run build` pass."
+      ],
+      "queueClass": "integrator"
+    },
+    {
+      "sliceId": "002-projection-runtime-contract-tests",
+      "title": "002 Projection Runtime Contract Tests",
+      "description": "Add tests proving the new TypeScript contracts describe current projection runtime artifacts and representative projection-state/replay-proof fields.",
+      "acceptanceCriteria": [
+        "Tests assert the projection contract module exports the expected public contract names.",
+        "Tests assert projection fixtures are included in TypeScript compilation.",
+        "Tests validate representative projection-state and replay-proof field names.",
+        "No runtime behavior changes are introduced."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "001-projection-cursor-contract-layer"
+      ]
+    },
+    {
+      "sliceId": "003-projection-state-compatibility-hardening",
+      "title": "003 Projection State Compatibility Hardening",
+      "description": "Harden projection-state normalization in RuntimeSnapshotStore while preserving the existing projection-state file format and projection engine behavior.",
+      "acceptanceCriteria": [
+        "Missing or invalid `lastAppliedSeq` normalizes to `0`.",
+        "Missing `requiresReplay` normalizes to `false`.",
+        "Missing `reason` normalizes to an empty string.",
+        "`updatedAt` remains a valid timestamp after write.",
+        "Existing replay and incremental projection behavior remains stable."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "002-projection-runtime-contract-tests"
+      ]
+    },
+    {
+      "sliceId": "004-continuation-status-update",
+      "title": "004 Continuation Status Update",
+      "description": "Update TypeScript migration continuity docs to record projection cursor boundary completion and identify the next safe migration area.",
+      "acceptanceCriteria": [
+        "Docs state projection cursor boundary/conversion is complete for this wave.",
+        "Docs state full projection engine TypeScript conversion remains deferred.",
+        "Docs identify EventLedger runtime conversion or snapshot/runtime store boundary hardening as the next recommended area.",
+        "Docs preserve contracts-first, runtime-conversion-later, strictness-last framing."
+      ],
+      "queueClass": "integrator",
+      "dependsOn": [
+        "003-projection-state-compatibility-hardening"
+      ]
+    }
+  ]
+}
