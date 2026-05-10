@@ -11,7 +11,7 @@ The adapter activation work from the original spec was completed under a separat
 - `ask-ts-011` is completed by `ask-adapter-002` and `ask-adapter-003`.
 - `ask-ts-012` is completed by `ask-adapter-004`.
 
-do not duplicate the completed adapter work. The completed adapter, governance, EventLedger, projection cursor, and RuntimeSnapshotStore waves should be referenced as existing capabilities, not regenerated under new TypeScript migration slice IDs.
+do not duplicate the completed adapter work. The completed adapter, governance, EventLedger, projection cursor, RuntimeSnapshotStore, and TaskRuntime waves should be referenced as existing capabilities, not regenerated under new TypeScript migration slice IDs.
 
 Earlier reconciliation identified governance/OFRR runtime typing, not adapter detection duplication, as the next true unfinished area. That governance/OFRR foundation has since been completed; the phrase remains here as historical context for the completed reconciliation.
 
@@ -26,7 +26,7 @@ The adapter wrapper, project detection, and adapter resolution are already compl
 | `ask-ts-003` Typed runtime events | Completed foundation | `ask-core/src/contracts/events.ts`, `runtimeEventContracts.contract.test.mjs` |
 | `ask-ts-004` Event ledger append/read conversion | Completed runtime compatibility conversion for this wave | Event contracts, EventLedger boundary contracts, runtime guard tests, typed runtime helpers, and source-compatible helper delegation exist |
 | `ask-ts-005` Projection cursor state conversion | Completed projection cursor and snapshot/runtime boundary compatibility waves, full projection engine conversion remaining | Projection cursor contracts, replay proof contracts, runtime artifact fixtures, projection-state compatibility tests, RuntimeSnapshotStore contracts, typed helpers, and source-compatible helper delegation exist; projection engine implementation remains JavaScript |
-| `ask-ts-006` Task and slice model conversion | Completed foundation, runtime conversion remaining | `tasks.ts` and task contract tests exist |
+| `ask-ts-006` Task and slice model conversion | Completed task runtime boundary wave, slice close and task projector conversion remaining | `tasks.ts`, task contract tests, `TaskRuntimeHelpers.ts`, `TaskRuntimeHelpers.js`, typed invariant companion, and source-compatible helper delegation exist |
 | `ask-ts-007` Plan batch registry typing | Completed foundation, runtime conversion remaining | Plan batch contracts and fixtures exist |
 | `ask-ts-008` Queue classification typing | Completed foundation | `queues.ts`, `workers.ts`, queue contract tests |
 | `ask-ts-009` Adapter contract | Completed | `adapter.ts`, adapter fixture tests |
@@ -99,12 +99,23 @@ The RuntimeSnapshotStore TypeScript Boundary Hardening wave is now in place:
 4. current snapshot paths and wire shapes remain unchanged. `.ask/runtime/snapshots/*`, `.ask/runtime/projection-state.json`, and `.ask/runtime/replay-proof.json` keep their existing compatibility behavior.
 5. task/slice runtime conversion or CLI build/shim strategy is now the next likely implementation area.
 
+## TaskRuntime TypeScript Boundary Hardening Wave
+
+The TaskRuntime TypeScript Boundary Hardening wave is now in place:
+
+1. TaskRuntime boundary hardening is complete for this wave. Current task lifecycle behavior for create, assign, start, complete, reopen, dependency add, status, freshness defaults, and rejected transitions is characterized before deeper runtime migration.
+2. `TaskRuntime.js` still remains the source-run authority for current CLI compatibility, but pure task normalization, freshness enrichment, lifecycle payload construction, and successful result construction now delegate through `TaskRuntimeHelpers.js`.
+3. `TaskRuntimeHelpers.ts` provides the typed helper boundary for the same pure behavior while source-run runtime files avoid importing `.ts` helpers directly.
+4. task invariant typing is covered by a TypeScript companion while `taskInvariants.js` remains the current source-compatible runtime import. Existing validation error codes and transition metadata remain unchanged.
+5. SliceCloseRuntime remains deferred because it owns validation, OHDER, auto-commit, rollback, and pre-push behavior. That runtime needs its own governed wave rather than being bundled into TaskRuntime helper hardening.
+6. full source-only .ts runtime loading remains deferred until CLI build/shim strategy is selected. The migration rule remains contracts first, runtime conversion later, strictness last.
+
 ## Next Recommended Implementation Sequence
 
-1. Task/slice runtime conversion or CLI build/shim strategy: choose the smallest next wave based on whether the priority is moving task/slice file behavior behind typed helpers or enabling source-only TypeScript runtime loading.
-2. Plan batch registry runtime conversion: move plan batch read/write behavior behind existing plan contract coverage after task/slice runtime behavior is stable.
+1. task projector boundary or plan batch registry runtime conversion: choose the smallest next wave based on whether the priority is typed task-board projection behavior or typed plan-batch read/write behavior.
+2. SliceCloseRuntime boundary: defer until task projector and plan batch behavior are stable because slice close owns validation, OHDER, auto-commit, rollback, and pre-push behavior.
 3. Law-pack and profile runtime conversion: move each runtime behind its existing contract fixture coverage.
-4. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable unless selected as the explicit next build/shim wave.
+4. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable unless selected as the explicit build/shim wave.
 5. Strictness ratchet: apply stricter TypeScript settings last, first to contracts, then runtime core, then the full package.
 
 ## Guardrail
