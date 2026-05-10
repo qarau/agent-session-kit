@@ -11,7 +11,7 @@ The adapter activation work from the original spec was completed under a separat
 - `ask-ts-011` is completed by `ask-adapter-002` and `ask-adapter-003`.
 - `ask-ts-012` is completed by `ask-adapter-004`.
 
-do not duplicate the completed adapter work. The completed adapter, governance, EventLedger, projection cursor, RuntimeSnapshotStore, and TaskRuntime waves should be referenced as existing capabilities, not regenerated under new TypeScript migration slice IDs.
+do not duplicate the completed adapter work. The completed adapter, governance, EventLedger, projection cursor, RuntimeSnapshotStore, TaskRuntime, and TaskBoardProjector waves should be referenced as existing capabilities, not regenerated under new TypeScript migration slice IDs.
 
 Earlier reconciliation identified governance/OFRR runtime typing, not adapter detection duplication, as the next true unfinished area. That governance/OFRR foundation has since been completed; the phrase remains here as historical context for the completed reconciliation.
 
@@ -26,7 +26,7 @@ The adapter wrapper, project detection, and adapter resolution are already compl
 | `ask-ts-003` Typed runtime events | Completed foundation | `ask-core/src/contracts/events.ts`, `runtimeEventContracts.contract.test.mjs` |
 | `ask-ts-004` Event ledger append/read conversion | Completed runtime compatibility conversion for this wave | Event contracts, EventLedger boundary contracts, runtime guard tests, typed runtime helpers, and source-compatible helper delegation exist |
 | `ask-ts-005` Projection cursor state conversion | Completed projection cursor and snapshot/runtime boundary compatibility waves, full projection engine conversion remaining | Projection cursor contracts, replay proof contracts, runtime artifact fixtures, projection-state compatibility tests, RuntimeSnapshotStore contracts, typed helpers, and source-compatible helper delegation exist; projection engine implementation remains JavaScript |
-| `ask-ts-006` Task and slice model conversion | Completed task runtime boundary wave, slice close and task projector conversion remaining | `tasks.ts`, task contract tests, `TaskRuntimeHelpers.ts`, `TaskRuntimeHelpers.js`, typed invariant companion, and source-compatible helper delegation exist |
+| `ask-ts-006` Task and slice model conversion | Completed task runtime and task-board projector boundary waves; SliceCloseRuntime conversion remaining | `tasks.ts`, task contract tests, `TaskRuntimeHelpers.ts`, `TaskRuntimeHelpers.js`, typed invariant companion, `TaskBoardProjectorHelpers.ts`, `TaskBoardProjectorHelpers.js`, task-board characterization coverage, and source-compatible helper delegation exist |
 | `ask-ts-007` Plan batch registry typing | Completed foundation, runtime conversion remaining | Plan batch contracts and fixtures exist |
 | `ask-ts-008` Queue classification typing | Completed foundation | `queues.ts`, `workers.ts`, queue contract tests |
 | `ask-ts-009` Adapter contract | Completed | `adapter.ts`, adapter fixture tests |
@@ -110,10 +110,22 @@ The TaskRuntime TypeScript Boundary Hardening wave is now in place:
 5. SliceCloseRuntime remains deferred because it owns validation, OHDER, auto-commit, rollback, and pre-push behavior. That runtime needs its own governed wave rather than being bundled into TaskRuntime helper hardening.
 6. full source-only .ts runtime loading remains deferred until CLI build/shim strategy is selected. The migration rule remains contracts first, runtime conversion later, strictness last.
 
+## TaskBoardProjector TypeScript Boundary Hardening Wave
+
+The TaskBoardProjector TypeScript Boundary Hardening wave is now in place:
+
+1. TaskBoardProjector boundary hardening is complete for this wave. Current task-board projection behavior for taskless events, unknown events, task lifecycle events, assignment, blocking, completion, reopening, acceptance criteria normalization, dependency merge/sort, and refactor approval/rejection projection is characterized.
+2. `TaskBoardProjector.js` still remains the source-run authority for current CLI compatibility, but pure task ID normalization, safe object cloning, acceptance criteria normalization, base task construction, task replacement, and dependency merging now delegate through `TaskBoardProjectorHelpers.js`.
+3. `TaskBoardProjectorHelpers.ts` provides the typed helper boundary for the same pure behavior while source-run runtime files avoid importing `.ts` helpers directly.
+4. RuntimeProjectionEngine.js still runs as source-compatible JavaScript while task-board projection helpers are typed and mirrored. Full projection engine TypeScript conversion remains deferred until source-run CLI compatibility has a selected migration path.
+5. Plan Batch Registry Runtime Conversion is the next likely wave because plan-batch contracts already exist, but the read/write runtime path has not yet received the same source-compatible TypeScript boundary treatment.
+6. SliceCloseRuntime remains deferred because it owns validation, OHDER, auto-commit, rollback, and pre-push behavior. That runtime should follow after task-board projection and plan-batch registry behavior are stable.
+7. The migration rule remains contracts first, runtime conversion later, strictness last.
+
 ## Next Recommended Implementation Sequence
 
-1. task projector boundary or plan batch registry runtime conversion: choose the smallest next wave based on whether the priority is typed task-board projection behavior or typed plan-batch read/write behavior.
-2. SliceCloseRuntime boundary: defer until task projector and plan batch behavior are stable because slice close owns validation, OHDER, auto-commit, rollback, and pre-push behavior.
+1. Plan Batch Registry Runtime Conversion: typed plan-batch contracts already exist, so the next smallest runtime wave should harden plan-batch read/write behavior behind typed helpers and source-compatible JavaScript mirrors.
+2. SliceCloseRuntime boundary: defer until plan batch behavior is stable because slice close owns validation, OHDER, auto-commit, rollback, and pre-push behavior.
 3. Law-pack and profile runtime conversion: move each runtime behind its existing contract fixture coverage.
 4. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable unless selected as the explicit build/shim wave.
 5. Strictness ratchet: apply stricter TypeScript settings last, first to contracts, then runtime core, then the full package.
