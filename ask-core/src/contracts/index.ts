@@ -5,6 +5,7 @@ export * from './events.js';
 export * from './eventFixtures.js';
 export * from './eventLedger.js';
 export * from './projection.js';
+export * from './runtimeSnapshots.js';
 export * from './tasks.js';
 export * from './taskPlanFixtures.js';
 export * from './checks.js';
