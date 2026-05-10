@@ -11,7 +11,7 @@ The adapter activation work from the original spec was completed under a separat
 - `ask-ts-011` is completed by `ask-adapter-002` and `ask-adapter-003`.
 - `ask-ts-012` is completed by `ask-adapter-004`.
 
-do not duplicate the completed adapter work. The completed adapter, governance, EventLedger, projection cursor, RuntimeSnapshotStore, TaskRuntime, TaskBoardProjector, and Plan Batch Registry waves should be referenced as existing capabilities, not regenerated under new TypeScript migration slice IDs.
+do not duplicate the completed adapter work. The completed adapter, governance, EventLedger, projection cursor, RuntimeSnapshotStore, TaskRuntime, TaskBoardProjector, Plan Batch Registry, and SliceCloseRuntime waves should be referenced as existing capabilities, not regenerated under new TypeScript migration slice IDs.
 
 Earlier reconciliation identified governance/OFRR runtime typing, not adapter detection duplication, as the next true unfinished area. That governance/OFRR foundation has since been completed; the phrase remains here as historical context for the completed reconciliation.
 
@@ -26,7 +26,7 @@ The adapter wrapper, project detection, and adapter resolution are already compl
 | `ask-ts-003` Typed runtime events | Completed foundation | `ask-core/src/contracts/events.ts`, `runtimeEventContracts.contract.test.mjs` |
 | `ask-ts-004` Event ledger append/read conversion | Completed runtime compatibility conversion for this wave | Event contracts, EventLedger boundary contracts, runtime guard tests, typed runtime helpers, and source-compatible helper delegation exist |
 | `ask-ts-005` Projection cursor state conversion | Completed projection cursor and snapshot/runtime boundary compatibility waves, full projection engine conversion remaining | Projection cursor contracts, replay proof contracts, runtime artifact fixtures, projection-state compatibility tests, RuntimeSnapshotStore contracts, typed helpers, and source-compatible helper delegation exist; projection engine implementation remains JavaScript |
-| `ask-ts-006` Task and slice model conversion | Completed task runtime and task-board projector boundary waves; SliceCloseRuntime conversion remaining | `tasks.ts`, task contract tests, `TaskRuntimeHelpers.ts`, `TaskRuntimeHelpers.js`, typed invariant companion, `TaskBoardProjectorHelpers.ts`, `TaskBoardProjectorHelpers.js`, task-board characterization coverage, and source-compatible helper delegation exist |
+| `ask-ts-006` Task and slice model conversion | Completed task runtime, task-board projector, and SliceCloseRuntime boundary waves for this stage | `tasks.ts`, task contract tests, `TaskRuntimeHelpers.ts`, `TaskRuntimeHelpers.js`, typed invariant companion, `TaskBoardProjectorHelpers.ts`, `TaskBoardProjectorHelpers.js`, `SliceCloseRuntimeHelpers.ts`, `SliceCloseRuntimeHelpers.js`, slice-close result contracts, characterization coverage, and source-compatible helper delegation exist |
 | `ask-ts-007` Plan batch registry typing | Completed runtime compatibility conversion for this wave | Plan batch contracts, fixtures, `PlanBatchRegistryRuntime.ts`, `PlanBatchRegistryRuntime.js`, helper contract tests, plan-ingest characterization tests, and source-compatible helper delegation exist |
 | `ask-ts-008` Queue classification typing | Completed foundation | `queues.ts`, `workers.ts`, queue contract tests |
 | `ask-ts-009` Adapter contract | Completed | `adapter.ts`, adapter fixture tests |
@@ -107,7 +107,7 @@ The TaskRuntime TypeScript Boundary Hardening wave is now in place:
 2. `TaskRuntime.js` still remains the source-run authority for current CLI compatibility, but pure task normalization, freshness enrichment, lifecycle payload construction, and successful result construction now delegate through `TaskRuntimeHelpers.js`.
 3. `TaskRuntimeHelpers.ts` provides the typed helper boundary for the same pure behavior while source-run runtime files avoid importing `.ts` helpers directly.
 4. task invariant typing is covered by a TypeScript companion while `taskInvariants.js` remains the current source-compatible runtime import. Existing validation error codes and transition metadata remain unchanged.
-5. SliceCloseRuntime remains deferred because it owns validation, OHDER, auto-commit, rollback, and pre-push behavior. That runtime needs its own governed wave rather than being bundled into TaskRuntime helper hardening.
+5. SliceCloseRuntime was deferred from this TaskRuntime wave because it owns validation, OHDER, auto-commit, rollback, and pre-push behavior. That runtime received its own governed wave later in this document.
 6. full source-only .ts runtime loading remains deferred until CLI build/shim strategy is selected. The migration rule remains contracts first, runtime conversion later, strictness last.
 
 ## TaskBoardProjector TypeScript Boundary Hardening Wave
@@ -119,7 +119,7 @@ The TaskBoardProjector TypeScript Boundary Hardening wave is now in place:
 3. `TaskBoardProjectorHelpers.ts` provides the typed helper boundary for the same pure behavior while source-run runtime files avoid importing `.ts` helpers directly.
 4. RuntimeProjectionEngine.js still runs as source-compatible JavaScript while task-board projection helpers are typed and mirrored. Full projection engine TypeScript conversion remains deferred until source-run CLI compatibility has a selected migration path.
 5. Plan Batch Registry Runtime Conversion followed this wave because plan-batch contracts already existed, but the read/write runtime path had not yet received the same source-compatible TypeScript boundary treatment.
-6. SliceCloseRuntime remains deferred because it owns validation, OHDER, auto-commit, rollback, and pre-push behavior. That runtime should follow after task-board projection and plan-batch registry behavior are stable.
+6. SliceCloseRuntime was deferred from this TaskBoardProjector wave because it owns validation, OHDER, auto-commit, rollback, and pre-push behavior. It follows after task-board projection and plan-batch registry behavior are stable.
 7. The migration rule remains contracts first, runtime conversion later, strictness last.
 
 ## Plan Batch Registry TypeScript Runtime Conversion Wave
@@ -130,15 +130,25 @@ The Plan Batch Registry TypeScript Runtime Conversion wave is now in place:
 2. `PlanIngestRuntime.js` remains source-compatible JavaScript while plan-batch registry helpers are typed and mirrored. It delegates registry normalization, batch base construction, artifact hash indexing, state merging, and deterministic duplicate batch id allocation through `PlanBatchRegistryRuntime.js`.
 3. `PlanBatchRegistryRuntime.ts` provides the typed helper boundary for the same pure behavior. Source-run runtime files avoid importing `.ts` helpers directly, preserving the current `node ask-core/bin/ask.js` execution path.
 4. Plan-mode handoff and implementation-begin flows now expose plan-batch provenance through `planBatchId` and `artifactHash`, and their tests verify the durable registry and event-ledger linkage.
-5. `SliceCloseRuntime boundary` is the next likely wave because slice close owns validation, OHDER, auto-commit, rollback, pre-push behavior, and the final governed commit boundary.
+5. `SliceCloseRuntime boundary` followed this wave because slice close owns validation, OHDER, auto-commit, rollback, pre-push behavior, and the final governed commit boundary.
+6. The migration rule remains contracts first, runtime conversion later, strictness last.
+
+## SliceCloseRuntime TypeScript Boundary Hardening Wave
+
+The SliceCloseRuntime TypeScript Boundary Hardening wave is now in place:
+
+1. SliceCloseRuntime boundary hardening is complete for this wave. Current slice-close behavior for success, dirty index, OHDER block, commit failure rollback, full-suite requirement, and pre-push failure is characterized before deeper runtime migration.
+2. The TypeScript contract layer now represents current slice-close success and failure payloads, including commit result, full-suite result, pre-push result, architect result, entropy result, lanes, and diagnostic failure codes.
+3. `SliceCloseRuntime.js` remains source-compatible JavaScript while pure helpers are typed and mirrored. It delegates normalization, boolean and number parsing, list parsing, git-status path parsing, summary rendering, entropy dimension extraction, architecture-score risk mapping, and refactor-governed task detection through `SliceCloseRuntimeHelpers.js`.
+4. `SliceCloseRuntimeHelpers.ts` provides the typed helper boundary for the same pure behavior, and `SliceCloseRuntimeHelpers.js` provides the source-compatible helper mirror. Source-run runtime files avoid importing `.ts` helpers directly.
+5. Law-pack and profile runtime conversion is the next likely wave because `ask-ts-016` and `ask-ts-017` still have partial runtime loading/resolution coverage while the final slice-close commit boundary is now stable for this migration stage.
 6. The migration rule remains contracts first, runtime conversion later, strictness last.
 
 ## Next Recommended Implementation Sequence
 
-1. SliceCloseRuntime boundary: plan batch behavior is now stable for this wave, so the next smallest runtime wave should harden the validation, OHDER, auto-commit, rollback, and pre-push commit boundary behind typed helpers and source-compatible JavaScript mirrors.
-2. Law-pack and profile runtime conversion: move each runtime behind its existing contract fixture coverage.
-3. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable unless selected as the explicit build/shim wave.
-4. Strictness ratchet: apply stricter TypeScript settings last, first to contracts, then runtime core, then the full package.
+1. Law-pack and profile runtime conversion: move each runtime behind its existing contract fixture coverage and keep static law/profile artifact shapes stable.
+2. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable unless selected as the explicit build/shim wave.
+3. Strictness ratchet: apply stricter TypeScript settings last, first to contracts, then runtime core, then the full package.
 
 ## Guardrail
 
