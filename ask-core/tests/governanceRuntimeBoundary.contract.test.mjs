@@ -24,7 +24,7 @@ test('typed governance runtime boundary exports identity helpers for current rec
   assert.match(boundary, /return finding;/u);
   assert.match(boundary, /return resolution;/u);
 
-  const fixtures = readContract('governanceFixtures.ts');
+  const fixtures = readContract('governanceOhderFixtures.ts');
   assert.match(fixtures, /defineAskOhderFinding\(/u);
   assert.match(fixtures, /defineAskOhderFindingResolution\(/u);
 });

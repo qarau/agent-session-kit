@@ -44,7 +44,13 @@ test('check and governance contracts are exported from the v6 contract layer', (
 });
 
 test('check and governance fixtures are included in TypeScript compilation', () => {
-  const fixture = readContract('governanceFixtures.ts');
+  const fixture = [
+    readContract('governanceFixtures.ts'),
+    readContract('governanceCheckFixtures.ts'),
+    readContract('governanceOhderFixtures.ts'),
+    readContract('governanceArchitectFixtures.ts'),
+    readContract('governanceDecisionFixtures.ts'),
+  ].join('\n');
   assert.match(fixture, /satisfies AskPreCommitCheckResult/u);
   assert.match(fixture, /satisfies AskCommitMessageCheckResult/u);
   assert.match(fixture, /satisfies AskPrePushCheckResult/u);

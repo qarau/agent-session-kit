@@ -48,7 +48,10 @@ test('governance explain report is exported from the TypeScript contract layer',
   assert.match(governance, /export interface AskGovernanceExplainReport\b/u);
   assert.match(governance, /export interface AskGovernanceExplainDetails\b/u);
 
-  const fixtures = readContract('governanceFixtures.ts');
+  const fixtures = [
+    readContract('governanceFixtures.ts'),
+    readContract('governanceDecisionFixtures.ts'),
+  ].join('\n');
   assert.match(fixtures, /askGovernanceExplainReportFixture/u);
   assert.match(fixtures, /satisfies AskGovernanceExplainReport/u);
 });
