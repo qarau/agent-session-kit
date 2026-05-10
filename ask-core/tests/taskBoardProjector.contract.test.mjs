@@ -87,3 +87,79 @@ test('TaskBoardProjector merges dependencies as sorted unique task ids', () => {
 
   assert.deepEqual(state.tasks['task-1'].dependencies, ['task-a', 'task-c']);
 });
+
+test('TaskBoardProjector projects refactor approval while preserving task metadata', () => {
+  const projector = new TaskBoardProjector();
+  let state = projector.apply(projector.initialState(), event('TaskCreated', 'refactor-1', {
+    title: 'Refactor target',
+    description: 'Reduce coupling',
+    origin: {
+      type: 'ohder-refactor-governance',
+      recommendationFingerprint: 'fingerprint-1',
+      targetId: 'ask-core/src/runtime/projectors/TaskBoardProjector.js',
+      confidence: 'medium',
+      approvalRequired: true,
+      refactorBaseline: { architectureScore: 94 },
+      refactorExecutionPlan: { actions: [{ type: 'extract-helper' }] },
+    },
+    acceptanceCriteria: ['preserve behavior'],
+    queueClassHint: 'integrator',
+  }, { seq: 20, ts: '2026-05-10T02:00:00.000Z' }));
+
+  state = projector.apply(state, event('RefactorApproved', 'refactor-1', {
+    approvedBy: 'architect',
+  }, { seq: 21, ts: '2026-05-10T02:10:00.000Z' }));
+
+  assert.equal(state.tasks['refactor-1'].status, 'created');
+  assert.equal(state.tasks['refactor-1'].title, 'Refactor target');
+  assert.deepEqual(state.tasks['refactor-1'].acceptanceCriteria, ['preserve behavior']);
+  assert.deepEqual(state.tasks['refactor-1'].refactorGovernance, {
+    recommendationFingerprint: 'fingerprint-1',
+    targetId: 'ask-core/src/runtime/projectors/TaskBoardProjector.js',
+    confidence: 'medium',
+    approvalRequired: false,
+    approvalStatus: 'approved',
+    approvedBy: 'architect',
+    approvedAt: '2026-05-10T02:10:00.000Z',
+    rejectedReason: '',
+    executionPlan: { actions: [{ type: 'extract-helper' }] },
+    baseline: { architectureScore: 94 },
+  });
+});
+
+test('TaskBoardProjector projects refactor rejection as blocked while preserving metadata', () => {
+  const projector = new TaskBoardProjector();
+  let state = projector.apply(projector.initialState(), event('TaskCreated', 'refactor-2', {
+    title: 'Refactor risky target',
+    description: 'Needs review',
+    origin: {
+      type: 'ohder-refactor-governance',
+      recommendationFingerprint: 'fingerprint-2',
+      targetId: 'ask-core/src/core/SliceCloseRuntime.js',
+      confidence: 'high',
+      approvalRequired: true,
+      refactorExecutionPlan: { actions: [{ type: 'split-runtime' }] },
+    },
+    acceptanceCriteria: ['document rejection'],
+  }, { seq: 30, ts: '2026-05-10T03:00:00.000Z' }));
+
+  state = projector.apply(state, event('RefactorRejected', 'refactor-2', {
+    reason: 'scope too broad for this slice',
+  }, { seq: 31, ts: '2026-05-10T03:15:00.000Z' }));
+
+  assert.equal(state.tasks['refactor-2'].status, 'blocked');
+  assert.equal(state.tasks['refactor-2'].title, 'Refactor risky target');
+  assert.equal(state.tasks['refactor-2'].description, 'Needs review');
+  assert.deepEqual(state.tasks['refactor-2'].acceptanceCriteria, ['document rejection']);
+  assert.deepEqual(state.tasks['refactor-2'].refactorGovernance, {
+    recommendationFingerprint: 'fingerprint-2',
+    targetId: 'ask-core/src/core/SliceCloseRuntime.js',
+    confidence: 'high',
+    approvalRequired: true,
+    approvalStatus: 'rejected',
+    approvedBy: '',
+    rejectedReason: 'scope too broad for this slice',
+    rejectedAt: '2026-05-10T03:15:00.000Z',
+    executionPlan: { actions: [{ type: 'split-runtime' }] },
+  });
+});
