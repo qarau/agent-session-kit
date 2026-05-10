@@ -22,7 +22,7 @@ The adapter wrapper, project detection, and adapter resolution are already compl
 | `ask-ts-001` TypeScript tooling | Completed | `package.json`, `tsconfig.json`, `npm run typecheck`, `npm run build` |
 | `ask-ts-002` Core contract directory | Completed | `ask-core/src/contracts/*` |
 | `ask-ts-003` Typed runtime events | Completed foundation | `ask-core/src/contracts/events.ts`, `runtimeEventContracts.contract.test.mjs` |
-| `ask-ts-004` Event ledger append/read conversion | Completed boundary foundation, runtime conversion remaining | Event contracts, EventLedger boundary contracts, and runtime guard tests exist; ledger implementation remains JavaScript |
+| `ask-ts-004` Event ledger append/read conversion | Completed runtime compatibility conversion for this wave | Event contracts, EventLedger boundary contracts, runtime guard tests, typed runtime helpers, and source-compatible helper delegation exist |
 | `ask-ts-005` Projection cursor state conversion | Completed boundary foundation, full projection engine conversion remaining | Projection cursor contracts, replay proof contracts, runtime artifact fixtures, and projection-state compatibility tests exist; projection engine implementation remains JavaScript |
 | `ask-ts-006` Task and slice model conversion | Completed foundation, runtime conversion remaining | `tasks.ts` and task contract tests exist |
 | `ask-ts-007` Plan batch registry typing | Completed foundation, runtime conversion remaining | Plan batch contracts and fixtures exist |
@@ -62,7 +62,7 @@ The Governance + Event Ledger TypeScript Boundary wave is now in place:
 3. EventLedger boundary hardening is complete. The TypeScript contract layer now represents append input, append result, read-all result, sequencing assumptions, payload preservation, and metadata preservation.
 4. EventLedger runtime guard tests are complete. Current source-compatible runtime behavior is covered for payload/meta preservation, sequence ordering, and malformed NDJSON throwing.
 
-The EventLedger implementation still remains JavaScript-first. The current work hardens the boundary before runtime conversion.
+The EventLedger implementation entered a compatibility conversion path after this boundary wave. The current source-run CLI still loads JavaScript, but append/read behavior now has typed helper coverage and a source-compatible helper seam.
 
 governance runtime decomposition is complete for this wave. Deeper governance runtime conversion remains deferred until source-run CLI compatibility has a selected migration path.
 
@@ -75,16 +75,25 @@ The Projection Cursor TypeScript Runtime Boundary wave is now in place:
 1. projection cursor boundary/conversion is complete for this wave. The TypeScript contract layer now represents projection cursor state, replay proof, sequence integrity, projection run summaries, and representative runtime artifacts.
 2. projection-state compatibility hardening is complete. `RuntimeSnapshotStore.readProjectionState()` and `writeProjectionState()` normalize missing or invalid cursor fields while preserving existing artifact paths and wire shape.
 3. full projection engine TypeScript conversion remains deferred. `RuntimeProjectionEngine.js` still runs as source-compatible JavaScript while its cursor and replay artifact boundary is typed and tested.
-4. EventLedger runtime conversion or snapshot/runtime store boundary hardening is the next recommended area. EventLedger conversion should preserve the existing append/read wire shape, while snapshot/runtime store hardening should reduce broad runtime-file responsibility before deeper TypeScript conversion.
+4. EventLedger runtime compatibility conversion followed this wave. Snapshot/runtime store boundary hardening or CLI build/shim strategy is now the next recommended area.
+
+## EventLedger TypeScript Runtime Conversion Wave
+
+The EventLedger TypeScript Runtime Conversion wave is now in place:
+
+1. EventLedger runtime compatibility conversion is complete for this wave. Append envelope construction, NDJSON line parsing, and sequence sorting are now represented by typed runtime helpers and mirrored by a source-compatible JavaScript helper.
+2. `EventLedger.js` still remains the source-run authority for current CLI compatibility, but it now delegates append/read behavior through `EventLedgerRuntime.js` instead of owning the behavior inline.
+3. full source-only .ts runtime loading remains deferred until CLI build/shim strategy is selected. This avoids breaking current direct source execution while still moving behavior behind typed contracts.
+4. event ledger runtime conversion is complete for the compatibility wave, not for the full future source-only TypeScript runtime. The distinction matters: contracts first, runtime conversion later, strictness last remains the migration rule.
+5. snapshot/runtime store boundary hardening or CLI build/shim strategy is now the next likely implementation area.
 
 ## Next Recommended Implementation Sequence
 
-1. EventLedger runtime conversion or snapshot/runtime store boundary hardening: choose the smallest next wave based on whether the priority is event append/read source conversion or reducing broad snapshot-store responsibility.
-2. event ledger runtime conversion: convert append/read implementation to TypeScript after projection assumptions are explicitly covered, if not selected first.
-3. governance runtime conversion: convert governance helper/report builder logic to TypeScript only after source-run CLI compatibility has a selected migration path.
-4. Task, plan, law-pack, and profile runtime conversion: move each runtime behind its existing contract fixture coverage.
-5. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable.
-6. Strictness ratchet: apply stricter TypeScript settings last, first to contracts, then runtime core, then the full package.
+1. Snapshot/runtime store boundary hardening or CLI build/shim strategy: choose the smallest next wave based on whether the priority is reducing broad snapshot-store responsibility or enabling source-only TypeScript runtime loading.
+2. governance runtime conversion: convert governance helper/report builder logic to TypeScript only after source-run CLI compatibility has a selected migration path.
+3. Task, plan, law-pack, and profile runtime conversion: move each runtime behind its existing contract fixture coverage.
+4. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable.
+5. Strictness ratchet: apply stricter TypeScript settings last, first to contracts, then runtime core, then the full package.
 
 ## Guardrail
 
