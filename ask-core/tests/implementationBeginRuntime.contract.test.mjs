@@ -41,6 +41,10 @@ function writeText(filePath, content) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
 function setupRepo() {
   const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-core-implementation-begin-'));
   runOrThrow('git', ['init'], { cwd: repoDir });
@@ -94,9 +98,16 @@ test('implementation begin prepares artifacts hands them to ASK and returns next
   assert.equal(payload.nextTask.taskId, 'rbp-001');
   assert.equal(payload.nextAction, 'ask task start rbp-001');
   assert.equal(payload.handoff.state.status, 'ingested');
+  assert.equal(typeof payload.handoff.planBatchId, 'string');
+  assert.equal(typeof payload.handoff.artifactHash, 'string');
 
   assert.equal(fs.existsSync(path.join(repoDir, payload.prepare.markdownPath)), true);
   assert.equal(fs.existsSync(path.join(repoDir, payload.prepare.planJsonPath)), true);
+
+  const registry = readJson(path.join(repoDir, '.ask', 'tasks', 'plan-batches.json'));
+  assert.deepEqual(registry.artifactHashes[payload.handoff.artifactHash], [payload.handoff.planBatchId]);
+  assert.equal(registry.batches[payload.handoff.planBatchId].status, 'completed');
+  assert.deepEqual(registry.batches[payload.handoff.planBatchId].createdTaskIds, ['rbp-001']);
 
   const preflight = run(process.execPath, [askBinPath, 'implementation', 'preflight'], { cwd: repoDir });
   assert.equal(preflight.status, 1, preflight.stdout + preflight.stderr);

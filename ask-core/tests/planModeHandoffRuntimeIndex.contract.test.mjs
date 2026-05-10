@@ -114,6 +114,8 @@ test('plan-mode handoff registers plan artifacts validates ingests and records d
   assert.deepEqual(payload.createdTaskIds, ['pmh-001', 'pmh-002']);
   assert.equal(payload.nextTask.taskId, 'pmh-001');
   assert.equal(payload.state.status, 'ingested');
+  assert.equal(typeof payload.planBatchId, 'string');
+  assert.equal(typeof payload.artifactHash, 'string');
 
   const runtime = new PlanModeHandoffRuntime(repoDir);
   const state = await runtime.readState();
@@ -131,9 +133,26 @@ test('plan-mode handoff registers plan artifacts validates ingests and records d
   assert.ok(artifacts.some(artifact => artifact.type === 'plan-markdown' && artifact.path === 'docs/plans/handoff-plan.md'));
   assert.ok(artifacts.some(artifact => artifact.type === 'plan' && artifact.path === 'docs/plans/handoff-plan.json'));
 
+  const batchShow = runOrThrow(process.execPath, [
+    askBinPath,
+    'plan',
+    'batch',
+    'show',
+    payload.planBatchId,
+  ], { cwd: repoDir });
+  const batchPayload = JSON.parse(batchShow.stdout);
+  assert.equal(batchPayload.ok, true);
+  assert.equal(batchPayload.batch.planBatchId, payload.planBatchId);
+  assert.equal(batchPayload.batch.artifactHash, payload.artifactHash);
+  assert.deepEqual(batchPayload.batch.createdTaskIds, ['pmh-001', 'pmh-002']);
+
   const events = await new EventLedger(repoDir).readAll();
   const eventTypes = events.map(event => event.type);
   assert.ok(eventTypes.includes('PlanModeHandoffCreated'));
   assert.ok(eventTypes.includes('PlanModeHandoffValidated'));
   assert.ok(eventTypes.includes('PlanModeHandoffIngested'));
+  const planIngested = events.find(event => event.type === 'PlanIngested');
+  assert.equal(planIngested.payload.planBatchId, payload.planBatchId);
+  assert.equal(planIngested.payload.artifactHash, payload.artifactHash);
+  assert.ok(events.some(event => event.type === 'PlanSliceMaterialized' && event.payload.planBatchId === payload.planBatchId));
 });
