@@ -102,3 +102,29 @@ test('source-run runtime files do not import the TypeScript slice-close helper d
 
   assert.deepEqual(offenders, []);
 });
+
+test('SliceCloseRuntime delegates pure behavior through source-compatible helper mirror', async () => {
+  const runtime = readCore('SliceCloseRuntime.js');
+  assert.match(runtime, /from '\.\/SliceCloseRuntimeHelpers\.js'/u);
+  assert.doesNotMatch(runtime, /from '\.\/SliceCloseRuntimeHelpers\.ts'/u);
+  for (const removedInlineHelper of [
+    /function normalize\(/u,
+    /function toBoolean\(/u,
+    /function toNumber\(/u,
+    /function normalizeLower\(/u,
+    /function parseList\(/u,
+    /function parseGitStatusPath\(/u,
+    /function resolveSummary\(/u,
+    /function isRefactorGovernedTask\(/u,
+  ]) {
+    assert.doesNotMatch(runtime, removedInlineHelper);
+  }
+
+  const helper = await import('../src/core/SliceCloseRuntimeHelpers.js');
+  assert.equal(helper.normalizeSliceCloseValue('  task-1  '), 'task-1');
+  assert.equal(helper.toSliceCloseBoolean('on', false), true);
+  assert.equal(helper.toSliceCloseNumber('bad', 9), 9);
+  assert.deepEqual(helper.parseSliceCloseList(' A, b ', [], true), ['a', 'b']);
+  assert.equal(helper.parseGitStatusPath(' M ask-core/src/core/SliceCloseRuntime.js'), 'ask-core/src/core/SliceCloseRuntime.js');
+  assert.equal(helper.isRefactorGovernedSliceTask({ title: 'Refactor runtime' }), true);
+});
