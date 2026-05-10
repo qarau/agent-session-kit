@@ -1,50 +1,11 @@
 import { AskPaths } from '../fs/AskPaths.js';
 import { FileStore } from '../fs/FileStore.js';
-
-function defaultProjectionState() {
-  return {
-    lastAppliedSeq: 0,
-    requiresReplay: false,
-    reason: '',
-    updatedAt: '',
-  };
-}
-
-function defaultReplayProof() {
-  return {
-    schemaVersion: 1,
-    mode: 'none',
-    eventCount: 0,
-    firstSeq: 0,
-    lastSeq: 0,
-    projectionCursor: 0,
-    replayHash: '',
-    snapshotHash: '',
-    sequenceIntegrity: {
-      contiguous: true,
-      monotonic: true,
-      hasDuplicates: false,
-      hasGaps: false,
-      cursorIntegrity: 'unknown',
-    },
-    generatedAt: '',
-  };
-}
-
-function normalizeProjectionState(payload = {}) {
-  const source = payload && typeof payload === 'object' && !Array.isArray(payload)
-    ? payload
-    : {};
-  const lastAppliedSeq = Number(source.lastAppliedSeq ?? 0);
-  return {
-    ...defaultProjectionState(),
-    ...source,
-    lastAppliedSeq: Number.isFinite(lastAppliedSeq) && lastAppliedSeq >= 0 ? lastAppliedSeq : 0,
-    requiresReplay: source.requiresReplay === true,
-    reason: typeof source.reason === 'string' ? source.reason : '',
-    updatedAt: source.updatedAt || new Date().toISOString(),
-  };
-}
+import {
+  createDefaultProjectionState,
+  createDefaultReplayProof,
+  mergeReplayProof,
+  normalizeProjectionState,
+} from './RuntimeSnapshotStoreRuntime.js';
 
 export class RuntimeSnapshotStore {
   constructor(cwd) {
@@ -205,7 +166,7 @@ export class RuntimeSnapshotStore {
   }
 
   async readProjectionState() {
-    const state = await this.store.readJson(this.paths.projectionState(), defaultProjectionState());
+    const state = await this.store.readJson(this.paths.projectionState(), createDefaultProjectionState());
     return normalizeProjectionState(state);
   }
 
@@ -216,16 +177,12 @@ export class RuntimeSnapshotStore {
   }
 
   async readReplayProof() {
-    return this.store.readJson(this.paths.replayProof(), defaultReplayProof());
+    return this.store.readJson(this.paths.replayProof(), createDefaultReplayProof());
   }
 
   async writeReplayProof(payload = {}) {
     const previous = await this.readReplayProof();
-    const next = {
-      ...previous,
-      ...payload,
-      generatedAt: payload.generatedAt || new Date().toISOString(),
-    };
+    const next = mergeReplayProof(previous, payload);
     await this.store.writeJson(this.paths.replayProof(), next);
     return next;
   }

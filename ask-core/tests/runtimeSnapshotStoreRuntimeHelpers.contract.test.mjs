@@ -51,3 +51,22 @@ test('source-run runtime files do not import the TypeScript snapshot helper dire
 
   assert.deepEqual(offenders, []);
 });
+
+test('RuntimeSnapshotStore source runtime delegates defaults through source-compatible helper', () => {
+  const store = readRuntime('RuntimeSnapshotStore.js');
+  assert.match(store, /from '\.\/RuntimeSnapshotStoreRuntime\.js'/u);
+  assert.match(store, /\bcreateDefaultProjectionState\b/u);
+  assert.match(store, /\bcreateDefaultReplayProof\b/u);
+  assert.match(store, /\bnormalizeProjectionState\b/u);
+  assert.match(store, /\bmergeReplayProof\b/u);
+
+  const helper = readRuntime('RuntimeSnapshotStoreRuntime.js');
+  for (const symbol of [
+    'createDefaultProjectionState',
+    'createDefaultReplayProof',
+    'normalizeProjectionState',
+    'mergeReplayProof',
+  ]) {
+    assert.match(helper, new RegExp(`export function ${symbol}\\b`, 'u'));
+  }
+});
