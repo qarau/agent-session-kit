@@ -11,7 +11,9 @@ The adapter activation work from the original spec was completed under a separat
 - `ask-ts-011` is completed by `ask-adapter-002` and `ask-adapter-003`.
 - `ask-ts-012` is completed by `ask-adapter-004`.
 
-do not duplicate the completed adapter work. The next true unfinished area is governance/OFRR runtime typing, not adapter detection duplication.
+do not duplicate the completed adapter work. The completed adapter, governance, EventLedger, projection cursor, and RuntimeSnapshotStore waves should be referenced as existing capabilities, not regenerated under new TypeScript migration slice IDs.
+
+Earlier reconciliation identified governance/OFRR runtime typing, not adapter detection duplication, as the next true unfinished area. That governance/OFRR foundation has since been completed; the phrase remains here as historical context for the completed reconciliation.
 
 The adapter wrapper, project detection, and adapter resolution are already complete. They should be referenced as completed capabilities, not regenerated under new TypeScript migration slice IDs.
 
@@ -23,7 +25,7 @@ The adapter wrapper, project detection, and adapter resolution are already compl
 | `ask-ts-002` Core contract directory | Completed | `ask-core/src/contracts/*` |
 | `ask-ts-003` Typed runtime events | Completed foundation | `ask-core/src/contracts/events.ts`, `runtimeEventContracts.contract.test.mjs` |
 | `ask-ts-004` Event ledger append/read conversion | Completed runtime compatibility conversion for this wave | Event contracts, EventLedger boundary contracts, runtime guard tests, typed runtime helpers, and source-compatible helper delegation exist |
-| `ask-ts-005` Projection cursor state conversion | Completed boundary foundation, full projection engine conversion remaining | Projection cursor contracts, replay proof contracts, runtime artifact fixtures, and projection-state compatibility tests exist; projection engine implementation remains JavaScript |
+| `ask-ts-005` Projection cursor state conversion | Completed projection cursor and snapshot/runtime boundary compatibility waves, full projection engine conversion remaining | Projection cursor contracts, replay proof contracts, runtime artifact fixtures, projection-state compatibility tests, RuntimeSnapshotStore contracts, typed helpers, and source-compatible helper delegation exist; projection engine implementation remains JavaScript |
 | `ask-ts-006` Task and slice model conversion | Completed foundation, runtime conversion remaining | `tasks.ts` and task contract tests exist |
 | `ask-ts-007` Plan batch registry typing | Completed foundation, runtime conversion remaining | Plan batch contracts and fixtures exist |
 | `ask-ts-008` Queue classification typing | Completed foundation | `queues.ts`, `workers.ts`, queue contract tests |
@@ -42,7 +44,7 @@ The adapter wrapper, project detection, and adapter resolution are already compl
 | `ask-ts-021` Strict checks for runtime core | Remaining | Runtime core is still JavaScript-first |
 | `ask-ts-022` Global strict checks | Remaining | Deferred until contracts/core strictness is stable |
 
-## Next Implementation Area
+## Completed Governance Continuation Area
 
 The governance/OFRR contract foundation from this plan is now in place:
 
@@ -75,7 +77,7 @@ The Projection Cursor TypeScript Runtime Boundary wave is now in place:
 1. projection cursor boundary/conversion is complete for this wave. The TypeScript contract layer now represents projection cursor state, replay proof, sequence integrity, projection run summaries, and representative runtime artifacts.
 2. projection-state compatibility hardening is complete. `RuntimeSnapshotStore.readProjectionState()` and `writeProjectionState()` normalize missing or invalid cursor fields while preserving existing artifact paths and wire shape.
 3. full projection engine TypeScript conversion remains deferred. `RuntimeProjectionEngine.js` still runs as source-compatible JavaScript while its cursor and replay artifact boundary is typed and tested.
-4. EventLedger runtime compatibility conversion followed this wave. Snapshot/runtime store boundary hardening or CLI build/shim strategy is now the next recommended area.
+4. EventLedger runtime compatibility conversion and RuntimeSnapshotStore boundary hardening followed this wave.
 
 ## EventLedger TypeScript Runtime Conversion Wave
 
@@ -85,14 +87,24 @@ The EventLedger TypeScript Runtime Conversion wave is now in place:
 2. `EventLedger.js` still remains the source-run authority for current CLI compatibility, but it now delegates append/read behavior through `EventLedgerRuntime.js` instead of owning the behavior inline.
 3. full source-only .ts runtime loading remains deferred until CLI build/shim strategy is selected. This avoids breaking current direct source execution while still moving behavior behind typed contracts.
 4. event ledger runtime conversion is complete for the compatibility wave, not for the full future source-only TypeScript runtime. The distinction matters: contracts first, runtime conversion later, strictness last remains the migration rule.
-5. snapshot/runtime store boundary hardening or CLI build/shim strategy is now the next likely implementation area.
+5. snapshot/runtime store boundary hardening is complete for this wave.
+
+## RuntimeSnapshotStore TypeScript Boundary Hardening Wave
+
+The RuntimeSnapshotStore TypeScript Boundary Hardening wave is now in place:
+
+1. snapshot/runtime store boundary hardening is complete for this wave. The TypeScript contract layer now represents session snapshots, task board snapshots, task-indexed snapshots, projection state, replay proof, and grouped runtime snapshot artifacts.
+2. `RuntimeSnapshotStore.js` still remains the source-run authority for current CLI compatibility, but default projection state, default replay proof, projection normalization, and replay-proof merge behavior now delegate through `RuntimeSnapshotStoreRuntime.js`.
+3. full source-only .ts runtime loading remains deferred until CLI build/shim strategy is selected. The current path keeps `node ask-core/bin/ask.js` safe while moving behavior behind typed contracts.
+4. current snapshot paths and wire shapes remain unchanged. `.ask/runtime/snapshots/*`, `.ask/runtime/projection-state.json`, and `.ask/runtime/replay-proof.json` keep their existing compatibility behavior.
+5. task/slice runtime conversion or CLI build/shim strategy is now the next likely implementation area.
 
 ## Next Recommended Implementation Sequence
 
-1. Snapshot/runtime store boundary hardening or CLI build/shim strategy: choose the smallest next wave based on whether the priority is reducing broad snapshot-store responsibility or enabling source-only TypeScript runtime loading.
-2. governance runtime conversion: convert governance helper/report builder logic to TypeScript only after source-run CLI compatibility has a selected migration path.
-3. Task, plan, law-pack, and profile runtime conversion: move each runtime behind its existing contract fixture coverage.
-4. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable.
+1. Task/slice runtime conversion or CLI build/shim strategy: choose the smallest next wave based on whether the priority is moving task/slice file behavior behind typed helpers or enabling source-only TypeScript runtime loading.
+2. Plan batch registry runtime conversion: move plan batch read/write behavior behind existing plan contract coverage after task/slice runtime behavior is stable.
+3. Law-pack and profile runtime conversion: move each runtime behind its existing contract fixture coverage.
+4. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable unless selected as the explicit next build/shim wave.
 5. Strictness ratchet: apply stricter TypeScript settings last, first to contracts, then runtime core, then the full package.
 
 ## Guardrail

@@ -16,7 +16,7 @@ test('typescript migration status records EventLedger runtime compatibility comp
     'EventLedger TypeScript Runtime Conversion wave',
     'EventLedger runtime compatibility conversion is complete for this wave',
     'full source-only .ts runtime loading remains deferred until CLI build/shim strategy is selected',
-    'snapshot/runtime store boundary hardening or CLI build/shim strategy',
+    'RuntimeSnapshotStore TypeScript Boundary Hardening wave',
     'contracts first',
     'runtime conversion later',
     'strictness last',

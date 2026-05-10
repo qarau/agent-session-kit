@@ -9,14 +9,13 @@ const testsDir = path.dirname(thisFilePath);
 const repoRoot = path.resolve(testsDir, '..', '..');
 const statusDocPath = path.join(repoRoot, 'docs', 'operations', 'typescript-migration-status.md');
 
-test('typescript migration status records projection cursor boundary completion and next runtime work', () => {
+test('typescript migration status records RuntimeSnapshotStore boundary hardening completion', () => {
   const doc = fs.readFileSync(statusDocPath, 'utf8');
 
   for (const phrase of [
-    'Projection Cursor TypeScript Runtime Boundary wave',
-    'projection cursor boundary/conversion is complete for this wave',
-    'full projection engine TypeScript conversion remains deferred',
     'RuntimeSnapshotStore TypeScript Boundary Hardening wave',
+    'snapshot/runtime store boundary hardening is complete for this wave',
+    'full source-only .ts runtime loading remains deferred until CLI build/shim strategy is selected',
     'task/slice runtime conversion or CLI build/shim strategy',
     'contracts first',
     'runtime conversion later',
