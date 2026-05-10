@@ -22,7 +22,7 @@ The adapter wrapper, project detection, and adapter resolution are already compl
 | `ask-ts-001` TypeScript tooling | Completed | `package.json`, `tsconfig.json`, `npm run typecheck`, `npm run build` |
 | `ask-ts-002` Core contract directory | Completed | `ask-core/src/contracts/*` |
 | `ask-ts-003` Typed runtime events | Completed foundation | `ask-core/src/contracts/events.ts`, `runtimeEventContracts.contract.test.mjs` |
-| `ask-ts-004` Event ledger append/read conversion | Remaining runtime migration | Event contracts exist; ledger implementation remains JavaScript |
+| `ask-ts-004` Event ledger append/read conversion | Completed boundary foundation, runtime conversion remaining | Event contracts, EventLedger boundary contracts, and runtime guard tests exist; ledger implementation remains JavaScript |
 | `ask-ts-005` Projection cursor state conversion | Remaining runtime migration | Current artifact contracts exist; projection implementation remains JavaScript |
 | `ask-ts-006` Task and slice model conversion | Completed foundation, runtime conversion remaining | `tasks.ts` and task contract tests exist |
 | `ask-ts-007` Plan batch registry typing | Completed foundation, runtime conversion remaining | Plan batch contracts and fixtures exist |
@@ -53,11 +53,26 @@ The governance/OFRR contract foundation from this plan is now in place:
 
 Do not claim full TypeScript runtime migration is complete. ASK Forge v6 remains contracts first, runtime conversion later, strictness last.
 
+## Governance + Event Ledger TypeScript Boundary Wave
+
+The Governance + Event Ledger TypeScript Boundary wave is now in place:
+
+1. governance report helper extraction is complete. `ask governance status` and `ask governance explain` still expose the same public CLI JSON fields, but report construction is now testable without spawning the CLI.
+2. governance fixture decomposition is complete. `governanceFixtures.ts` remains the public facade while focused fixture modules hold check, OHDER, architect, and decision/explain fixtures.
+3. EventLedger boundary hardening is complete. The TypeScript contract layer now represents append input, append result, read-all result, sequencing assumptions, payload preservation, and metadata preservation.
+4. EventLedger runtime guard tests are complete. Current source-compatible runtime behavior is covered for payload/meta preservation, sequence ordering, and malformed NDJSON throwing.
+
+The EventLedger implementation still remains JavaScript-first. The current work hardens the boundary before runtime conversion.
+
+governance runtime decomposition is complete for this wave. Deeper governance runtime conversion remains deferred until source-run CLI compatibility has a selected migration path.
+
+projection cursor runtime conversion is next and still deferred. It should follow the ledger boundary work because projection cursor correctness depends on stable event ordering, event parse behavior, replay assumptions, and ledger sequence semantics.
+
 ## Next Recommended Implementation Sequence
 
-1. governance runtime decomposition: split `ask-core/src/cli/commands/governance.js` and large governance contract fixtures into smaller modules before adding more behavior.
-2. event ledger runtime conversion: convert append/read boundaries to TypeScript after the current event contracts have stayed stable.
-3. projection cursor runtime conversion: type the projection cursor and replay state after event ledger conversion lands.
+1. projection cursor runtime conversion: type the projection cursor and replay state after EventLedger boundaries remain stable.
+2. event ledger runtime conversion: convert append/read implementation to TypeScript after projection assumptions are explicitly covered.
+3. governance runtime conversion: convert governance helper/report builder logic to TypeScript only after source-run CLI compatibility has a selected migration path.
 4. Task, plan, law-pack, and profile runtime conversion: move each runtime behind its existing contract fixture coverage.
 5. CLI entrypoint conversion and JavaScript compatibility shim: defer until runtime boundaries are stable.
 6. Strictness ratchet: apply stricter TypeScript settings last, first to contracts, then runtime core, then the full package.
